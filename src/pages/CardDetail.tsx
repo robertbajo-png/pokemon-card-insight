@@ -10,14 +10,14 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useLanguage, type Currency } from "@/contexts/LanguageContext";
 
-const CURRENCY_RATES = {
+const CURRENCY_RATES: Record<Currency, number> = {
   SEK: 1,
   USD: 0.091, // 1 SEK ≈ 0.091 USD
   EUR: 0.084, // 1 SEK ≈ 0.084 EUR
   JPY: 14.5, // 1 SEK ≈ 14.5 JPY
 };
 
-const CURRENCY_SYMBOLS = {
+const CURRENCY_SYMBOLS: Record<Currency, string> = {
   SEK: "kr",
   USD: "$",
   EUR: "€",
