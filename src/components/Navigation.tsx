@@ -1,14 +1,18 @@
 import { Link, useLocation } from "react-router-dom";
-import { Scan, Image, Home } from "lucide-react";
+import { Scan, Image, Home, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Navigation = () => {
   const location = useLocation();
+  const { language, setLanguage, t } = useLanguage();
 
   const links = [
-    { to: "/", label: "Hem", icon: Home },
-    { to: "/scanner", label: "Scanna", icon: Scan },
-    { to: "/gallery", label: "Galleri", icon: Image },
+    { to: "/", label: t("home"), icon: Home },
+    { to: "/scanner", label: t("scan"), icon: Scan },
+    { to: "/gallery", label: t("gallery"), icon: Image },
   ];
 
   return (
@@ -45,6 +49,40 @@ const Navigation = () => {
                 </Link>
               );
             })}
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full">
+                  <Globe className="w-5 h-5" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-40 p-2 bg-card border border-border shadow-lg z-[100]" align="end" sideOffset={8}>
+                <div className="space-y-1">
+                  <button
+                    onClick={() => setLanguage("sv")}
+                    className={cn(
+                      "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
+                      language === "sv" 
+                        ? "bg-primary text-primary-foreground" 
+                        : "hover:bg-accent text-foreground"
+                    )}
+                  >
+                    🇸🇪 Svenska
+                  </button>
+                  <button
+                    onClick={() => setLanguage("en")}
+                    className={cn(
+                      "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
+                      language === "en" 
+                        ? "bg-primary text-primary-foreground" 
+                        : "hover:bg-accent text-foreground"
+                    )}
+                  >
+                    🇬🇧 English
+                  </button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </div>
