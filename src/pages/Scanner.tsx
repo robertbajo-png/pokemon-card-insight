@@ -30,7 +30,7 @@ const Scanner = () => {
     setShowCamera(false);
   };
 
-  const analyzeCard = () => {
+  const analyzeCard = async () => {
     if (!selectedImage) {
       toast.error("Ladda upp en bild först");
       return;
@@ -38,20 +38,34 @@ const Scanner = () => {
 
     setIsAnalyzing(true);
     
-    // Simulera AI-analys
-    setTimeout(() => {
-      setResult({
-        name: "Charizard",
-        type: "Fire",
-        rarity: "Ultra Rare",
-        set: "Base Set",
-        number: "4/102",
-        estimatedValue: "1200-1500 kr",
-        condition: "Near Mint",
-      });
-      setIsAnalyzing(false);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-pokemon-card`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image: selectedImage,
+            action: 'analyze'
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to analyze card');
+      }
+
+      const data = await response.json();
+      setResult(data);
       toast.success("Kort analyserat!");
-    }, 2000);
+    } catch (error) {
+      console.error('Error analyzing card:', error);
+      toast.error("Kunde inte analysera kortet");
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   return (
