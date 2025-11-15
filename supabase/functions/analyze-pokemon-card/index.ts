@@ -88,6 +88,8 @@ Svara ENDAST med giltig JSON i detta exakta format (utan extra text):
       
     } else if (action === 'generate') {
       // Generate card data for gallery
+      console.log('Generating cards with params:', { searchQuery, types, rarity, pageSize });
+      
       systemPrompt = `Du är en expert på Pokemon-kort. Generera en lista med realistiska Pokemon-kort baserat på sökkriterierna.
 Svara ENDAST med giltig JSON-array i detta exakta format (utan extra text):
 [
@@ -140,14 +142,17 @@ Generera ${pageSize} olika kort. Använd riktiga Pokemon-namn och realistiska v�
 
       const data = await response.json();
       const content = data.choices[0].message.content;
+      console.log('AI response received, extracting JSON...');
       
       // Extract JSON array from response
       const jsonMatch = content.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
+        console.error('Could not find JSON in AI response:', content);
         throw new Error('Could not parse AI response');
       }
       
       const cards = JSON.parse(jsonMatch[0]);
+      console.log(`Successfully generated ${cards.length} cards`);
       
       return new Response(JSON.stringify({ data: cards, totalCount: cards.length }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

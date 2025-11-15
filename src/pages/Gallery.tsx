@@ -23,6 +23,7 @@ const Gallery = () => {
   const loadCards = async () => {
     setIsLoading(true);
     try {
+      console.log('Loading cards with filters:', { searchQuery, filterType, filterRarity });
       const types = filterType !== "all" ? [filterType] : undefined;
       const rarity = filterRarity !== "all" ? filterRarity : undefined;
       
@@ -32,10 +33,11 @@ const Gallery = () => {
         rarity,
       });
       
+      console.log('Cards loaded:', data);
       setCards(data);
     } catch (error) {
       console.error("Error loading cards:", error);
-      toast.error("Kunde inte ladda kort");
+      toast.error("Kunde inte ladda kort. Försök igen.");
     } finally {
       setIsLoading(false);
     }
