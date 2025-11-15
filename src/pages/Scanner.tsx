@@ -30,7 +30,10 @@ const Scanner = () => {
   const [showCamera, setShowCamera] = useState(false);
   const { currency, setCurrency } = useLanguage();
 
+  console.log('Scanner - Current currency:', currency);
+
   const convertPrice = (priceInSEK: string): string => {
+    console.log('Converting price:', priceInSEK, 'with currency:', currency);
     // Extract number from string like "1200-1500 kr" or "1200 kr"
     const match = priceInSEK.match(/(\d+)(?:-(\d+))?\s*kr/);
     if (!match) return priceInSEK;
@@ -40,6 +43,8 @@ const Scanner = () => {
     
     const convertedMin = Math.round(minPrice * CURRENCY_RATES[currency]);
     const symbol = CURRENCY_SYMBOLS[currency];
+    
+    console.log('Converted:', convertedMin, 'Symbol:', symbol, 'Rate:', CURRENCY_RATES[currency]);
     
     // Symbol after number for SEK, EUR
     const symbolAfter = currency === "SEK" || currency === "EUR";

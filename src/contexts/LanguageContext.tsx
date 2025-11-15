@@ -257,11 +257,15 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguage] = useState<Language>("sv");
   const [currency, setCurrency] = useState<Currency>(languageToCurrency["sv"]);
+  const [hasSetInitialCurrency, setHasSetInitialCurrency] = useState(false);
 
-  // Automatically update currency when language changes
+  // Only automatically update currency on first language change
   useEffect(() => {
-    setCurrency(languageToCurrency[language]);
-  }, [language]);
+    if (!hasSetInitialCurrency) {
+      setCurrency(languageToCurrency[language]);
+      setHasSetInitialCurrency(true);
+    }
+  }, [language, hasSetInitialCurrency]);
 
   const t = (key: string): string => {
     return translations[language][key] || key;
