@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
-type Language = "sv" | "en";
-export type Currency = "SEK" | "USD" | "EUR";
+type Language = "sv" | "en" | "de" | "fr" | "ja";
+export type Currency = "SEK" | "USD" | "EUR" | "JPY";
 
 interface LanguageContextType {
   language: Language;
@@ -14,6 +14,9 @@ interface LanguageContextType {
 const languageToCurrency: Record<Language, Currency> = {
   sv: "SEK",
   en: "USD",
+  de: "EUR",
+  fr: "EUR",
+  ja: "JPY",
 };
 
 const translations: Record<Language, Record<string, string>> = {
@@ -108,6 +111,144 @@ const translations: Record<Language, Record<string, string>> = {
     step2Desc: "Our AI identifies the card and finds relevant information",
     step3Title: "3. View Details",
     step3Desc: "Get information about rarity, value and the card's history",
+  },
+  de: {
+    // Navigation
+    home: "Startseite",
+    scan: "Scannen",
+    gallery: "Galerie",
+    
+    // Scanner
+    scanPokemonCard: "Pokemon-Karte scannen",
+    scanDescription: "Machen Sie ein Foto oder laden Sie ein Bild Ihrer Pokemon-Karte hoch, um detaillierte Informationen und Wertschätzung zu erhalten",
+    uploadImage: "Bild hochladen",
+    takePhoto: "Foto machen",
+    analyzeCard: "Karte analysieren",
+    analyzing: "Analysieren...",
+    cardInformation: "Karteninformation",
+    type: "Typ",
+    rarity: "Seltenheit",
+    set: "Set",
+    number: "Nummer",
+    condition: "Zustand",
+    estimatedValue: "Geschätzter Wert",
+    
+    // Camera
+    takePhotoOfCard: "Foto von Karte machen",
+    placeCardInFrame: "Karte im Rahmen platzieren",
+    pressToTakePhoto: "Drücken Sie die Kamerataste, um ein Foto zu machen",
+    
+    // Gallery
+    pokemonGallery: "Pokemon-Kartengalerie",
+    searchCards: "Karten suchen...",
+    filterByType: "Nach Typ filtern",
+    allTypes: "Alle Typen",
+    filterByRarity: "Nach Seltenheit filtern",
+    allRarities: "Alle Seltenheiten",
+    
+    // Home
+    welcomeTitle: "Willkommen bei Pokemon Card Lens",
+    welcomeSubtitle: "Scannen und entdecken Sie den Wert Ihrer Pokemon-Karten",
+    getStarted: "Loslegen",
+    howItWorks: "Wie es funktioniert",
+    step1Title: "1. Foto machen",
+    step1Desc: "Verwenden Sie die Kamera Ihres Telefons, um ein klares Foto Ihrer Pokemon-Karte zu machen",
+    step2Title: "2. KI-Analyse",
+    step2Desc: "Unsere KI identifiziert die Karte und findet relevante Informationen",
+    step3Title: "3. Details ansehen",
+    step3Desc: "Erhalten Sie Informationen über Seltenheit, Wert und Geschichte der Karte",
+  },
+  fr: {
+    // Navigation
+    home: "Accueil",
+    scan: "Scanner",
+    gallery: "Galerie",
+    
+    // Scanner
+    scanPokemonCard: "Scanner une carte Pokemon",
+    scanDescription: "Prenez une photo ou téléchargez une image de votre carte Pokemon pour obtenir des informations détaillées et une estimation de valeur",
+    uploadImage: "Télécharger une image",
+    takePhoto: "Prendre une photo",
+    analyzeCard: "Analyser la carte",
+    analyzing: "Analyse en cours...",
+    cardInformation: "Informations sur la carte",
+    type: "Type",
+    rarity: "Rareté",
+    set: "Collection",
+    number: "Numéro",
+    condition: "État",
+    estimatedValue: "Valeur estimée",
+    
+    // Camera
+    takePhotoOfCard: "Prendre une photo de la carte",
+    placeCardInFrame: "Placer la carte dans le cadre",
+    pressToTakePhoto: "Appuyez sur le bouton de l'appareil photo pour prendre une photo",
+    
+    // Gallery
+    pokemonGallery: "Galerie de cartes Pokemon",
+    searchCards: "Rechercher des cartes...",
+    filterByType: "Filtrer par type",
+    allTypes: "Tous les types",
+    filterByRarity: "Filtrer par rareté",
+    allRarities: "Toutes les raretés",
+    
+    // Home
+    welcomeTitle: "Bienvenue sur Pokemon Card Lens",
+    welcomeSubtitle: "Scannez et découvrez la valeur de vos cartes Pokemon",
+    getStarted: "Commencer",
+    howItWorks: "Comment ça marche",
+    step1Title: "1. Prendre une photo",
+    step1Desc: "Utilisez l'appareil photo de votre téléphone pour prendre une photo claire de votre carte Pokemon",
+    step2Title: "2. Analyse IA",
+    step2Desc: "Notre IA identifie la carte et trouve des informations pertinentes",
+    step3Title: "3. Voir les détails",
+    step3Desc: "Obtenez des informations sur la rareté, la valeur et l'histoire de la carte",
+  },
+  ja: {
+    // Navigation
+    home: "ホーム",
+    scan: "スキャン",
+    gallery: "ギャラリー",
+    
+    // Scanner
+    scanPokemonCard: "ポケモンカードをスキャン",
+    scanDescription: "ポケモンカードの写真を撮るかアップロードして、詳細情報と価値の見積もりを取得します",
+    uploadImage: "画像をアップロード",
+    takePhoto: "写真を撮る",
+    analyzeCard: "カードを分析",
+    analyzing: "分析中...",
+    cardInformation: "カード情報",
+    type: "タイプ",
+    rarity: "レアリティ",
+    set: "セット",
+    number: "番号",
+    condition: "状態",
+    estimatedValue: "推定価値",
+    
+    // Camera
+    takePhotoOfCard: "カードの写真を撮る",
+    placeCardInFrame: "フレーム内にカードを配置",
+    pressToTakePhoto: "カメラボタンを押して写真を撮影",
+    
+    // Gallery
+    pokemonGallery: "ポケモンカードギャラリー",
+    searchCards: "カードを検索...",
+    filterByType: "タイプで絞り込み",
+    allTypes: "すべてのタイプ",
+    filterByRarity: "レアリティで絞り込み",
+    allRarities: "すべてのレアリティ",
+    
+    // Home
+    welcomeTitle: "Pokemon Card Lensへようこそ",
+    welcomeSubtitle: "ポケモンカードの価値をスキャンして発見",
+    getStarted: "始める",
+    howItWorks: "使い方",
+    step1Title: "1. 写真を撮る",
+    step1Desc: "スマートフォンのカメラを使って、ポケモンカードの鮮明な写真を撮影します",
+    step2Title: "2. AI分析",
+    step2Desc: "AIがカードを識別し、関連情報を検索します",
+    step3Title: "3. 詳細を表示",
+    step3Desc: "レアリティ、価値、カードの歴史に関する情報を取得",
   },
 };
 

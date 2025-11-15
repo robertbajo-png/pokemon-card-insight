@@ -56,7 +56,7 @@ const Navigation = () => {
                   <Globe className="w-5 h-5" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-40 p-2 bg-card border border-border shadow-lg z-[100]" align="end" sideOffset={8}>
+              <PopoverContent className="w-44 p-2 bg-card border border-border shadow-lg z-[100]" align="end" sideOffset={8}>
                 <div className="space-y-1">
                   <button
                     onClick={() => setLanguage("sv")}
@@ -79,6 +79,39 @@ const Navigation = () => {
                     )}
                   >
                     🇬🇧 English
+                  </button>
+                  <button
+                    onClick={() => setLanguage("de")}
+                    className={cn(
+                      "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
+                      language === "de" 
+                        ? "bg-primary text-primary-foreground" 
+                        : "hover:bg-accent text-foreground"
+                    )}
+                  >
+                    🇩🇪 Deutsch
+                  </button>
+                  <button
+                    onClick={() => setLanguage("fr")}
+                    className={cn(
+                      "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
+                      language === "fr" 
+                        ? "bg-primary text-primary-foreground" 
+                        : "hover:bg-accent text-foreground"
+                    )}
+                  >
+                    🇫🇷 Français
+                  </button>
+                  <button
+                    onClick={() => setLanguage("ja")}
+                    className={cn(
+                      "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
+                      language === "ja" 
+                        ? "bg-primary text-primary-foreground" 
+                        : "hover:bg-accent text-foreground"
+                    )}
+                  >
+                    🇯🇵 日本語
                   </button>
                 </div>
               </PopoverContent>
