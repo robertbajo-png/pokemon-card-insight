@@ -3,12 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Upload, Camera, Sparkles } from "lucide-react";
 import Navigation from "@/components/Navigation";
+import CameraCapture from "@/components/CameraCapture";
 import { toast } from "sonner";
 
 const Scanner = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [showCamera, setShowCamera] = useState(false);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -20,6 +22,12 @@ const Scanner = () => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleCameraCapture = (imageDataUrl: string) => {
+    setSelectedImage(imageDataUrl);
+    setResult(null);
+    setShowCamera(false);
   };
 
   const analyzeCard = () => {
@@ -103,7 +111,7 @@ const Scanner = () => {
                   <Button
                     variant="outline"
                     className="flex-1"
-                    onClick={() => toast.info("Kamerafunktion kommer snart")}
+                    onClick={() => setShowCamera(true)}
                   >
                     <Camera className="w-4 h-4 mr-2" />
                     Kamera
@@ -168,6 +176,13 @@ const Scanner = () => {
           </div>
         </div>
       </div>
+
+      {showCamera && (
+        <CameraCapture
+          onCapture={handleCameraCapture}
+          onClose={() => setShowCamera(false)}
+        />
+      )}
     </div>
   );
 };
