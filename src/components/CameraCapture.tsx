@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Camera, X, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface CameraCaptureProps {
   onCapture: (imageDataUrl: string) => void;
@@ -15,6 +16,7 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     startCamera();
@@ -89,7 +91,7 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
   return (
     <Card className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col">
       <div className="flex items-center justify-between p-4 border-b border-border">
-        <h2 className="text-xl font-bold">Ta foto av kort</h2>
+        <h2 className="text-xl font-bold">{t("takePhotoOfCard")}</h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="w-5 h-5" />
         </Button>
@@ -108,7 +110,7 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
           <div className="w-[80%] max-w-md aspect-[3/4] border-4 border-primary/50 rounded-xl">
             <div className="absolute top-2 left-2 right-2 text-center">
               <span className="text-white text-sm bg-black/50 px-3 py-1 rounded-full">
-                Placera kortet i ramen
+                {t("placeCardInFrame")}
               </span>
             </div>
           </div>
@@ -141,7 +143,7 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
-          Tryck på kameraknappen för att ta ett foto
+          {t("pressToTakePhoto")}
         </p>
       </div>
 
