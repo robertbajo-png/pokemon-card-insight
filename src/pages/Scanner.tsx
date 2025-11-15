@@ -1,16 +1,60 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, Camera, Sparkles } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Upload, Camera, Sparkles, ChevronDown } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import CameraCapture from "@/components/CameraCapture";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+type Currency = "SEK" | "USD" | "EUR";
+
+const CURRENCY_RATES = {
+  SEK: 1,
+  USD: 0.091,
+  EUR: 0.084,
+};
+
+const CURRENCY_SYMBOLS = {
+  SEK: "kr",
+  USD: "$",
+  EUR: "€",
+};
 
 const Scanner = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [showCamera, setShowCamera] = useState(false);
+  const [currency, setCurrency] = useState<Currency>("SEK");
+
+  const convertPrice = (priceInSEK: string): string => {
+    // Extract number from string like "1200-1500 kr" or "1200 kr"
+    const match = priceInSEK.match(/(\d+)(?:-(\d+))?\s*kr/);
+    if (!match) return priceInSEK;
+    
+    const minPrice = parseInt(match[1]);
+    const maxPrice = match[2] ? parseInt(match[2]) : null;
+    
+    const convertedMin = Math.round(minPrice * CURRENCY_RATES[currency]);
+    const symbol = CURRENCY_SYMBOLS[currency];
+    
+    if (maxPrice) {
+      const convertedMax = Math.round(maxPrice * CURRENCY_RATES[currency]);
+      if (currency === "SEK" || currency === "EUR") {
+        return `${convertedMin}-${convertedMax} ${symbol}`;
+      } else {
+        return `${symbol}${convertedMin}-${convertedMax}`;
+      }
+    } else {
+      if (currency === "SEK" || currency === "EUR") {
+        return `${convertedMin} ${symbol}`;
+      } else {
+        return `${symbol}${convertedMin}`;
+      }
+    }
+  };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -177,7 +221,53 @@ const Scanner = () => {
                     </div>
                     <div className="flex justify-between py-2">
                       <span className="text-muted-foreground">Uppskattat värde:</span>
-                      <span className="font-bold text-primary">{result.estimatedValue}</span>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-accent transition-colors">
+                            <span className="font-bold text-primary">
+                              {result.estimatedValue ? convertPrice(result.estimatedValue) : result.estimatedValue}
+                            </span>
+                            <ChevronDown className="w-3 h-3 text-primary" />
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48 p-3 bg-card border border-border shadow-lg z-[100]" align="end" sideOffset={8}>
+                          <div className="space-y-1">
+                            <button
+                              onClick={() => setCurrency("SEK")}
+                              className={cn(
+                                "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
+                                currency === "SEK" 
+                                  ? "bg-primary text-primary-foreground" 
+                                  : "hover:bg-accent text-foreground"
+                              )}
+                            >
+                              SEK (kr)
+                            </button>
+                            <button
+                              onClick={() => setCurrency("USD")}
+                              className={cn(
+                                "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
+                                currency === "USD" 
+                                  ? "bg-primary text-primary-foreground" 
+                                  : "hover:bg-accent text-foreground"
+                              )}
+                            >
+                              USD ($)
+                            </button>
+                            <button
+                              onClick={() => setCurrency("EUR")}
+                              className={cn(
+                                "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
+                                currency === "EUR" 
+                                  ? "bg-primary text-primary-foreground" 
+                                  : "hover:bg-accent text-foreground"
+                              )}
+                            >
+                              EUR (€)
+                            </button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   </div>
                 </div>
