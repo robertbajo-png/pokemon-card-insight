@@ -12,7 +12,8 @@ serve(async (req) => {
   }
 
   try {
-    const { image, action } = await req.json();
+    const requestData = await req.json();
+    const { image, action, searchQuery, types, rarity, pageSize = 20 } = requestData;
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
     if (!LOVABLE_API_KEY) {
@@ -87,8 +88,6 @@ Svara ENDAST med giltig JSON i detta exakta format (utan extra text):
       
     } else if (action === 'generate') {
       // Generate card data for gallery
-      const { searchQuery, types, rarity, pageSize = 20 } = await req.json();
-      
       systemPrompt = `Du är en expert på Pokemon-kort. Generera en lista med realistiska Pokemon-kort baserat på sökkriterierna.
 Svara ENDAST med giltig JSON-array i detta exakta format (utan extra text):
 [
