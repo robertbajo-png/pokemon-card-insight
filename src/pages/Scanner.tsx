@@ -13,12 +13,14 @@ const CURRENCY_RATES = {
   SEK: 1,
   USD: 0.091,
   EUR: 0.084,
+  JPY: 14.5,
 };
 
 const CURRENCY_SYMBOLS = {
   SEK: "kr",
   USD: "$",
   EUR: "€",
+  JPY: "¥",
 };
 
 const Scanner = () => {
@@ -263,6 +265,17 @@ const Scanner = () => {
                               )}
                             >
                               EUR (€)
+                            </button>
+                            <button
+                              onClick={() => setCurrency("JPY")}
+                              className={cn(
+                                "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
+                                currency === "JPY" 
+                                  ? "bg-primary text-primary-foreground" 
+                                  : "hover:bg-accent text-foreground"
+                              )}
+                            >
+                              JPY (¥)
                             </button>
                           </div>
                         </PopoverContent>

@@ -14,12 +14,14 @@ const CURRENCY_RATES = {
   SEK: 1,
   USD: 0.091, // 1 SEK ≈ 0.091 USD
   EUR: 0.084, // 1 SEK ≈ 0.084 EUR
+  JPY: 14.5, // 1 SEK ≈ 14.5 JPY
 };
 
 const CURRENCY_SYMBOLS = {
   SEK: "kr",
   USD: "$",
   EUR: "€",
+  JPY: "¥",
 };
 
 const CardDetail = () => {
@@ -157,6 +159,17 @@ const CardDetail = () => {
                           )}
                         >
                           EUR (€)
+                        </button>
+                        <button
+                          onClick={() => setCurrency("JPY")}
+                          className={cn(
+                            "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
+                            currency === "JPY" 
+                              ? "bg-primary text-primary-foreground" 
+                              : "hover:bg-accent text-foreground"
+                          )}
+                        >
+                          JPY (¥)
                         </button>
                       </div>
                     </PopoverContent>
