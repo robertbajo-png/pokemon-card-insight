@@ -2,11 +2,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, TrendingUp, Star, Loader2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ArrowLeft, TrendingUp, Star, Loader2, ChevronDown } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { getCardById, type PokemonCard as PokemonCardType } from "@/services/pokemonTcgApi";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 type Currency = "SEK" | "USD" | "EUR";
 
@@ -103,20 +104,6 @@ const CardDetail = () => {
             {/* Card Image */}
             <div>
               <Card className="p-6 sticky top-24">
-                <div className="mb-4">
-                  <label className="text-sm text-muted-foreground mb-2 block">Valuta:</label>
-                  <Select value={currency} onValueChange={(value) => setCurrency(value as Currency)}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="SEK">SEK (kr)</SelectItem>
-                      <SelectItem value="USD">USD ($)</SelectItem>
-                      <SelectItem value="EUR">EUR (€)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
                 <div className="aspect-[3/4] overflow-hidden rounded-lg mb-4">
                   <img
                     src={card.images.large}
@@ -129,10 +116,52 @@ const CardDetail = () => {
                     <Star className="w-5 h-5 text-secondary" />
                     <span className="font-medium">{card.rarity || "Unknown"}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-primary" />
-                    <span className="font-bold text-primary">{marketValue}</span>
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors cursor-pointer">
+                        <TrendingUp className="w-5 h-5 text-primary" />
+                        <span className="font-bold text-primary">{marketValue}</span>
+                        <ChevronDown className="w-4 h-4 text-primary" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48 p-2 bg-popover z-50" align="end">
+                      <div className="space-y-1">
+                        <button
+                          onClick={() => setCurrency("SEK")}
+                          className={cn(
+                            "w-full text-left px-3 py-2 rounded-md transition-colors",
+                            currency === "SEK" 
+                              ? "bg-primary text-primary-foreground" 
+                              : "hover:bg-accent"
+                          )}
+                        >
+                          SEK (kr)
+                        </button>
+                        <button
+                          onClick={() => setCurrency("USD")}
+                          className={cn(
+                            "w-full text-left px-3 py-2 rounded-md transition-colors",
+                            currency === "USD" 
+                              ? "bg-primary text-primary-foreground" 
+                              : "hover:bg-accent"
+                          )}
+                        >
+                          USD ($)
+                        </button>
+                        <button
+                          onClick={() => setCurrency("EUR")}
+                          className={cn(
+                            "w-full text-left px-3 py-2 rounded-md transition-colors",
+                            currency === "EUR" 
+                              ? "bg-primary text-primary-foreground" 
+                              : "hover:bg-accent"
+                          )}
+                        >
+                          EUR (€)
+                        </button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </Card>
             </div>
