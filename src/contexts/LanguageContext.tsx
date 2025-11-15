@@ -115,7 +115,12 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguage] = useState<Language>("sv");
-  const [currency, setCurrency] = useState<Currency>("SEK");
+  const [currency, setCurrency] = useState<Currency>(languageToCurrency["sv"]);
+
+  // Automatically update currency when language changes
+  useEffect(() => {
+    setCurrency(languageToCurrency[language]);
+  }, [language]);
 
   const t = (key: string): string => {
     return translations[language][key] || key;
