@@ -1,44 +1,60 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, TrendingUp, Star } from "lucide-react";
+import { ArrowLeft, TrendingUp, Star, Loader2 } from "lucide-react";
 import Navigation from "@/components/Navigation";
-import charizardImg from "@/assets/card-charizard.jpg";
-import pikachuImg from "@/assets/card-pikachu.jpg";
-import blastoiseImg from "@/assets/card-blastoise.jpg";
+import { getCardById, type PokemonCard as PokemonCardType } from "@/services/pokemonTcgApi";
+import { toast } from "sonner";
 
 const CardDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [card, setCard] = useState<PokemonCardType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock data - skulle normalt komma från API eller state
-  const cardData: Record<string, any> = {
-    "1": {
-      name: "Charizard",
-      image: charizardImg,
-      type: "Fire",
-      rarity: "Ultra Rare",
-      set: "Base Set",
-      number: "4/102",
-      hp: "120",
-      attacks: [
-        { name: "Fire Spin", damage: "100", cost: "4 Energy" },
-        { name: "Flamethrower", damage: "90", cost: "3 Energy" },
-      ],
-      weakness: "Water",
-      resistance: "Fighting",
-      retreatCost: "3",
-      description: "En kraftfull Fire-typ Pokemon som spyr intensiv eldflammor som kan smälta allt.",
-      marketValue: "1200-1500 kr",
-      priceHistory: [
-        { date: "2024-01", value: 900 },
-        { date: "2024-04", value: 1100 },
-        { date: "2024-08", value: 1350 },
-      ],
-    },
+  useEffect(() => {
+    if (id) {
+      loadCard(id);
+    }
+  }, [id]);
+
+  const loadCard = async (cardId: string) => {
+    setIsLoading(true);
+    try {
+      const data = await getCardById(cardId);
+      if (data) {
+        setCard(data);
+      } else {
+        toast.error("Kort hittades inte");
+        navigate("/gallery");
+      }
+    } catch (error) {
+      console.error("Error loading card:", error);
+      toast.error("Kunde inte ladda kort");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const card = cardData[id || "1"] || cardData["1"];
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <div className="container mx-auto px-4 pt-24 pb-16 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!card) {
+    return null;
+  }
+
+  const marketValue = card.cardmarket?.prices?.trendPrice 
+    ? `${Math.round(card.cardmarket.prices.trendPrice * 11)} kr` 
+    : "Pris ej tillgängligt";
 
   return (
     <div className="min-h-screen bg-background">
@@ -61,7 +77,7 @@ const CardDetail = () => {
               <Card className="p-6 sticky top-24">
                 <div className="aspect-[3/4] overflow-hidden rounded-lg mb-4">
                   <img
-                    src={card.image}
+                    src={card.images.large}
                     alt={card.name}
                     className="w-full h-full object-contain"
                   />
@@ -69,11 +85,11 @@ const CardDetail = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Star className="w-5 h-5 text-secondary" />
-                    <span className="font-medium">{card.rarity}</span>
+                    <span className="font-medium">{card.rarity || "Unknown"}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-primary" />
-                    <span className="font-bold text-primary">{card.marketValue}</span>
+                    <span className="font-bold text-primary">{marketValue}</span>
                   </div>
                 </div>
               </Card>
@@ -83,12 +99,14 @@ const CardDetail = () => {
             <div className="space-y-6">
               <div>
                 <h1 className="text-4xl font-bold mb-2">{card.name}</h1>
-                <div className="flex items-center gap-4">
-                  <span className="px-3 py-1 rounded-lg bg-primary/10 text-primary font-medium">
-                    {card.type}
-                  </span>
+                <div className="flex items-center gap-4 flex-wrap">
+                  {card.types?.map((type) => (
+                    <span key={type} className="px-3 py-1 rounded-lg bg-primary/10 text-primary font-medium">
+                      {type}
+                    </span>
+                  ))}
                   <span className="text-muted-foreground">
-                    {card.set} • {card.number}
+                    {card.set.name} • {card.number}
                   </span>
                 </div>
               </div>
@@ -96,49 +114,97 @@ const CardDetail = () => {
               <Card className="p-6">
                 <h2 className="text-xl font-bold mb-4">Grundläggande info</h2>
                 <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">HP:</span>
-                    <span className="font-medium">{card.hp}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Svaghet:</span>
-                    <span className="font-medium">{card.weakness}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Motstånd:</span>
-                    <span className="font-medium">{card.resistance}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Reträttskostnad:</span>
-                    <span className="font-medium">{card.retreatCost} Energy</span>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <h2 className="text-xl font-bold mb-4">Attacker</h2>
-                <div className="space-y-4">
-                  {card.attacks.map((attack: any, index: number) => (
-                    <div key={index} className="border-l-4 border-primary pl-4">
-                      <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-bold">{attack.name}</h3>
-                        <span className="text-primary font-bold">{attack.damage}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{attack.cost}</p>
+                  {card.hp && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">HP:</span>
+                      <span className="font-medium">{card.hp}</span>
                     </div>
-                  ))}
+                  )}
+                  {card.weaknesses && card.weaknesses.length > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Svaghet:</span>
+                      <span className="font-medium">
+                        {card.weaknesses.map(w => `${w.type} ${w.value}`).join(", ")}
+                      </span>
+                    </div>
+                  )}
+                  {card.resistances && card.resistances.length > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Motstånd:</span>
+                      <span className="font-medium">
+                        {card.resistances.map(r => `${r.type} ${r.value}`).join(", ")}
+                      </span>
+                    </div>
+                  )}
+                  {card.retreatCost && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Reträttskostnad:</span>
+                      <span className="font-medium">{card.retreatCost.length} Energy</span>
+                    </div>
+                  )}
                 </div>
               </Card>
 
-              <Card className="p-6">
-                <h2 className="text-xl font-bold mb-4">Beskrivning</h2>
-                <p className="text-muted-foreground leading-relaxed">{card.description}</p>
-              </Card>
+              {card.attacks && card.attacks.length > 0 && (
+                <Card className="p-6">
+                  <h2 className="text-xl font-bold mb-4">Attacker</h2>
+                  <div className="space-y-4">
+                    {card.attacks.map((attack, index) => (
+                      <div key={index} className="border-l-4 border-primary pl-4">
+                        <div className="flex justify-between items-start mb-1">
+                          <h3 className="font-bold">{attack.name}</h3>
+                          <span className="text-primary font-bold">{attack.damage || "—"}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-1">
+                          {attack.cost.join(", ")}
+                        </p>
+                        {attack.text && (
+                          <p className="text-sm">{attack.text}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
 
-              <Card className="p-6 bg-gradient-hero text-white">
-                <h2 className="text-xl font-bold mb-2">Marknadsvärde</h2>
-                <p className="text-3xl font-bold mb-2">{card.marketValue}</p>
-                <p className="text-sm opacity-90">Baserat på senaste försäljningar och marknadstrender</p>
+              {card.flavorText && (
+                <Card className="p-6">
+                  <h2 className="text-xl font-bold mb-4">Beskrivning</h2>
+                  <p className="text-muted-foreground leading-relaxed">{card.flavorText}</p>
+                </Card>
+              )}
+
+              <Card className="p-6">
+                <h2 className="text-xl font-bold mb-4">Marknadsvärde</h2>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg">Estimerat värde:</span>
+                    <span className="text-2xl font-bold text-primary">{marketValue}</span>
+                  </div>
+                  {card.cardmarket?.prices && (
+                    <div className="pt-4 border-t border-border">
+                      <h3 className="font-medium mb-2">Prisinformation</h3>
+                      <div className="space-y-2">
+                        {card.cardmarket.prices.averageSellPrice && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Genomsnittspris:</span>
+                            <span className="font-medium">
+                              {Math.round(card.cardmarket.prices.averageSellPrice * 11)} kr
+                            </span>
+                          </div>
+                        )}
+                        {card.cardmarket.prices.trendPrice && (
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Trendpris:</span>
+                            <span className="font-medium">
+                              {Math.round(card.cardmarket.prices.trendPrice * 11)} kr
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </Card>
             </div>
           </div>

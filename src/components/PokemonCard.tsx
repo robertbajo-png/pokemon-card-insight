@@ -7,6 +7,8 @@ interface PokemonCardProps {
   image: string;
   type: string;
   rarity: string;
+  set?: string;
+  number?: string;
   onClick?: () => void;
   className?: string;
 }
@@ -15,14 +17,25 @@ const PokemonCard = ({ name, image, type, rarity, onClick, className }: PokemonC
   const typeColors: Record<string, string> = {
     fire: "from-orange-500 to-red-500",
     water: "from-blue-500 to-cyan-500",
+    lightning: "from-yellow-400 to-yellow-600",
     electric: "from-yellow-400 to-yellow-600",
     grass: "from-green-500 to-emerald-500",
+    psychic: "from-purple-500 to-pink-500",
+    fighting: "from-red-600 to-orange-600",
+    darkness: "from-gray-800 to-purple-900",
+    metal: "from-gray-400 to-slate-600",
+    dragon: "from-indigo-600 to-purple-600",
+    fairy: "from-pink-400 to-rose-500",
+    colorless: "from-gray-400 to-gray-500",
   };
 
   const rarityBadgeColors: Record<string, string> = {
     common: "bg-muted text-muted-foreground",
     uncommon: "bg-accent text-accent-foreground",
     rare: "bg-secondary text-secondary-foreground",
+    "rare holo": "bg-gradient-primary text-primary-foreground",
+    "rare ultra": "bg-gradient-primary text-primary-foreground",
+    "rare secret": "bg-gradient-primary text-primary-foreground",
     ultra: "bg-gradient-primary text-primary-foreground",
   };
 

@@ -1,83 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import PokemonCard from "@/components/PokemonCard";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search } from "lucide-react";
-import charizardImg from "@/assets/card-charizard.jpg";
-import pikachuImg from "@/assets/card-pikachu.jpg";
-import blastoiseImg from "@/assets/card-blastoise.jpg";
+import { Search, Loader2 } from "lucide-react";
+import { filterCards, type PokemonCard as PokemonCardType } from "@/services/pokemonTcgApi";
+import { toast } from "sonner";
 
 const Gallery = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterRarity, setFilterRarity] = useState("all");
+  const [cards, setCards] = useState<PokemonCardType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const cards = [
-    {
-      id: "1",
-      name: "Charizard",
-      image: charizardImg,
-      type: "fire",
-      rarity: "ultra",
-      set: "Base Set",
-      number: "4/102",
-    },
-    {
-      id: "2",
-      name: "Pikachu",
-      image: pikachuImg,
-      type: "electric",
-      rarity: "rare",
-      set: "Base Set",
-      number: "58/102",
-    },
-    {
-      id: "3",
-      name: "Blastoise",
-      image: blastoiseImg,
-      type: "water",
-      rarity: "ultra",
-      set: "Base Set",
-      number: "2/102",
-    },
-    {
-      id: "4",
-      name: "Venusaur",
-      image: charizardImg,
-      type: "grass",
-      rarity: "rare",
-      set: "Base Set",
-      number: "15/102",
-    },
-    {
-      id: "5",
-      name: "Mewtwo",
-      image: pikachuImg,
-      type: "psychic",
-      rarity: "ultra",
-      set: "Base Set",
-      number: "10/102",
-    },
-    {
-      id: "6",
-      name: "Gyarados",
-      image: blastoiseImg,
-      type: "water",
-      rarity: "rare",
-      set: "Base Set",
-      number: "6/102",
-    },
-  ];
+  useEffect(() => {
+    loadCards();
+  }, [searchQuery, filterType, filterRarity]);
 
-  const filteredCards = cards.filter((card) => {
-    const matchesSearch = card.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = filterType === "all" || card.type === filterType;
-    const matchesRarity = filterRarity === "all" || card.rarity === filterRarity;
-    return matchesSearch && matchesType && matchesRarity;
-  });
+  const loadCards = async () => {
+    setIsLoading(true);
+    try {
+      const types = filterType !== "all" ? [filterType] : undefined;
+      const rarity = filterRarity !== "all" ? filterRarity : undefined;
+      
+      const { data } = await filterCards({
+        searchQuery: searchQuery || undefined,
+        types,
+        rarity,
+      });
+      
+      setCards(data);
+    } catch (error) {
+      console.error("Error loading cards:", error);
+      toast.error("Kunde inte ladda kort");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,11 +77,16 @@ const Gallery = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Alla typer</SelectItem>
-                  <SelectItem value="fire">Fire</SelectItem>
-                  <SelectItem value="water">Water</SelectItem>
-                  <SelectItem value="electric">Electric</SelectItem>
-                  <SelectItem value="grass">Grass</SelectItem>
-                  <SelectItem value="psychic">Psychic</SelectItem>
+                  <SelectItem value="Fire">Fire</SelectItem>
+                  <SelectItem value="Water">Water</SelectItem>
+                  <SelectItem value="Lightning">Electric</SelectItem>
+                  <SelectItem value="Grass">Grass</SelectItem>
+                  <SelectItem value="Psychic">Psychic</SelectItem>
+                  <SelectItem value="Fighting">Fighting</SelectItem>
+                  <SelectItem value="Darkness">Darkness</SelectItem>
+                  <SelectItem value="Metal">Metal</SelectItem>
+                  <SelectItem value="Dragon">Dragon</SelectItem>
+                  <SelectItem value="Fairy">Fairy</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -129,30 +96,46 @@ const Gallery = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Alla sällsyntheter</SelectItem>
-                  <SelectItem value="common">Common</SelectItem>
-                  <SelectItem value="uncommon">Uncommon</SelectItem>
-                  <SelectItem value="rare">Rare</SelectItem>
-                  <SelectItem value="ultra">Ultra Rare</SelectItem>
+                  <SelectItem value="Common">Common</SelectItem>
+                  <SelectItem value="Uncommon">Uncommon</SelectItem>
+                  <SelectItem value="Rare">Rare</SelectItem>
+                  <SelectItem value="Rare Holo">Rare Holo</SelectItem>
+                  <SelectItem value="Rare Ultra">Ultra Rare</SelectItem>
+                  <SelectItem value="Rare Secret">Secret Rare</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           {/* Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredCards.map((card) => (
-              <PokemonCard
-                key={card.id}
-                {...card}
-                onClick={() => navigate(`/card/${card.id}`)}
-              />
-            ))}
-          </div>
-
-          {filteredCards.length === 0 && (
-            <div className="text-center py-16 text-muted-foreground">
-              <p className="text-lg">Inga kort matchar din sökning</p>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {cards.map((card) => (
+                  <PokemonCard
+                    key={card.id}
+                    id={card.id}
+                    name={card.name}
+                    image={card.images.small}
+                    type={card.types?.[0]?.toLowerCase() || "normal"}
+                    rarity={card.rarity?.toLowerCase() || "common"}
+                    set={card.set.name}
+                    number={card.number}
+                    onClick={() => navigate(`/card/${card.id}`)}
+                  />
+                ))}
+              </div>
+
+              {cards.length === 0 && (
+                <div className="text-center py-16 text-muted-foreground">
+                  <p className="text-lg">Inga kort matchar din sökning</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
