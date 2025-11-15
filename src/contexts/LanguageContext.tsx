@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 type Language = "sv" | "en";
-type Currency = "SEK" | "USD" | "EUR";
+export type Currency = "SEK" | "USD" | "EUR";
 
 interface LanguageContextType {
   language: Language;

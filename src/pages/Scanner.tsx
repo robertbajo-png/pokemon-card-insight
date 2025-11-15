@@ -7,9 +7,7 @@ import Navigation from "@/components/Navigation";
 import CameraCapture from "@/components/CameraCapture";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useLanguage } from "@/contexts/LanguageContext";
-
-type Currency = "SEK" | "USD" | "EUR";
+import { useLanguage, type Currency } from "@/contexts/LanguageContext";
 
 const CURRENCY_RATES = {
   SEK: 1,
