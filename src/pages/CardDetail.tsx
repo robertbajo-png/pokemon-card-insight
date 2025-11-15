@@ -8,6 +8,7 @@ import Navigation from "@/components/Navigation";
 import { getCardById, type PokemonCard as PokemonCardType } from "@/services/pokemonTcgApi";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type Currency = "SEK" | "USD" | "EUR";
 
@@ -28,7 +29,7 @@ const CardDetail = () => {
   const navigate = useNavigate();
   const [card, setCard] = useState<PokemonCardType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currency, setCurrency] = useState<Currency>("SEK");
+  const { currency, setCurrency } = useLanguage();
 
   useEffect(() => {
     if (id) {

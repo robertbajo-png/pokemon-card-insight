@@ -1,12 +1,20 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 type Language = "sv" | "en";
+type Currency = "SEK" | "USD" | "EUR";
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
+  currency: Currency;
+  setCurrency: (curr: Currency) => void;
   t: (key: string) => string;
 }
+
+const languageToCurrency: Record<Language, Currency> = {
+  sv: "SEK",
+  en: "USD",
+};
 
 const translations: Record<Language, Record<string, string>> = {
   sv: {
@@ -107,13 +115,19 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [language, setLanguage] = useState<Language>("sv");
+  const [currency, setCurrency] = useState<Currency>("SEK");
+
+  // Automatically update currency when language changes
+  useEffect(() => {
+    setCurrency(languageToCurrency[language]);
+  }, [language]);
 
   const t = (key: string): string => {
     return translations[language][key] || key;
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, currency, setCurrency, t }}>
       {children}
     </LanguageContext.Provider>
   );
