@@ -2,3 +2,6 @@ project_id = "lqyfvwmyckbhrqlrrykd"
 
 [functions.analyze-pokemon-card]
 verify_jwt = false
+
+[functions.pokemon-proxy]
+verify_jwt = false
