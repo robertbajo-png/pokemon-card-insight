@@ -7,6 +7,7 @@ import Navigation from "@/components/Navigation";
 import CameraCapture from "@/components/CameraCapture";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type Currency = "SEK" | "USD" | "EUR";
 
@@ -27,7 +28,7 @@ const Scanner = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [showCamera, setShowCamera] = useState(false);
-  const [currency, setCurrency] = useState<Currency>("EUR");
+  const { currency, setCurrency } = useLanguage();
 
   const convertPrice = (priceInSEK: string): string => {
     // Extract number from string like "1200-1500 kr" or "1200 kr"
