@@ -27,7 +27,7 @@ const Scanner = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [showCamera, setShowCamera] = useState(false);
-  const [currency, setCurrency] = useState<Currency>("SEK");
+  const [currency, setCurrency] = useState<Currency>("EUR");
 
   const convertPrice = (priceInSEK: string): string => {
     // Extract number from string like "1200-1500 kr" or "1200 kr"
