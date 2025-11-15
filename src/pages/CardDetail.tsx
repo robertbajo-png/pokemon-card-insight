@@ -124,15 +124,15 @@ const CardDetail = () => {
                         <ChevronDown className="w-4 h-4 text-primary" />
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-48 p-2 bg-popover z-50" align="end">
+                    <PopoverContent className="w-48 p-3 bg-card border border-border shadow-lg z-[100]" align="end" sideOffset={8}>
                       <div className="space-y-1">
                         <button
                           onClick={() => setCurrency("SEK")}
                           className={cn(
-                            "w-full text-left px-3 py-2 rounded-md transition-colors",
+                            "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
                             currency === "SEK" 
                               ? "bg-primary text-primary-foreground" 
-                              : "hover:bg-accent"
+                              : "hover:bg-accent text-foreground"
                           )}
                         >
                           SEK (kr)
@@ -140,10 +140,10 @@ const CardDetail = () => {
                         <button
                           onClick={() => setCurrency("USD")}
                           className={cn(
-                            "w-full text-left px-3 py-2 rounded-md transition-colors",
+                            "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
                             currency === "USD" 
                               ? "bg-primary text-primary-foreground" 
-                              : "hover:bg-accent"
+                              : "hover:bg-accent text-foreground"
                           )}
                         >
                           USD ($)
@@ -151,10 +151,10 @@ const CardDetail = () => {
                         <button
                           onClick={() => setCurrency("EUR")}
                           className={cn(
-                            "w-full text-left px-3 py-2 rounded-md transition-colors",
+                            "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
                             currency === "EUR" 
                               ? "bg-primary text-primary-foreground" 
-                              : "hover:bg-accent"
+                              : "hover:bg-accent text-foreground"
                           )}
                         >
                           EUR (€)
