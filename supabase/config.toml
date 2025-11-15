@@ -1,1 +1,4 @@
 project_id = "lqyfvwmyckbhrqlrrykd"
+
+[functions.analyze-pokemon-card]
+verify_jwt = false
