@@ -41,15 +41,18 @@ const Scanner = () => {
     const convertedMin = Math.round(minPrice * CURRENCY_RATES[currency]);
     const symbol = CURRENCY_SYMBOLS[currency];
     
+    // Symbol after number for SEK, EUR
+    const symbolAfter = currency === "SEK" || currency === "EUR";
+    
     if (maxPrice) {
       const convertedMax = Math.round(maxPrice * CURRENCY_RATES[currency]);
-      if (currency === "SEK" || currency === "EUR") {
+      if (symbolAfter) {
         return `${convertedMin}-${convertedMax} ${symbol}`;
       } else {
         return `${symbol}${convertedMin}-${convertedMax}`;
       }
     } else {
-      if (currency === "SEK" || currency === "EUR") {
+      if (symbolAfter) {
         return `${convertedMin} ${symbol}`;
       } else {
         return `${symbol}${convertedMin}`;

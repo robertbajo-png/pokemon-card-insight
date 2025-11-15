@@ -60,7 +60,10 @@ const CardDetail = () => {
     const symbol = CURRENCY_SYMBOLS[currency];
     const formatted = Math.round(converted);
     
-    if (currency === "SEK" || currency === "EUR") {
+    // Symbol after number for SEK, EUR
+    const symbolAfter = currency === "SEK" || currency === "EUR";
+    
+    if (symbolAfter) {
       return `${formatted} ${symbol}`;
     } else {
       return `${symbol}${formatted}`;
