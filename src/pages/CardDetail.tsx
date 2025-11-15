@@ -2,16 +2,32 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, TrendingUp, Star, Loader2 } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { getCardById, type PokemonCard as PokemonCardType } from "@/services/pokemonTcgApi";
 import { toast } from "sonner";
+
+type Currency = "SEK" | "USD" | "EUR";
+
+const CURRENCY_RATES = {
+  SEK: 1,
+  USD: 0.091, // 1 SEK ≈ 0.091 USD
+  EUR: 0.084, // 1 SEK ≈ 0.084 EUR
+};
+
+const CURRENCY_SYMBOLS = {
+  SEK: "kr",
+  USD: "$",
+  EUR: "€",
+};
 
 const CardDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [card, setCard] = useState<PokemonCardType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [currency, setCurrency] = useState<Currency>("SEK");
 
   useEffect(() => {
     if (id) {
@@ -37,6 +53,18 @@ const CardDetail = () => {
     }
   };
 
+  const convertPrice = (priceInSEK: number): string => {
+    const converted = priceInSEK * CURRENCY_RATES[currency];
+    const symbol = CURRENCY_SYMBOLS[currency];
+    const formatted = Math.round(converted);
+    
+    if (currency === "SEK" || currency === "EUR") {
+      return `${formatted} ${symbol}`;
+    } else {
+      return `${symbol}${formatted}`;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -53,7 +81,7 @@ const CardDetail = () => {
   }
 
   const marketValue = card.cardmarket?.prices?.trendPrice 
-    ? `${Math.round(card.cardmarket.prices.trendPrice * 11)} kr` 
+    ? convertPrice(card.cardmarket.prices.trendPrice * 11)
     : "Pris ej tillgängligt";
 
   return (
@@ -75,6 +103,20 @@ const CardDetail = () => {
             {/* Card Image */}
             <div>
               <Card className="p-6 sticky top-24">
+                <div className="mb-4">
+                  <label className="text-sm text-muted-foreground mb-2 block">Valuta:</label>
+                  <Select value={currency} onValueChange={(value) => setCurrency(value as Currency)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SEK">SEK (kr)</SelectItem>
+                      <SelectItem value="USD">USD ($)</SelectItem>
+                      <SelectItem value="EUR">EUR (€)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
                 <div className="aspect-[3/4] overflow-hidden rounded-lg mb-4">
                   <img
                     src={card.images.large}
@@ -189,7 +231,7 @@ const CardDetail = () => {
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Genomsnittspris:</span>
                             <span className="font-medium">
-                              {Math.round(card.cardmarket.prices.averageSellPrice * 11)} kr
+                              {convertPrice(card.cardmarket.prices.averageSellPrice * 11)}
                             </span>
                           </div>
                         )}
@@ -197,7 +239,7 @@ const CardDetail = () => {
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Trendpris:</span>
                             <span className="font-medium">
-                              {Math.round(card.cardmarket.prices.trendPrice * 11)} kr
+                              {convertPrice(card.cardmarket.prices.trendPrice * 11)}
                             </span>
                           </div>
                         )}
