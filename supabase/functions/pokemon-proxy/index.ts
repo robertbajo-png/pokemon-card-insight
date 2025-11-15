@@ -19,6 +19,40 @@ serve(async (req) => {
     console.log('Proxying request to:', apiUrl);
     
     const response = await fetch(apiUrl);
+    
+    // Check if the response is OK
+    if (!response.ok) {
+      console.error(`API returned ${response.status}: ${response.statusText}`);
+      return new Response(
+        JSON.stringify({ 
+          error: `Pokemon TCG API error: ${response.status} ${response.statusText}`,
+          data: []
+        }), 
+        { 
+          status: response.status, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
+    // Check content type
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      console.error('API returned non-JSON response:', contentType);
+      const text = await response.text();
+      console.error('Response body:', text.substring(0, 200));
+      return new Response(
+        JSON.stringify({ 
+          error: 'API returned non-JSON response',
+          data: []
+        }), 
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
     const data = await response.json();
     
     return new Response(JSON.stringify(data), {
@@ -28,7 +62,10 @@ serve(async (req) => {
     console.error('Error in pokemon-proxy:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: errorMessage }), 
+      JSON.stringify({ 
+        error: errorMessage,
+        data: []
+      }), 
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
