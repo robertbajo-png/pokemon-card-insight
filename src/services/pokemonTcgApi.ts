@@ -47,55 +47,38 @@ export interface SearchParams {
 }
 
 export const searchCards = async (params: SearchParams = {}): Promise<{ data: PokemonCard[]; totalCount: number }> => {
-  const { q = "", pageSize = 20 } = params;
+  const { q = "", page = 1, pageSize = 20, orderBy = "-set.releaseDate" } = params;
   
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  
-  const response = await fetch(`${supabaseUrl}/functions/v1/analyze-pokemon-card`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      action: 'generate',
-      searchQuery: q,
-      pageSize,
-    }),
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    pageSize: pageSize.toString(),
+    orderBy,
   });
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch cards');
+
+  if (q) {
+    queryParams.append("q", q);
   }
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const proxyUrl = `${supabaseUrl}/functions/v1/pokemon-proxy?path=/cards&query=${queryParams.toString()}`;
   
-  const result = await response.json();
+  const response = await fetch(proxyUrl);
+  const data = await response.json();
+  
   return {
-    data: result.data,
-    totalCount: result.totalCount,
+    data: data.data || [],
+    totalCount: data.totalCount || 0,
   };
 };
 
 export const getCardById = async (id: string): Promise<PokemonCard | null> => {
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const proxyUrl = `${supabaseUrl}/functions/v1/pokemon-proxy?path=/cards/${id}`;
     
-    const response = await fetch(`${supabaseUrl}/functions/v1/analyze-pokemon-card`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        action: 'generate',
-        searchQuery: id,
-        pageSize: 1,
-      }),
-    });
-    
-    if (!response.ok) {
-      return null;
-    }
-    
-    const result = await response.json();
-    return result.data[0] || null;
+    const response = await fetch(proxyUrl);
+    const data = await response.json();
+    return data.data || null;
   } catch (error) {
     console.error("Error fetching card:", error);
     return null;
@@ -113,29 +96,25 @@ export const filterCards = async (filters: {
   searchQuery?: string;
   page?: number;
 }): Promise<{ data: PokemonCard[]; totalCount: number }> => {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  
-  const response = await fetch(`${supabaseUrl}/functions/v1/analyze-pokemon-card`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      action: 'generate',
-      searchQuery: filters.searchQuery,
-      types: filters.types,
-      rarity: filters.rarity !== 'all' ? filters.rarity : undefined,
-      pageSize: 20,
-    }),
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch cards');
+  const queries: string[] = [];
+
+  if (filters.searchQuery) {
+    queries.push(`name:*${filters.searchQuery}*`);
   }
-  
-  const result = await response.json();
-  return {
-    data: result.data,
-    totalCount: result.totalCount,
-  };
+
+  if (filters.types && filters.types.length > 0) {
+    queries.push(`types:${filters.types.join(",")}`);
+  }
+
+  if (filters.rarity && filters.rarity !== "all") {
+    queries.push(`rarity:"${filters.rarity}"`);
+  }
+
+  const q = queries.length > 0 ? queries.join(" ") : undefined;
+
+  return searchCards({
+    q,
+    page: filters.page || 1,
+    pageSize: 20,
+  });
 };
