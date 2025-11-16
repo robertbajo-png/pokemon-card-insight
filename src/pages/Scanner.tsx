@@ -5,6 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Upload, Camera, Sparkles, ChevronDown } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import CameraCapture from "@/components/CameraCapture";
+import { TranslatedText } from "@/components/TranslatedText";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useLanguage, type Currency } from "@/contexts/LanguageContext";
@@ -130,18 +131,20 @@ const Scanner = () => {
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold mb-4">
               <span className="bg-gradient-hero bg-clip-text text-transparent">
-                Scanna Pokemon-kort
+                <TranslatedText text="Scanna Pokemon-kort" />
               </span>
             </h1>
             <p className="text-lg text-muted-foreground">
-              Ladda upp en bild av ditt kort för att få detaljerad information
+              <TranslatedText text="Ladda upp en bild av ditt kort för att få detaljerad information" />
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* Upload Section */}
             <Card className="p-6">
-              <h2 className="text-xl font-bold mb-4">Ladda upp kort</h2>
+              <h2 className="text-xl font-bold mb-4">
+                <TranslatedText text="Ladda upp kort" />
+              </h2>
               
               <div className="space-y-4">
                 <div 
@@ -153,7 +156,9 @@ const Scanner = () => {
                   ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground">
                       <Upload className="w-12 h-12 mb-2" />
-                      <p className="text-sm">Klicka för att ladda upp</p>
+                      <p className="text-sm">
+                        <TranslatedText text="Klicka för att ladda upp" />
+                      </p>
                     </div>
                   )}
                 </div>
@@ -173,7 +178,7 @@ const Scanner = () => {
                     onClick={() => document.getElementById("file-upload")?.click()}
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    Välj fil
+                    <TranslatedText text="Välj fil" />
                   </Button>
                   <Button
                     variant="outline"
@@ -181,7 +186,7 @@ const Scanner = () => {
                     onClick={() => setShowCamera(true)}
                   >
                     <Camera className="w-4 h-4 mr-2" />
-                    Kamera
+                    <TranslatedText text="Kamera" />
                   </Button>
                 </div>
 
@@ -192,14 +197,16 @@ const Scanner = () => {
                   disabled={!selectedImage || isAnalyzing}
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
-                  {isAnalyzing ? "Analyserar..." : "Analysera kort"}
+                  <TranslatedText text={isAnalyzing ? "Analyserar..." : "Analysera kort"} />
                 </Button>
               </div>
             </Card>
 
             {/* Results Section */}
             <Card className="p-6">
-              <h2 className="text-xl font-bold mb-4">Kortinformation</h2>
+              <h2 className="text-xl font-bold mb-4">
+                <TranslatedText text="Kortinformation" />
+              </h2>
               
               {result ? (
                 <div className="space-y-4">
@@ -209,27 +216,39 @@ const Scanner = () => {
 
                   <div className="space-y-2">
                     <div className="flex justify-between py-2 border-b border-border">
-                      <span className="text-muted-foreground">Typ:</span>
+                      <span className="text-muted-foreground">
+                        <TranslatedText text="Typ:" />
+                      </span>
                       <span className="font-medium">{result.type}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-border">
-                      <span className="text-muted-foreground">Sällsynthet:</span>
+                      <span className="text-muted-foreground">
+                        <TranslatedText text="Sällsynthet:" />
+                      </span>
                       <span className="font-medium">{result.rarity}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-border">
-                      <span className="text-muted-foreground">Set:</span>
+                      <span className="text-muted-foreground">
+                        <TranslatedText text="Set:" />
+                      </span>
                       <span className="font-medium">{result.set}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-border">
-                      <span className="text-muted-foreground">Nummer:</span>
+                      <span className="text-muted-foreground">
+                        <TranslatedText text="Nummer:" />
+                      </span>
                       <span className="font-medium">{result.number}</span>
                     </div>
                     <div className="flex justify-between py-2 border-b border-border">
-                      <span className="text-muted-foreground">Skick:</span>
+                      <span className="text-muted-foreground">
+                        <TranslatedText text="Skick:" />
+                      </span>
                       <span className="font-medium">{result.condition}</span>
                     </div>
                     <div className="flex justify-between py-2">
-                      <span className="text-muted-foreground">Uppskattat värde:</span>
+                      <span className="text-muted-foreground">
+                        <TranslatedText text="Uppskattat värde:" />
+                      </span>
                       <Popover>
                         <PopoverTrigger asChild>
                           <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors cursor-pointer">
@@ -305,7 +324,9 @@ const Scanner = () => {
                 </div>
               ) : (
                 <div className="h-full flex items-center justify-center text-center text-muted-foreground">
-                  <p>Ladda upp och analysera ett kort för att se information här</p>
+                  <p>
+                    <TranslatedText text="Ladda upp och analysera ett kort för att se information här" />
+                  </p>
                 </div>
               )}
             </Card>
