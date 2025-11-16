@@ -232,17 +232,20 @@ const Scanner = () => {
                       <span className="text-muted-foreground">Uppskattat värde:</span>
                       <Popover>
                         <PopoverTrigger asChild>
-                          <button className="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-accent transition-colors">
+                          <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors cursor-pointer">
                             <span className="font-bold text-primary">
                               {result.estimatedValue ? convertPrice(result.estimatedValue) : result.estimatedValue}
                             </span>
-                            <ChevronDown className="w-3 h-3 text-primary" />
+                            <ChevronDown className="w-4 h-4 text-primary" />
                           </button>
                         </PopoverTrigger>
                         <PopoverContent className="w-48 p-3 bg-card border border-border shadow-lg z-[100]" align="end" sideOffset={8}>
                           <div className="space-y-1">
                             <button
-                              onClick={() => setCurrency("SEK")}
+                              onClick={() => {
+                                console.log('Changing currency to SEK');
+                                setCurrency("SEK");
+                              }}
                               className={cn(
                                 "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
                                 currency === "SEK" 
@@ -253,7 +256,10 @@ const Scanner = () => {
                               SEK (kr)
                             </button>
                             <button
-                              onClick={() => setCurrency("USD")}
+                              onClick={() => {
+                                console.log('Changing currency to USD');
+                                setCurrency("USD");
+                              }}
                               className={cn(
                                 "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
                                 currency === "USD" 
@@ -264,7 +270,10 @@ const Scanner = () => {
                               USD ($)
                             </button>
                             <button
-                              onClick={() => setCurrency("EUR")}
+                              onClick={() => {
+                                console.log('Changing currency to EUR');
+                                setCurrency("EUR");
+                              }}
                               className={cn(
                                 "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
                                 currency === "EUR" 
@@ -275,7 +284,10 @@ const Scanner = () => {
                               EUR (€)
                             </button>
                             <button
-                              onClick={() => setCurrency("JPY")}
+                              onClick={() => {
+                                console.log('Changing currency to JPY');
+                                setCurrency("JPY");
+                              }}
                               className={cn(
                                 "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
                                 currency === "JPY" 
