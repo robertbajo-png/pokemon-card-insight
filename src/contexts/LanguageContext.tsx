@@ -255,13 +255,19 @@ const translations: Record<Language, Record<string, string>> = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguage] = useState<Language>("sv");
-  const [currency, setCurrency] = useState<Currency>(languageToCurrency["sv"]);
+  // Detect initial language and currency from browser
+  const getInitialLanguage = (): Language => {
+    const browserLang = navigator.language.toLowerCase();
+    if (browserLang.startsWith('sv')) return 'sv';
+    if (browserLang.startsWith('de')) return 'de';
+    if (browserLang.startsWith('fr')) return 'fr';
+    if (browserLang.startsWith('ja')) return 'ja';
+    return 'en';
+  };
 
-  // Automatically update currency when language changes
-  useEffect(() => {
-    setCurrency(languageToCurrency[language]);
-  }, [language]);
+  const initialLanguage = getInitialLanguage();
+  const [language, setLanguage] = useState<Language>(initialLanguage);
+  const [currency, setCurrency] = useState<Currency>(languageToCurrency[initialLanguage]);
 
   const t = (key: string): string => {
     return translations[language][key] || key;
