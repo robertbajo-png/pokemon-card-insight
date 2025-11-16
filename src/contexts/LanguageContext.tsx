@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { translateText } from "@/services/translationService";
 
 type Language = "sv" | "en" | "de" | "fr" | "ja";
 export type Currency = "SEK" | "USD" | "EUR" | "JPY";
@@ -9,6 +10,7 @@ interface LanguageContextType {
   currency: Currency;
   setCurrency: (curr: Currency) => void;
   t: (key: string) => string;
+  translateAsync: (text: string) => Promise<string>;
 }
 
 const languageToCurrency: Record<Language, Currency> = {
@@ -273,8 +275,13 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     return translations[language][key] || key;
   };
 
+  const translateAsync = async (text: string): Promise<string> => {
+    if (language === "sv") return text; // Default language, no translation needed
+    return translateText(text, language);
+  };
+
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, currency, setCurrency, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, currency, setCurrency, t, translateAsync }}>
       {children}
     </LanguageContext.Provider>
   );
