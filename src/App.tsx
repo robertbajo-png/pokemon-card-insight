@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import Index from "./pages/Index";
 import Scanner from "./pages/Scanner";
 import Gallery from "./pages/Gallery";
+import SetDetail from "./pages/SetDetail";
 import CardDetail from "./pages/CardDetail";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/scanner" element={<Scanner />} />
             <Route path="/gallery" element={<Gallery />} />
+            <Route path="/set/:setId" element={<SetDetail />} />
             <Route path="/card/:id" element={<CardDetail />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
