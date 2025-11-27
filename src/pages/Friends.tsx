@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Copy, Link2, ShieldCheck, UserMinus, UserPlus, Users } from "lucide-react";
+import { Copy, Link2, Share2, ShieldCheck, UserMinus, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,6 +65,28 @@ const Friends = () => {
     } catch (error) {
       console.error("Kunde inte kopiera länk", error);
       toast.error("Kunde inte kopiera länken. Försök igen.");
+    }
+  };
+
+  const handleShareInvite = async () => {
+    if (!inviteLink) return;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: "Bli vän på Pokemon Card Lens",
+          text: "Använd länken för att bli vän med mig i appen!",
+          url: inviteLink,
+        });
+        toast.success("Länkdelning påbörjad! Skicka den till en vän.");
+        return;
+      }
+
+      await navigator.clipboard.writeText(inviteLink);
+      toast.success("Länk kopierad! Skicka den till en vän för att bli vänner.");
+    } catch (error) {
+      console.error("Kunde inte dela eller kopiera länk", error);
+      toast.error("Kunde inte dela länken. Försök igen.");
     }
   };
 
@@ -160,6 +182,10 @@ const Friends = () => {
                       <Button onClick={handleCopyLink} className="gap-2">
                         <Copy className="w-4 h-4" />
                         Kopiera
+                      </Button>
+                      <Button variant="secondary" onClick={handleShareInvite} className="gap-2">
+                        <Share2 className="w-4 h-4" />
+                        Kopiera & dela
                       </Button>
                     </div>
                     <p className="text-sm text-muted-foreground">
