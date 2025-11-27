@@ -8,8 +8,13 @@ interface BeforeInstallPromptEvent extends Event {
 export const useInstallPrompt = () => {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isInPreview, setIsInPreview] = useState(false);
 
   useEffect(() => {
+    // Check if in Lovable preview
+    const inPreview = window.location.hostname.includes('lovableproject.com');
+    setIsInPreview(inPreview);
+
     // Check if already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
@@ -36,7 +41,11 @@ export const useInstallPrompt = () => {
   }, []);
 
   const handleInstall = async () => {
-    if (!installPrompt) return;
+    if (!installPrompt) {
+      // In preview mode, show info message
+      alert('Installera-funktionen aktiveras när du publicerar appen. Klicka på Publish-knappen för att göra den tillgänglig!');
+      return;
+    }
 
     installPrompt.prompt();
     const { outcome } = await installPrompt.userChoice;
@@ -50,6 +59,6 @@ export const useInstallPrompt = () => {
     installPrompt,
     isInstalled,
     handleInstall,
-    canInstall: !!installPrompt && !isInstalled
+    canInstall: isInPreview || (!!installPrompt && !isInstalled)
   };
 };
