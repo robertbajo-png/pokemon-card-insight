@@ -1,19 +1,28 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import { TranslatedText } from "@/components/TranslatedText";
 import { pokemonSets } from "@/data/pokemonSets";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
-import { getAllSets } from "@/services/pokemonTcgApi";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import PokemonCard from "@/components/PokemonCard";
+import { useScannedCards } from "@/hooks/useScannedCards";
+import { getAllSets, getCardsBySet, type PokemonCard as PokemonCardType } from "@/services/pokemonTcgApi";
+import type { PokemonSet as LocalPokemonSet } from "@/data/pokemonSets";
 
 const Gallery = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSeries, setFilterSeries] = useState("all");
   const [setsWithLogos, setSetsWithLogos] = useState(pokemonSets);
+  const [selectedSet, setSelectedSet] = useState<LocalPokemonSet | null>(null);
+  const [setCards, setSetCards] = useState<PokemonCardType[]>([]);
+  const [isLoadingCards, setIsLoadingCards] = useState(false);
+  const { cards: scannedCards } = useScannedCards();
 
   // Load logos in background after initial render
   useEffect(() => {
@@ -24,8 +33,8 @@ const Gallery = () => {
           const apiSet = apiSets.find(s => s.id === localSet.id);
           return {
             ...localSet,
-            logo: apiSet?.images?.logo,
-            symbol: apiSet?.images?.symbol,
+            logo: apiSet?.images?.logo || `https://images.pokemontcg.io/${localSet.id}/logo.png`,
+            symbol: apiSet?.images?.symbol || `https://images.pokemontcg.io/${localSet.id}/symbol.png`,
           };
         });
         setSetsWithLogos(mergedSets);
@@ -47,6 +56,33 @@ const Gallery = () => {
     const matchesSeries = filterSeries === "all" || set.series === filterSeries;
     return matchesSearch && matchesSeries;
   });
+
+  const ownedCardsForSelectedSet = useMemo(() => {
+    if (!selectedSet) return [];
+
+    const normalizedName = selectedSet.name.toLowerCase();
+    const normalizedCode = selectedSet.setCode.toLowerCase();
+
+    return scannedCards.filter(card => {
+      const normalizedSet = card.set.toLowerCase();
+      return normalizedSet === normalizedName || normalizedSet === normalizedCode || normalizedSet.includes(normalizedName);
+    });
+  }, [scannedCards, selectedSet]);
+
+  const handleSelectSet = async (set: LocalPokemonSet) => {
+    setSelectedSet(set);
+    setIsLoadingCards(true);
+    setSetCards([]);
+
+    try {
+      const { data } = await getCardsBySet(set.id);
+      setSetCards(data);
+    } catch (error) {
+      console.error("Failed to load cards for set", error);
+    } finally {
+      setIsLoadingCards(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -98,10 +134,10 @@ const Gallery = () => {
           {/* Sets Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredSets.map((set) => (
-              <Card 
+              <Card
                 key={set.id}
                 className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105"
-                onClick={() => navigate(`/set/${set.id}`)}
+                onClick={() => handleSelectSet(set)}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between mb-2">
@@ -146,11 +182,122 @@ const Gallery = () => {
 
           {filteredSets.length === 0 && (
             <div className="text-center py-16 text-muted-foreground">
-              <TranslatedText 
+              <TranslatedText
                 text="Inga set matchar din sökning"
                 className="text-lg"
                 as="p"
               />
+            </div>
+          )}
+
+          {selectedSet && (
+            <div className="mt-12 space-y-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  {selectedSet.symbol && (
+                    <img
+                      src={selectedSet.symbol}
+                      alt={`${selectedSet.name} symbol`}
+                      className="w-10 h-10 object-contain"
+                    />
+                  )}
+                  <div>
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                      {selectedSet.logo ? (
+                        <img
+                          src={selectedSet.logo}
+                          alt={selectedSet.name}
+                          className="max-h-10 object-contain"
+                        />
+                      ) : (
+                        <TranslatedText text={selectedSet.name} />
+                      )}
+                      <Badge variant="secondary">{selectedSet.setCode}</Badge>
+                    </h2>
+                    <p className="text-muted-foreground">
+                      <TranslatedText text="Utgivning" />: {new Date(selectedSet.releaseDate).toLocaleDateString("sv-SE")}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Badge variant="outline" className="text-sm">
+                    <TranslatedText text="Kort skannade i detta set" />: {ownedCardsForSelectedSet.length}
+                  </Badge>
+                  <Badge variant="outline" className="text-sm">
+                    <TranslatedText text="Totalt antal kort" />: {selectedSet.totalCards}
+                  </Badge>
+                  <Button variant="outline" onClick={() => navigate(`/set/${selectedSet.id}`)}>
+                    <TranslatedText text="Öppna setdetalj" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <TranslatedText text="Dina kort i setet" />
+                  <Badge variant="secondary">{ownedCardsForSelectedSet.length}</Badge>
+                </h3>
+                {ownedCardsForSelectedSet.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {ownedCardsForSelectedSet.map((card) => (
+                      <PokemonCard
+                        key={card.id}
+                        id={card.id}
+                        name={card.name}
+                        image={card.image || selectedSet.logo || selectedSet.symbol || `https://images.pokemontcg.io/${selectedSet.id}/logo.png`}
+                        type={card.type}
+                        rarity={card.rarity}
+                        set={card.set}
+                        number={card.number}
+                        onClick={() => navigate(`/card/${card.id}`)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    <TranslatedText text="Du har inte skannat några kort från detta set ännu." />
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold">
+                    <TranslatedText text="Alla kort i setet" />
+                  </h3>
+                  {isLoadingCards && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+                  {!isLoadingCards && setCards.length > 0 && (
+                    <Badge variant="secondary">{setCards.length}</Badge>
+                  )}
+                </div>
+
+                {isLoadingCards ? (
+                  <div className="flex items-center justify-center py-12 text-muted-foreground">
+                    <TranslatedText text="Laddar kort från setet..." />
+                  </div>
+                ) : setCards.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    {setCards.map((card) => (
+                      <PokemonCard
+                        key={card.id}
+                        id={card.id}
+                        name={card.name}
+                        image={card.images.small}
+                        type={card.types?.[0]?.toLowerCase() || "normal"}
+                        rarity={card.rarity?.toLowerCase() || "common"}
+                        set={card.set.name}
+                        number={card.number}
+                        onClick={() => navigate(`/card/${card.id}`)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    <TranslatedText text="Korten i detta set kunde inte hämtas just nu." />
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
