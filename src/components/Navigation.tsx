@@ -10,6 +10,7 @@ import {
   Gavel,
   Library,
   User,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -34,6 +35,7 @@ const Navigation = () => {
     { to: "/gallery", label: "Galleri", icon: Image },
     { to: "/market", label: "Marknad", icon: Gavel },
     { to: "/collection", label: "Samling", icon: Library },
+    { to: "/friends", label: "Vänner", icon: Users },
   ];
 
   return (
