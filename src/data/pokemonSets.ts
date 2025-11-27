@@ -140,6 +140,10 @@ export const pokemonSets: PokemonSet[] = [
   { id: "sv6", name: "Temporal Forces", series: "Scarlet & Violet Series", totalCards: 218, releaseDate: "2024-03-22", setCode: "TEF" },
   { id: "sv7", name: "Twilight Masquerade", series: "Scarlet & Violet Series", totalCards: 226, releaseDate: "2024-05-24", setCode: "TWM" },
   { id: "sv8", name: "Shrouded Fable", series: "Scarlet & Violet Series", totalCards: 99, releaseDate: "2024-08-02", setCode: "SFA" },
+  { id: "sv9", name: "Stellar Crown", series: "Scarlet & Violet Series", totalCards: 175, releaseDate: "2024-09-13", setCode: "SCR" },
+  { id: "sv10", name: "Surging Sparks", series: "Scarlet & Violet Series", totalCards: 252, releaseDate: "2024-11-08", setCode: "SSP" },
+  { id: "sv11", name: "Journey Together", series: "Scarlet & Violet Series", totalCards: 203, releaseDate: "2025-03-28", setCode: "JTO" },
+  { id: "sv12", name: "Destined Rivals", series: "Scarlet & Violet Series", totalCards: 198, releaseDate: "2025-05-30", setCode: "DRV" },
   
   // Mega Evolution Series
   { id: "me1", name: "Mega Evolution", series: "Mega Evolution Series", totalCards: 188, releaseDate: "2025-09-26", setCode: "MEG" },
