@@ -1,48 +1,28 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
-import PokemonCard from "@/components/PokemonCard";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Loader2 } from "lucide-react";
-import { filterCards, type PokemonCard as PokemonCardType } from "@/services/pokemonTcgApi";
-import { toast } from "sonner";
+import { Search } from "lucide-react";
 import { TranslatedText } from "@/components/TranslatedText";
+import { pokemonSets } from "@/data/pokemonSets";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Gallery = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState("all");
-  const [filterRarity, setFilterRarity] = useState("all");
-  const [cards, setCards] = useState<PokemonCardType[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [filterSeries, setFilterSeries] = useState("all");
 
-  useEffect(() => {
-    loadCards();
-  }, [searchQuery, filterType, filterRarity]);
+  // Get unique series for filtering
+  const uniqueSeries = ["all", ...Array.from(new Set(pokemonSets.map(set => set.series)))];
 
-  const loadCards = async () => {
-    setIsLoading(true);
-    try {
-      console.log('Loading cards with filters:', { searchQuery, filterType, filterRarity });
-      const types = filterType !== "all" ? [filterType] : undefined;
-      const rarity = filterRarity !== "all" ? filterRarity : undefined;
-      
-      const { data } = await filterCards({
-        searchQuery: searchQuery || undefined,
-        types,
-        rarity,
-      });
-      
-      console.log('Cards loaded:', data);
-      setCards(data);
-    } catch (error) {
-      console.error("Error loading cards:", error);
-      toast.error("Kunde inte ladda kort. Försök igen.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Filter sets based on search and series
+  const filteredSets = pokemonSets.filter(set => {
+    const matchesSearch = set.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         set.setCode.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSeries = filterSeries === "all" || set.series === filterSeries;
+    return matchesSearch && matchesSeries;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,11 +33,11 @@ const Gallery = () => {
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold mb-4">
               <span className="bg-gradient-hero bg-clip-text text-transparent">
-                <TranslatedText text="Kortgalleri" />
+                <TranslatedText text="Pokemon TCG Set Galleri" />
               </span>
             </h1>
             <TranslatedText 
-              text="Utforska populära och sällsynta Pokemon-kort"
+              text="Utforska alla Pokemon kort-set från Base Set till Phantasmal Flames"
               className="text-lg text-muted-foreground"
               as="p"
             />
@@ -68,83 +48,74 @@ const Gallery = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Sök efter kort..."
+                placeholder="Sök efter set..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
-              <Select value={filterType} onValueChange={setFilterType}>
+            <div className="w-full">
+              <Select value={filterSeries} onValueChange={setFilterSeries}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Filtrera efter typ" />
+                  <SelectValue placeholder="Filtrera efter serie" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Alla typer</SelectItem>
-                  <SelectItem value="Fire">Fire</SelectItem>
-                  <SelectItem value="Water">Water</SelectItem>
-                  <SelectItem value="Lightning">Electric</SelectItem>
-                  <SelectItem value="Grass">Grass</SelectItem>
-                  <SelectItem value="Psychic">Psychic</SelectItem>
-                  <SelectItem value="Fighting">Fighting</SelectItem>
-                  <SelectItem value="Darkness">Darkness</SelectItem>
-                  <SelectItem value="Metal">Metal</SelectItem>
-                  <SelectItem value="Dragon">Dragon</SelectItem>
-                  <SelectItem value="Fairy">Fairy</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={filterRarity} onValueChange={setFilterRarity}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filtrera efter sällsynthet" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alla sällsyntheter</SelectItem>
-                  <SelectItem value="Common">Common</SelectItem>
-                  <SelectItem value="Uncommon">Uncommon</SelectItem>
-                  <SelectItem value="Rare">Rare</SelectItem>
-                  <SelectItem value="Rare Holo">Rare Holo</SelectItem>
-                  <SelectItem value="Rare Ultra">Ultra Rare</SelectItem>
-                  <SelectItem value="Rare Secret">Secret Rare</SelectItem>
+                  {uniqueSeries.map((series) => (
+                    <SelectItem key={series} value={series}>
+                      {series === "all" ? "Alla serier" : series}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Cards Grid */}
-          {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {cards.map((card) => (
-                  <PokemonCard
-                    key={card.id}
-                    id={card.id}
-                    name={card.name}
-                    image={card.images.small}
-                    type={card.types?.[0]?.toLowerCase() || "normal"}
-                    rarity={card.rarity?.toLowerCase() || "common"}
-                    set={card.set.name}
-                    number={card.number}
-                    onClick={() => navigate(`/card/${card.id}`)}
-                  />
-                ))}
-              </div>
+          {/* Sets Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredSets.map((set) => (
+              <Card 
+                key={set.id}
+                className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105"
+                onClick={() => navigate(`/set/${set.id}`)}
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-mono text-muted-foreground">{set.setCode}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(set.releaseDate).getFullYear()}
+                    </span>
+                  </div>
+                  <CardTitle className="text-lg">
+                    <TranslatedText text={set.name} />
+                  </CardTitle>
+                  <CardDescription>
+                    <TranslatedText text={set.series} />
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      <TranslatedText text="Antal kort" />:
+                    </span>
+                    <span className="font-semibold">{set.totalCards}</span>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    <TranslatedText text="Utgivning" />: {new Date(set.releaseDate).toLocaleDateString('sv-SE')}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-              {cards.length === 0 && (
-                <div className="text-center py-16 text-muted-foreground">
-                  <TranslatedText 
-                    text="Inga kort matchar din sökning"
-                    className="text-lg"
-                    as="p"
-                  />
-                </div>
-              )}
-            </>
+          {filteredSets.length === 0 && (
+            <div className="text-center py-16 text-muted-foreground">
+              <TranslatedText 
+                text="Inga set matchar din sökning"
+                className="text-lg"
+                as="p"
+              />
+            </div>
           )}
         </div>
       </div>
