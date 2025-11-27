@@ -1,5 +1,15 @@
 import { Link, useLocation } from "react-router-dom";
-import { Scan, Image, Home, Globe, Download, Sun, Moon, Library } from "lucide-react";
+import {
+  Scan,
+  Image,
+  Home,
+  Globe,
+  Download,
+  Sun,
+  Moon,
+  Library,
+  User,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -15,6 +25,7 @@ const Navigation = () => {
   const { theme, setTheme } = useTheme();
 
   const links = [
+    { to: "/login", label: "Konto", icon: User },
     { to: "/", label: "Hem", icon: Home },
     { to: "/scanner", label: "Scanna", icon: Scan },
     { to: "/gallery", label: "Galleri", icon: Image },
