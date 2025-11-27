@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Scan, Image, Sparkles } from "lucide-react";
 import Navigation from "@/components/Navigation";
-import heroBanner from "@/assets/hero-banner.jpg";
+import heroBanner from "@/assets/charizard-base-set.jpg";
 import { TranslatedText } from "@/components/TranslatedText";
 
 const Index = () => {
