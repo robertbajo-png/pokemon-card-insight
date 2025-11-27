@@ -1,45 +1,25 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Loader2 } from "lucide-react";
+import { Search } from "lucide-react";
 import { TranslatedText } from "@/components/TranslatedText";
-import { getAllSets, type PokemonSet } from "@/services/pokemonTcgApi";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
+import { pokemonSets } from "@/data/pokemonSets";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 
 const Gallery = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSeries, setFilterSeries] = useState("all");
-  const [sets, setSets] = useState<PokemonSet[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    loadSets();
-  }, []);
-
-  const loadSets = async () => {
-    setIsLoading(true);
-    try {
-      const allSets = await getAllSets();
-      setSets(allSets);
-    } catch (error) {
-      console.error("Error loading sets:", error);
-      toast.error("Kunde inte ladda set. Försök igen.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Get unique series for filtering
-  const uniqueSeries = ["all", ...Array.from(new Set(sets.map(set => set.series)))];
+  const uniqueSeries = ["all", ...Array.from(new Set(pokemonSets.map(set => set.series)))];
 
   // Filter sets based on search and series
-  const filteredSets = sets.filter(set => {
+  const filteredSets = pokemonSets.filter(set => {
     const matchesSearch = set.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         set.id.toLowerCase().includes(searchQuery.toLowerCase());
+                         set.setCode.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSeries = filterSeries === "all" || set.series === filterSeries;
     return matchesSearch && matchesSeries;
   });
@@ -92,66 +72,50 @@ const Gallery = () => {
           </div>
 
           {/* Sets Grid */}
-          {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredSets.map((set) => (
-                  <Card 
-                    key={set.id}
-                    className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105 overflow-hidden"
-                    onClick={() => navigate(`/set/${set.id}`)}
-                  >
-                    <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <img 
-                          src={set.images.symbol} 
-                          alt={`${set.name} symbol`}
-                          className="w-8 h-8 object-contain"
-                        />
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(set.releaseDate).getFullYear()}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-center mb-3 h-16">
-                        <img 
-                          src={set.images.logo} 
-                          alt={set.name}
-                          className="max-h-full max-w-full object-contain"
-                        />
-                      </div>
-                      <CardDescription className="text-center">
-                        <TranslatedText text={set.series} />
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">
-                          <TranslatedText text="Antal kort" />:
-                        </span>
-                        <span className="font-semibold">{set.total}</span>
-                      </div>
-                      <div className="mt-2 text-xs text-muted-foreground text-center">
-                        <TranslatedText text="Utgivning" />: {new Date(set.releaseDate).toLocaleDateString('sv-SE')}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredSets.map((set) => (
+              <Card 
+                key={set.id}
+                className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105"
+                onClick={() => navigate(`/set/${set.id}`)}
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-mono text-muted-foreground">{set.setCode}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(set.releaseDate).getFullYear()}
+                    </span>
+                  </div>
+                  <div className="text-lg font-semibold mb-2">
+                    <TranslatedText text={set.name} />
+                  </div>
+                  <CardDescription>
+                    <TranslatedText text={set.series} />
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      <TranslatedText text="Antal kort" />:
+                    </span>
+                    <span className="font-semibold">{set.totalCards}</span>
+                  </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    <TranslatedText text="Utgivning" />: {new Date(set.releaseDate).toLocaleDateString('sv-SE')}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-              {filteredSets.length === 0 && (
-                <div className="text-center py-16 text-muted-foreground">
-                  <TranslatedText 
-                    text="Inga set matchar din sökning"
-                    className="text-lg"
-                    as="p"
-                  />
-                </div>
-              )}
-            </>
+          {filteredSets.length === 0 && (
+            <div className="text-center py-16 text-muted-foreground">
+              <TranslatedText 
+                text="Inga set matchar din sökning"
+                className="text-lg"
+                as="p"
+              />
+            </div>
           )}
         </div>
       </div>
