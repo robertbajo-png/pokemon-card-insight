@@ -1,5 +1,19 @@
 const BASE_URL = "https://api.pokemontcg.io/v2";
 
+export interface PokemonSet {
+  id: string;
+  name: string;
+  series: string;
+  printedTotal: number;
+  total: number;
+  releaseDate: string;
+  images: {
+    symbol: string;
+    logo: string;
+  };
+  ptcgoCode?: string;
+}
+
 export interface PokemonCard {
   id: string;
   name: string;
@@ -117,4 +131,18 @@ export const filterCards = async (filters: {
     page: filters.page || 1,
     pageSize: 20,
   });
+};
+
+export const getAllSets = async (): Promise<PokemonSet[]> => {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const proxyUrl = `${supabaseUrl}/functions/v1/pokemon-proxy?path=/sets&query=orderBy=releaseDate`;
+    
+    const response = await fetch(proxyUrl);
+    const data = await response.json();
+    return data.data || [];
+  } catch (error) {
+    console.error("Error fetching sets:", error);
+    return [];
+  }
 };
