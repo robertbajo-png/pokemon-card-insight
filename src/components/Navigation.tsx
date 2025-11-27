@@ -145,9 +145,10 @@ const Navigation = () => {
         <Button
           onClick={handleInstall}
           size="lg"
-          className="sm:hidden fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl bg-gradient-hero text-white p-0 flex items-center justify-center"
+          className="sm:hidden fixed bottom-20 right-4 z-[60] w-16 h-16 rounded-full shadow-2xl bg-gradient-hero text-white p-0 flex items-center justify-center animate-pulse hover:animate-none"
+          aria-label="Installera app"
         >
-          <Download className="w-6 h-6" />
+          <Download className="w-7 h-7" />
         </Button>
       )}
     </>
