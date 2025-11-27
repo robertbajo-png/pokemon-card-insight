@@ -4,15 +4,16 @@ import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { TranslatedText } from "@/components/TranslatedText";
 
 const Navigation = () => {
   const location = useLocation();
   const { language, setLanguage, t } = useLanguage();
 
   const links = [
-    { to: "/", label: t("home"), icon: Home },
-    { to: "/scanner", label: t("scan"), icon: Scan },
-    { to: "/gallery", label: t("gallery"), icon: Image },
+    { to: "/", label: "Hem", icon: Home },
+    { to: "/scanner", label: "Scanna", icon: Scan },
+    { to: "/gallery", label: "Galleri", icon: Image },
   ];
 
   return (
@@ -45,7 +46,7 @@ const Navigation = () => {
                   )}
                 >
                   <Icon className="w-4 h-4" />
-                  <span className="hidden sm:inline">{link.label}</span>
+                  <TranslatedText text={link.label} className="hidden sm:inline" />
                 </Link>
               );
             })}

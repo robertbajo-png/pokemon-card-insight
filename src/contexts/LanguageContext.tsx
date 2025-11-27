@@ -272,7 +272,8 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const [currency, setCurrency] = useState<Currency>(languageToCurrency[initialLanguage]);
 
   const t = (key: string): string => {
-    return translations[language][key] || key;
+    // Always return Swedish text - it will be translated by TranslatedText component
+    return translations["sv"][key] || key;
   };
 
   const translateAsync = async (text: string): Promise<string> => {
