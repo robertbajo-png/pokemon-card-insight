@@ -7,6 +7,8 @@ export interface PokemonSet {
   setCode: string;
   symbolUrl?: string;
   logoUrl?: string;
+  logo?: string;
+  symbol?: string;
 }
 
 export const pokemonSets: PokemonSet[] = [
