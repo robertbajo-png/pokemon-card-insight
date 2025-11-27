@@ -34,7 +34,7 @@ const Navigation = () => {
 
           <div className="flex items-center gap-2">
             {/* Desktop install button */}
-            {!isInstalled && (
+            {canInstall && (
               <Button
                 onClick={handleInstall}
                 variant="default"
@@ -141,7 +141,7 @@ const Navigation = () => {
       </nav>
 
       {/* Floating install button for mobile */}
-      {!isInstalled && (
+      {canInstall && (
         <Button
           onClick={handleInstall}
           size="lg"
