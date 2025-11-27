@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Scan, Image, Home, Globe, Download, Sun, Moon } from "lucide-react";
+import { Scan, Image, Home, Globe, Download, Sun, Moon, Library } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ const Navigation = () => {
     { to: "/", label: "Hem", icon: Home },
     { to: "/scanner", label: "Scanna", icon: Scan },
     { to: "/gallery", label: "Galleri", icon: Image },
+    { to: "/collection", label: "Samling", icon: Library },
   ];
 
   return (

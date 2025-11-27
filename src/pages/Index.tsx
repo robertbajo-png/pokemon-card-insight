@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Scan, Image, Sparkles } from "lucide-react";
+import { Scan, Image, Sparkles, Library } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import heroBanner from "@/assets/charizard-base-set.jpg";
 import { TranslatedText } from "@/components/TranslatedText";
@@ -54,6 +54,12 @@ const Index = () => {
                 <Button variant="accent" size="lg" className="gap-2">
                   <Image className="w-5 h-5" />
                   <TranslatedText text="Visa Galleri" />
+                </Button>
+              </Link>
+              <Link to="/collection">
+                <Button variant="outline" size="lg" className="gap-2">
+                  <Library className="w-5 h-5" />
+                  <TranslatedText text="Se samling" />
                 </Button>
               </Link>
             </div>
