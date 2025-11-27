@@ -26,16 +26,16 @@ export default defineConfig(({ mode }) => ({
         orientation: 'portrait',
         icons: [
           {
-            src: '/placeholder.svg',
+            src: '/charizard-icon.jpg',
             sizes: '192x192',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
+            type: 'image/jpeg',
+            purpose: 'any'
           },
           {
-            src: '/placeholder.svg',
+            src: '/charizard-icon.jpg',
             sizes: '512x512',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
+            type: 'image/jpeg',
+            purpose: 'any'
           }
         ]
       },
