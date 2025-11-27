@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Scan, Image, Sparkles } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import heroBanner from "@/assets/hero-banner.jpg";
+import { TranslatedText } from "@/components/TranslatedText";
 
 const Index = () => {
   return (
@@ -31,21 +32,23 @@ const Index = () => {
               </span>
             </h1>
 
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-              Scanna, identifiera och utforska dina Pokemon-kort med AI-kraft
-            </p>
+            <TranslatedText 
+              text="Scanna, identifiera och utforska dina Pokemon-kort med AI-kraft"
+              className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto"
+              as="p"
+            />
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/scanner">
                 <Button variant="hero" size="lg" className="gap-2">
                   <Scan className="w-5 h-5" />
-                  Scanna Kort
+                  <TranslatedText text="Scanna Kort" />
                 </Button>
               </Link>
               <Link to="/gallery">
                 <Button variant="accent" size="lg" className="gap-2">
                   <Image className="w-5 h-5" />
-                  Visa Galleri
+                  <TranslatedText text="Visa Galleri" />
                 </Button>
               </Link>
             </div>
@@ -56,39 +59,47 @@ const Index = () => {
       {/* Features Section */}
       <section className="py-16 bg-muted/50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            Kraftfulla Funktioner
-          </h2>
+          <TranslatedText 
+            text="Kraftfulla Funktioner"
+            className="text-3xl font-bold text-center mb-12"
+            as="h2"
+          />
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <div className="bg-card p-6 rounded-xl border border-border hover:shadow-card transition-all duration-300">
               <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mb-4">
                 <Scan className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Scanna Kort</h3>
-              <p className="text-muted-foreground">
-                Ladda upp eller fotografera dina kort för omedelbar identifiering
-              </p>
+              <TranslatedText text="Scanna Kort" className="text-xl font-bold mb-2" as="h3" />
+              <TranslatedText 
+                text="Ladda upp eller fotografera dina kort för omedelbar identifiering"
+                className="text-muted-foreground"
+                as="p"
+              />
             </div>
 
             <div className="bg-card p-6 rounded-xl border border-border hover:shadow-card transition-all duration-300">
               <div className="w-12 h-12 bg-gradient-secondary rounded-lg flex items-center justify-center mb-4">
                 <Sparkles className="w-6 h-6 text-foreground" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Detaljerad Info</h3>
-              <p className="text-muted-foreground">
-                Få fullständig information om sällsynthet, typ och värde
-              </p>
+              <TranslatedText text="Detaljerad Info" className="text-xl font-bold mb-2" as="h3" />
+              <TranslatedText 
+                text="Få fullständig information om sällsynthet, typ och värde"
+                className="text-muted-foreground"
+                as="p"
+              />
             </div>
 
             <div className="bg-card p-6 rounded-xl border border-border hover:shadow-card transition-all duration-300">
               <div className="w-12 h-12 bg-accent rounded-lg flex items-center justify-center mb-4">
                 <Image className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Kortgalleri</h3>
-              <p className="text-muted-foreground">
-                Utforska en samling av populära och sällsynta kort
-              </p>
+              <TranslatedText text="Kortgalleri" className="text-xl font-bold mb-2" as="h3" />
+              <TranslatedText 
+                text="Utforska en samling av populära och sällsynta kort"
+                className="text-muted-foreground"
+                as="p"
+              />
             </div>
           </div>
         </div>

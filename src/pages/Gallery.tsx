@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Loader2 } from "lucide-react";
 import { filterCards, type PokemonCard as PokemonCardType } from "@/services/pokemonTcgApi";
 import { toast } from "sonner";
+import { TranslatedText } from "@/components/TranslatedText";
 
 const Gallery = () => {
   const navigate = useNavigate();
@@ -52,12 +53,14 @@ const Gallery = () => {
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold mb-4">
               <span className="bg-gradient-hero bg-clip-text text-transparent">
-                Kortgalleri
+                <TranslatedText text="Kortgalleri" />
               </span>
             </h1>
-            <p className="text-lg text-muted-foreground">
-              Utforska populära och sällsynta Pokemon-kort
-            </p>
+            <TranslatedText 
+              text="Utforska populära och sällsynta Pokemon-kort"
+              className="text-lg text-muted-foreground"
+              as="p"
+            />
           </div>
 
           {/* Filters */}
@@ -134,7 +137,11 @@ const Gallery = () => {
 
               {cards.length === 0 && (
                 <div className="text-center py-16 text-muted-foreground">
-                  <p className="text-lg">Inga kort matchar din sökning</p>
+                  <TranslatedText 
+                    text="Inga kort matchar din sökning"
+                    className="text-lg"
+                    as="p"
+                  />
                 </div>
               )}
             </>
