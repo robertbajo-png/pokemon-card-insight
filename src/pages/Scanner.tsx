@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { convertPriceRange } from "@/utils/currency";
+import { useScannedCards } from "@/hooks/useScannedCards";
 
 const Scanner = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -17,6 +18,7 @@ const Scanner = () => {
   const [result, setResult] = useState<any>(null);
   const [showCamera, setShowCamera] = useState(false);
   const { currency, setCurrency } = useLanguage();
+  const { addCard } = useScannedCards();
 
   const convertPrice = (priceInSEK: string): string =>
     convertPriceRange(priceInSEK, currency);
@@ -68,6 +70,16 @@ const Scanner = () => {
 
       const data = await response.json();
       setResult(data);
+      addCard({
+        name: data.name ?? "Okänt kort",
+        type: data.type?.toLowerCase?.() ?? "colorless",
+        rarity: data.rarity ?? "unknown",
+        set: data.set ?? "Okänt set",
+        number: data.number?.toString?.() ?? "-",
+        condition: data.condition,
+        estimatedValue: data.estimatedValue,
+        image: selectedImage ?? undefined,
+      });
       toast.success("Kort analyserat!");
     } catch (error) {
       console.error('Error analyzing card:', error);
