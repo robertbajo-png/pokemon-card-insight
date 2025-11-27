@@ -10,7 +10,7 @@ import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 const Navigation = () => {
   const location = useLocation();
   const { language, setLanguage, t } = useLanguage();
-  const { canInstall, handleInstall } = useInstallPrompt();
+  const { canInstall, handleInstall, isInstalled } = useInstallPrompt();
 
   const links = [
     { to: "/", label: "Hem", icon: Home },
@@ -32,7 +32,7 @@ const Navigation = () => {
           </Link>
 
           <div className="flex items-center gap-2">
-            {canInstall && (
+            {!isInstalled && (
               <Button
                 onClick={handleInstall}
                 variant="default"
