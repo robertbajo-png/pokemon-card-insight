@@ -1,16 +1,18 @@
 import { Link, useLocation } from "react-router-dom";
-import { Scan, Image, Home, Globe, Download } from "lucide-react";
+import { Scan, Image, Home, Globe, Download, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { TranslatedText } from "@/components/TranslatedText";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
+import { useTheme } from "next-themes";
 
 const Navigation = () => {
   const location = useLocation();
   const { language, setLanguage, t } = useLanguage();
   const { canInstall, handleInstall, isInstalled } = useInstallPrompt();
+  const { theme, setTheme } = useTheme();
 
   const links = [
     { to: "/", label: "Hem", icon: Home },
@@ -135,6 +137,16 @@ const Navigation = () => {
                 </div>
               </PopoverContent>
             </Popover>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              aria-label={theme === "dark" ? t("Byt till ljust läge") : t("Byt till mörkt läge")}
+            >
+              {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </Button>
           </div>
         </div>
       </div>
