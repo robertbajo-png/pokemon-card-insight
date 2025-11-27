@@ -11,13 +11,7 @@ const Index = () => {
       <Navigation />
       
       {/* Hero Section */}
-      <section className="relative pt-24 pb-16 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-hero opacity-10" />
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-20"
-          style={{ backgroundImage: `url(${heroBanner})` }}
-        />
-        
+      <section className="relative pt-24 pb-16 overflow-hidden bg-muted/30">
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <div className="inline-block animate-float">
@@ -37,6 +31,17 @@ const Index = () => {
               className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto"
               as="p"
             />
+
+            {/* Charizard Card Display */}
+            <div className="flex justify-center my-8">
+              <div className="relative w-64 md:w-80 transform hover:scale-105 transition-transform duration-300">
+                <img 
+                  src={heroBanner} 
+                  alt="Base Set Holo Charizard" 
+                  className="w-full h-auto rounded-xl shadow-2xl"
+                />
+              </div>
+            </div>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/scanner">
