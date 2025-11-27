@@ -7,6 +7,7 @@ import {
   Download,
   Sun,
   Moon,
+  Gavel,
   Library,
   User,
 } from "lucide-react";
@@ -31,6 +32,7 @@ const Navigation = () => {
     { to: "/", label: "Hem", icon: Home },
     { to: "/scanner", label: "Scanna", icon: Scan },
     { to: "/gallery", label: "Galleri", icon: Image },
+    { to: "/market", label: "Marknad", icon: Gavel },
     { to: "/collection", label: "Samling", icon: Library },
   ];
 

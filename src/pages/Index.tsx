@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Scan, Image, Sparkles, Library } from "lucide-react";
+import { Gavel, Image, Library, Scan, Sparkles } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import heroBanner from "@/assets/charizard-base-set.jpg";
 import { TranslatedText } from "@/components/TranslatedText";
@@ -56,6 +56,12 @@ const Index = () => {
                   <TranslatedText text="Visa Galleri" />
                 </Button>
               </Link>
+              <Link to="/market">
+                <Button variant="default" size="lg" className="gap-2">
+                  <Gavel className="w-5 h-5" />
+                  <TranslatedText text="Marknadsplats" />
+                </Button>
+              </Link>
               <Link to="/collection">
                 <Button variant="outline" size="lg" className="gap-2">
                   <Library className="w-5 h-5" />
@@ -76,7 +82,7 @@ const Index = () => {
             as="h2"
           />
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
             <div className="bg-card p-6 rounded-xl border border-border hover:shadow-card transition-all duration-300">
               <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mb-4">
                 <Scan className="w-6 h-6 text-white" />
@@ -94,7 +100,7 @@ const Index = () => {
                 <Sparkles className="w-6 h-6 text-foreground" />
               </div>
               <TranslatedText text="Detaljerad Info" className="text-xl font-bold mb-2" as="h3" />
-              <TranslatedText 
+              <TranslatedText
                 text="Få fullständig information om sällsynthet, typ och värde"
                 className="text-muted-foreground"
                 as="p"
@@ -106,8 +112,20 @@ const Index = () => {
                 <Image className="w-6 h-6 text-white" />
               </div>
               <TranslatedText text="Kortgalleri" className="text-xl font-bold mb-2" as="h3" />
-              <TranslatedText 
+              <TranslatedText
                 text="Utforska en samling av populära och sällsynta kort"
+                className="text-muted-foreground"
+                as="p"
+              />
+            </div>
+
+            <div className="bg-card p-6 rounded-xl border border-border hover:shadow-card transition-all duration-300">
+              <div className="w-12 h-12 bg-primary/10 text-primary rounded-lg flex items-center justify-center mb-4">
+                <Gavel className="w-6 h-6" />
+              </div>
+              <TranslatedText text="Marknadsplats" className="text-xl font-bold mb-2" as="h3" />
+              <TranslatedText
+                text="Sälj och buda på kort via auktioner tillsammans med andra samlare"
                 className="text-muted-foreground"
                 as="p"
               />
