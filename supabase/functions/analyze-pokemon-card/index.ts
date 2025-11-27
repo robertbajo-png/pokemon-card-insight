@@ -27,6 +27,10 @@ serve(async (req) => {
       // Analyze uploaded card image
       systemPrompt = `Du är en expert på Pokemon-kort. Analysera bilden av Pokemon-kortet mycket noggrant.
 
+Använd officiella källor:
+- Stäm av namn, set, nummer och sällsynthet mot den officiella Pokemon-webbplatsen (pokemon.com) och Bulbapedia för att säkerställa att detaljerna är korrekta.
+- Om uppgifterna inte kan bekräftas av dessa källor ska du rapportera värdet som "Unknown" istället för att gissa.
+
 KRITISKT VIKTIGT - FOKUSERA PÅ SET-IDENTIFIERING:
 1. Börja med att zooma in på NEDRE HÖGRA HÖRNET för att identifiera set-symbolen och kortnumret (format "X/Y").
 2. Matcha symbolen mot kända set. Kontrollera även kortnumret mot rimliga totalsidor (t.ex. Base Set 102, Jungle 64, Fossil 62, Team Rocket 82, Base Set 2 130, Gym Heroes 132, Gym Challenge 132, Neo Genesis 111, Neo Discovery 75).
