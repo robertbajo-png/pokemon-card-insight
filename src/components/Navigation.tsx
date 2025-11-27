@@ -1,14 +1,16 @@
 import { Link, useLocation } from "react-router-dom";
-import { Scan, Image, Home, Globe } from "lucide-react";
+import { Scan, Image, Home, Globe, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { TranslatedText } from "@/components/TranslatedText";
+import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 
 const Navigation = () => {
   const location = useLocation();
   const { language, setLanguage, t } = useLanguage();
+  const { canInstall, handleInstall } = useInstallPrompt();
 
   const links = [
     { to: "/", label: "Hem", icon: Home },
@@ -30,6 +32,18 @@ const Navigation = () => {
           </Link>
 
           <div className="flex items-center gap-2">
+            {canInstall && (
+              <Button
+                onClick={handleInstall}
+                variant="default"
+                size="sm"
+                className="gap-2 bg-gradient-hero text-white shadow-glow"
+              >
+                <Download className="w-4 h-4" />
+                <TranslatedText text="Installera" className="hidden sm:inline" />
+              </Button>
+            )}
+            
             {links.map((link) => {
               const Icon = link.icon;
               const isActive = location.pathname === link.to;
