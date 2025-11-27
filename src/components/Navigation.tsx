@@ -37,10 +37,12 @@ const Navigation = () => {
                 onClick={handleInstall}
                 variant="default"
                 size="sm"
-                className="gap-2 bg-gradient-hero text-white shadow-glow"
+                className="gap-1.5 bg-gradient-hero text-white shadow-glow"
               >
                 <Download className="w-4 h-4" />
-                <TranslatedText text="Installera" className="hidden sm:inline" />
+                <span className="text-sm">
+                  <TranslatedText text="Installera" />
+                </span>
               </Button>
             )}
             
