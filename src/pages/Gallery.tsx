@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Input } from "@/components/ui/input";
@@ -7,17 +7,41 @@ import { Search } from "lucide-react";
 import { TranslatedText } from "@/components/TranslatedText";
 import { pokemonSets } from "@/data/pokemonSets";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { getAllSets } from "@/services/pokemonTcgApi";
 
 const Gallery = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSeries, setFilterSeries] = useState("all");
+  const [setsWithLogos, setSetsWithLogos] = useState(pokemonSets);
+
+  // Load logos in background after initial render
+  useEffect(() => {
+    const fetchLogos = async () => {
+      try {
+        const apiSets = await getAllSets();
+        const mergedSets = pokemonSets.map(localSet => {
+          const apiSet = apiSets.find(s => s.id === localSet.id);
+          return {
+            ...localSet,
+            logo: apiSet?.images?.logo,
+            symbol: apiSet?.images?.symbol,
+          };
+        });
+        setSetsWithLogos(mergedSets);
+      } catch (error) {
+        console.log("Could not fetch logos from API", error);
+      }
+    };
+
+    fetchLogos();
+  }, []);
 
   // Get unique series for filtering
   const uniqueSeries = ["all", ...Array.from(new Set(pokemonSets.map(set => set.series)))];
 
   // Filter sets based on search and series
-  const filteredSets = pokemonSets.filter(set => {
+  const filteredSets = setsWithLogos.filter(set => {
     const matchesSearch = set.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          set.setCode.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSeries = filterSeries === "all" || set.series === filterSeries;
@@ -86,9 +110,21 @@ const Gallery = () => {
                       {new Date(set.releaseDate).getFullYear()}
                     </span>
                   </div>
-                  <div className="text-lg font-semibold mb-2">
-                    <TranslatedText text={set.name} />
-                  </div>
+                  {/* Set Logo */}
+                  {set.logo ? (
+                    <div className="w-full h-24 flex items-center justify-center mb-4">
+                      <img 
+                        src={set.logo} 
+                        alt={set.name}
+                        className="max-h-20 w-auto object-contain"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-lg font-semibold mb-2">
+                      <TranslatedText text={set.name} />
+                    </div>
+                  )}
                   <CardDescription>
                     <TranslatedText text={set.series} />
                   </CardDescription>
