@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Camera, X, RotateCcw } from "lucide-react";
@@ -16,6 +16,8 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -29,6 +31,10 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
 
   const checkMultipleCameras = async () => {
     try {
+      if (!navigator.mediaDevices?.enumerateDevices) {
+        return;
+      }
+
       const devices = await navigator.mediaDevices.enumerateDevices();
       const videoDevices = devices.filter(device => device.kind === "videoinput");
       setHasMultipleCameras(videoDevices.length > 1);
@@ -39,6 +45,12 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
 
   const startCamera = async () => {
     try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setCameraError("Din enhet stöder inte kameran i webbläsaren. Använd filuppladdning istället.");
+        return;
+      }
+
+      setCameraError(null);
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: facingMode,
@@ -53,6 +65,7 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
       }
     } catch (error) {
       console.error("Error accessing camera:", error);
+      setCameraError("Kunde inte komma åt kameran. Kontrollera behörigheter eller använd filuppladdning.");
       toast.error("Kunde inte komma åt kameran. Kontrollera behörigheter.");
     }
   };
@@ -88,6 +101,23 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
     setFacingMode(prev => prev === "user" ? "environment" : "user");
   };
 
+  const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result as string;
+      onCapture(result);
+      toast.success("Foto uppladdat!");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const triggerFileUpload = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <Card className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col">
       <div className="flex items-center justify-between p-4 border-b border-border">
@@ -98,28 +128,46 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
       </div>
 
       <div className="flex-1 relative overflow-hidden bg-black">
-        <video
-          ref={videoRef}
-          autoPlay
-          playsInline
-          className="w-full h-full object-cover"
-        />
-        
-        {/* Camera guide overlay */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-[80%] max-w-md aspect-[3/4] border-4 border-primary/50 rounded-xl">
-            <div className="absolute top-2 left-2 right-2 text-center">
-              <span className="text-white text-sm bg-black/50 px-3 py-1 rounded-full">
-                {t("placeCardInFrame")}
-              </span>
+        {!cameraError ? (
+          <>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              className="w-full h-full object-cover"
+            />
+
+            {/* Camera guide overlay */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-[80%] max-w-md aspect-[3/4] border-4 border-primary/50 rounded-xl">
+                <div className="absolute top-2 left-2 right-2 text-center">
+                  <span className="text-white text-sm bg-black/50 px-3 py-1 rounded-full">
+                    {t("placeCardInFrame")}
+                  </span>
+                </div>
+              </div>
             </div>
+          </>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-4 text-center bg-background">
+            <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+              <Camera className="w-8 h-8" />
+            </div>
+            <p className="text-lg font-semibold">{cameraError}</p>
+            <p className="text-sm text-muted-foreground max-w-sm">
+              Ladda upp ett foto direkt från mobilen för att fortsätta.
+            </p>
+            <Button variant="hero" className="gap-2" onClick={triggerFileUpload}>
+              <Camera className="w-4 h-4" />
+              <span>Välj eller ta foto</span>
+            </Button>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-center gap-4">
-          {hasMultipleCameras && (
+          {hasMultipleCameras && !cameraError && (
             <Button
               variant="outline"
               size="icon"
@@ -133,7 +181,7 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
           <Button
             variant="hero"
             size="icon"
-            onClick={capturePhoto}
+            onClick={cameraError ? triggerFileUpload : capturePhoto}
             className="rounded-full w-16 h-16"
           >
             <Camera className="w-8 h-8" />
@@ -143,9 +191,18 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
-          {t("pressToTakePhoto")}
+          {cameraError ? "Alternativ: ladda upp ett foto via mobilen" : t("pressToTakePhoto")}
         </p>
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleFileUpload}
+      />
 
       <canvas ref={canvasRef} className="hidden" />
     </Card>
