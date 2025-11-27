@@ -17,15 +17,17 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { TranslatedText } from "@/components/TranslatedText";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { useTheme } from "next-themes";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Navigation = () => {
   const location = useLocation();
   const { language, setLanguage, t } = useLanguage();
   const { canInstall, handleInstall, isInstalled } = useInstallPrompt();
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
 
   const links = [
-    { to: "/login", label: "Konto", icon: User },
+    { to: "/login", label: user ? "Profil" : "Konto", icon: User },
     { to: "/", label: "Hem", icon: Home },
     { to: "/scanner", label: "Scanna", icon: Scan },
     { to: "/gallery", label: "Galleri", icon: Image },
