@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import Collection from "./pages/Collection";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
+import Market from "./pages/Market";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/scanner" element={<Scanner />} />
                 <Route path="/gallery" element={<Gallery />} />
+                <Route path="/market" element={<Market />} />
                 <Route path="/collection" element={<Collection />} />
                 <Route path="/set/:setId" element={<SetDetail />} />
                 <Route path="/card/:id" element={<CardDetail />} />
