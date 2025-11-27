@@ -25,14 +25,30 @@ serve(async (req) => {
 
     if (action === 'analyze' && image) {
       // Analyze uploaded card image
-      systemPrompt = `Du är en expert på Pokemon-kort. Analysera bilden av Pokemon-kortet och ge detaljerad information.
+      systemPrompt = `Du är en expert på Pokemon-kort. Analysera bilden av Pokemon-kortet mycket noggrant.
+
+KRITISKT VIKTIGT - FOKUSERA PÅ SET-IDENTIFIERING:
+1. Titta noga i NEDRE HÖGRA HÖRNET av kortet - där finns set-symbolen och kortnumret
+2. Set-symbolen är en liten ikon som identifierar vilket set kortet kommer från
+3. Bredvid symbolen står det ofta ett nummer i formatet "X/Y" (t.ex. "4/102")
+4. Använd set-symbolen och numret för att identifiera exakt vilket set detta är
+
+Vanliga Pokemon-kort sets och deras symboler:
+- Base Set (1999): Cirkel med 1 edition text eller ingen symbol
+- Jungle: Dschungel-löv symbol
+- Fossil: Fossil-symbol
+- Team Rocket: R-symbol
+- Gym Heroes/Challenge: Gym badge-symboler
+- Neo sets: Neo-text symboler
+
 Svara ENDAST med giltig JSON i detta exakta format (utan extra text):
 {
   "name": "kortets namn",
   "type": "typ (Fire, Water, Lightning, Grass, Psychic, Fighting, Darkness, Metal, Dragon, Fairy, Colorless)",
   "rarity": "sällsynthet (Common, Uncommon, Rare, Rare Holo, Ultra Rare, Secret Rare)",
-  "set": "set-namn",
-  "number": "kortnummer/totalt",
+  "set": "exakt set-namn baserat på symbol i nedre högra hörnet",
+  "setCode": "set-kod om synlig",
+  "number": "kortnummer/totalt (från nedre högra hörnet)",
   "hp": "HP-värde",
   "attacks": [{"name": "attacknamn", "damage": "skada", "cost": ["energityp"]}],
   "weaknesses": [{"type": "typ", "value": "värde"}],
@@ -43,7 +59,7 @@ Svara ENDAST med giltig JSON i detta exakta format (utan extra text):
   "description": "kortbeskrivning"
 }`;
 
-      userPrompt = `Analysera detta Pokemon-kort från bilden och ge detaljerad information.`;
+      userPrompt = `Analysera detta Pokemon-kort från bilden. Fokusera EXTRA NOGA på set-symbolen i NEDRE HÖGRA HÖRNET för att identifiera vilket set kortet kommer från. Titta på både symbolen och kortnumret för exakt set-identifiering.`;
 
       const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
