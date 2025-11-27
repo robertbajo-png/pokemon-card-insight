@@ -19,8 +19,9 @@ const Navigation = () => {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-      <div className="container mx-auto px-4 py-4">
+    <>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <div className="w-10 h-10 bg-gradient-hero rounded-lg flex items-center justify-center shadow-glow">
@@ -32,12 +33,13 @@ const Navigation = () => {
           </Link>
 
           <div className="flex items-center gap-2">
+            {/* Desktop install button */}
             {!isInstalled && (
               <Button
                 onClick={handleInstall}
                 variant="default"
                 size="sm"
-                className="gap-1.5 bg-gradient-hero text-white shadow-glow"
+                className="hidden sm:flex gap-1.5 bg-gradient-hero text-white shadow-glow"
               >
                 <Download className="w-4 h-4" />
                 <span className="text-sm">
@@ -136,7 +138,19 @@ const Navigation = () => {
           </div>
         </div>
       </div>
-    </nav>
+      </nav>
+
+      {/* Floating install button for mobile */}
+      {!isInstalled && (
+        <Button
+          onClick={handleInstall}
+          size="lg"
+          className="sm:hidden fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-2xl bg-gradient-hero text-white p-0 flex items-center justify-center"
+        >
+          <Download className="w-6 h-6" />
+        </Button>
+      )}
+    </>
   );
 };
 
