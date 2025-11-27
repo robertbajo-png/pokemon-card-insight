@@ -146,3 +146,34 @@ export const getAllSets = async (): Promise<PokemonSet[]> => {
     return [];
   }
 };
+
+export const getCardsBySet = async (setId: string): Promise<{ data: PokemonCard[]; totalCount: number }> => {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const proxyUrl = `${supabaseUrl}/functions/v1/pokemon-proxy?path=/cards&query=q=set.id:${setId}&pageSize=250`;
+    
+    const response = await fetch(proxyUrl);
+    const data = await response.json();
+    return {
+      data: data.data || [],
+      totalCount: data.totalCount || 0,
+    };
+  } catch (error) {
+    console.error("Error fetching cards by set:", error);
+    return { data: [], totalCount: 0 };
+  }
+};
+
+export const getSetById = async (setId: string): Promise<PokemonSet | null> => {
+  try {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const proxyUrl = `${supabaseUrl}/functions/v1/pokemon-proxy?path=/sets/${setId}`;
+    
+    const response = await fetch(proxyUrl);
+    const data = await response.json();
+    return data.data || null;
+  } catch (error) {
+    console.error("Error fetching set:", error);
+    return null;
+  }
+};
