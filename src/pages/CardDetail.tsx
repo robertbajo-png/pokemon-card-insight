@@ -8,21 +8,8 @@ import Navigation from "@/components/Navigation";
 import { getCardById, type PokemonCard as PokemonCardType } from "@/services/pokemonTcgApi";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useLanguage, type Currency } from "@/contexts/LanguageContext";
-
-const CURRENCY_RATES: Record<Currency, number> = {
-  SEK: 1,
-  USD: 0.091, // 1 SEK ≈ 0.091 USD
-  EUR: 0.084, // 1 SEK ≈ 0.084 EUR
-  JPY: 14.5, // 1 SEK ≈ 14.5 JPY
-};
-
-const CURRENCY_SYMBOLS: Record<Currency, string> = {
-  SEK: "kr",
-  USD: "$",
-  EUR: "€",
-  JPY: "¥",
-};
+import { useLanguage } from "@/contexts/LanguageContext";
+import { convertPriceValue } from "@/utils/currency";
 
 const CardDetail = () => {
   const { id } = useParams();
@@ -55,20 +42,8 @@ const CardDetail = () => {
     }
   };
 
-  const convertPrice = (priceInSEK: number): string => {
-    const converted = priceInSEK * CURRENCY_RATES[currency];
-    const symbol = CURRENCY_SYMBOLS[currency];
-    const formatted = Math.round(converted);
-    
-    // Symbol after number for SEK, EUR
-    const symbolAfter = currency === "SEK" || currency === "EUR";
-    
-    if (symbolAfter) {
-      return `${formatted} ${symbol}`;
-    } else {
-      return `${symbol}${formatted}`;
-    }
-  };
+  const convertPrice = (priceInSEK: number): string =>
+    convertPriceValue(priceInSEK, currency);
 
   if (isLoading) {
     return (
@@ -85,8 +60,8 @@ const CardDetail = () => {
     return null;
   }
 
-  const marketValue = card.cardmarket?.prices?.trendPrice 
-    ? convertPrice(card.cardmarket.prices.trendPrice * 11)
+  const marketValue = card.cardmarket?.prices?.trendPrice
+    ? convertPriceValue(card.cardmarket.prices.trendPrice * 11, currency)
     : "Pris ej tillgängligt";
 
   return (
@@ -275,7 +250,10 @@ const CardDetail = () => {
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Genomsnittspris:</span>
                             <span className="font-medium">
-                              {convertPrice(card.cardmarket.prices.averageSellPrice * 11)}
+                              {convertPriceValue(
+                                card.cardmarket.prices.averageSellPrice * 11,
+                                currency,
+                              )}
                             </span>
                           </div>
                         )}
@@ -283,7 +261,10 @@ const CardDetail = () => {
                           <div className="flex justify-between text-sm">
                             <span className="text-muted-foreground">Trendpris:</span>
                             <span className="font-medium">
-                              {convertPrice(card.cardmarket.prices.trendPrice * 11)}
+                              {convertPriceValue(
+                                card.cardmarket.prices.trendPrice * 11,
+                                currency,
+                              )}
                             </span>
                           </div>
                         )}

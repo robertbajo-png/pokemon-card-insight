@@ -8,21 +8,8 @@ import CameraCapture from "@/components/CameraCapture";
 import { TranslatedText } from "@/components/TranslatedText";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useLanguage, type Currency } from "@/contexts/LanguageContext";
-
-const CURRENCY_RATES: Record<Currency, number> = {
-  SEK: 1,
-  USD: 0.091,
-  EUR: 0.084,
-  JPY: 14.5,
-};
-
-const CURRENCY_SYMBOLS: Record<Currency, string> = {
-  SEK: "kr",
-  USD: "$",
-  EUR: "€",
-  JPY: "¥",
-};
+import { useLanguage } from "@/contexts/LanguageContext";
+import { convertPriceRange } from "@/utils/currency";
 
 const Scanner = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -31,40 +18,8 @@ const Scanner = () => {
   const [showCamera, setShowCamera] = useState(false);
   const { currency, setCurrency } = useLanguage();
 
-  console.log('Scanner - Current currency:', currency);
-
-  const convertPrice = (priceInSEK: string): string => {
-    console.log('Converting price:', priceInSEK, 'with currency:', currency);
-    // Extract number from string like "1200-1500 kr" or "1200 kr"
-    const match = priceInSEK.match(/(\d+)(?:-(\d+))?\s*kr/);
-    if (!match) return priceInSEK;
-    
-    const minPrice = parseInt(match[1]);
-    const maxPrice = match[2] ? parseInt(match[2]) : null;
-    
-    const convertedMin = Math.round(minPrice * CURRENCY_RATES[currency]);
-    const symbol = CURRENCY_SYMBOLS[currency];
-    
-    console.log('Converted:', convertedMin, 'Symbol:', symbol, 'Rate:', CURRENCY_RATES[currency]);
-    
-    // Symbol after number for SEK, EUR
-    const symbolAfter = currency === "SEK" || currency === "EUR";
-    
-    if (maxPrice) {
-      const convertedMax = Math.round(maxPrice * CURRENCY_RATES[currency]);
-      if (symbolAfter) {
-        return `${convertedMin}-${convertedMax} ${symbol}`;
-      } else {
-        return `${symbol}${convertedMin}-${convertedMax}`;
-      }
-    } else {
-      if (symbolAfter) {
-        return `${convertedMin} ${symbol}`;
-      } else {
-        return `${symbol}${convertedMin}`;
-      }
-    }
-  };
+  const convertPrice = (priceInSEK: string): string =>
+    convertPriceRange(priceInSEK, currency);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
