@@ -5,6 +5,7 @@ import PokemonCard from "@/components/PokemonCard";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { getCardsBySet, getSetById, type PokemonCard as PokemonCardType, type PokemonSet } from "@/services/pokemonTcgApi";
+import { pokemonSets } from "@/data/pokemonSets";
 import { toast } from "sonner";
 import { TranslatedText } from "@/components/TranslatedText";
 
@@ -14,6 +15,7 @@ const SetDetail = () => {
   const [set, setSet] = useState<PokemonSet | null>(null);
   const [cards, setCards] = useState<PokemonCardType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [useLocalData, setUseLocalData] = useState(false);
 
   useEffect(() => {
     if (setId) {
@@ -26,16 +28,57 @@ const SetDetail = () => {
     
     setIsLoading(true);
     try {
-      const [setData, cardsData] = await Promise.all([
-        getSetById(setId),
-        getCardsBySet(setId)
-      ]);
+      // Try to fetch from API first
+      const setData = await getSetById(setId);
       
-      setSet(setData);
-      setCards(cardsData.data);
+      if (setData) {
+        setSet(setData);
+        // Fetch cards for this set
+        const cardsData = await getCardsBySet(setId);
+        setCards(cardsData.data);
+      } else {
+        // Fallback to local data if API fails
+        const localSet = pokemonSets.find(s => s.id === setId);
+        if (localSet) {
+          setUseLocalData(true);
+          // Convert local data format to match PokemonSet interface
+          setSet({
+            id: localSet.id,
+            name: localSet.name,
+            series: localSet.series,
+            printedTotal: localSet.totalCards,
+            total: localSet.totalCards,
+            releaseDate: localSet.releaseDate,
+            images: {
+              symbol: "",
+              logo: ""
+            },
+            ptcgoCode: localSet.setCode
+          });
+        }
+      }
     } catch (error) {
       console.error("Error loading set data:", error);
-      toast.error("Kunde inte ladda set. Försök igen.");
+      toast.error("Kunde inte ladda set från API, försöker med lokal data...");
+      
+      // Fallback to local data
+      const localSet = pokemonSets.find(s => s.id === setId);
+      if (localSet) {
+        setUseLocalData(true);
+        setSet({
+          id: localSet.id,
+          name: localSet.name,
+          series: localSet.series,
+          printedTotal: localSet.totalCards,
+          total: localSet.totalCards,
+          releaseDate: localSet.releaseDate,
+          images: {
+            symbol: "",
+            logo: ""
+          },
+          ptcgoCode: localSet.setCode
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -91,18 +134,30 @@ const SetDetail = () => {
 
           {/* Set Header */}
           <div className="mb-8 text-center">
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <img 
-                src={set.images.symbol} 
-                alt={`${set.name} symbol`}
-                className="w-12 h-12 object-contain"
-              />
-              <img 
-                src={set.images.logo} 
-                alt={set.name}
-                className="max-h-20 object-contain"
-              />
-            </div>
+            {!useLocalData && set.images.logo && (
+              <div className="flex items-center justify-center gap-4 mb-4">
+                {set.images.symbol && (
+                  <img 
+                    src={set.images.symbol} 
+                    alt={`${set.name} symbol`}
+                    className="w-12 h-12 object-contain"
+                  />
+                )}
+                <img 
+                  src={set.images.logo} 
+                  alt={set.name}
+                  className="max-h-20 object-contain"
+                />
+              </div>
+            )}
+            
+            {useLocalData && (
+              <h1 className="text-3xl font-bold mb-4">
+                <span className="bg-gradient-hero bg-clip-text text-transparent">
+                  <TranslatedText text={set.name} />
+                </span>
+              </h1>
+            )}
             
             <p className="text-lg text-muted-foreground mb-2">
               <TranslatedText text={set.series} />
@@ -128,26 +183,26 @@ const SetDetail = () => {
           </div>
 
           {/* Cards Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {cards.map((card) => (
-              <PokemonCard
-                key={card.id}
-                id={card.id}
-                name={card.name}
-                image={card.images.small}
-                type={card.types?.[0]?.toLowerCase() || "normal"}
-                rarity={card.rarity?.toLowerCase() || "common"}
-                set={card.set.name}
-                number={card.number}
-                onClick={() => navigate(`/card/${card.id}`)}
-              />
-            ))}
-          </div>
-
-          {cards.length === 0 && (
+          {cards.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {cards.map((card) => (
+                <PokemonCard
+                  key={card.id}
+                  id={card.id}
+                  name={card.name}
+                  image={card.images.small}
+                  type={card.types?.[0]?.toLowerCase() || "normal"}
+                  rarity={card.rarity?.toLowerCase() || "common"}
+                  set={card.set.name}
+                  number={card.number}
+                  onClick={() => navigate(`/card/${card.id}`)}
+                />
+              ))}
+            </div>
+          ) : (
             <div className="text-center py-16 text-muted-foreground">
               <TranslatedText 
-                text="Inga kort hittades i detta set"
+                text="Kort för detta set är inte tillgängliga ännu. API:et kan vara överbelastat."
                 className="text-lg"
                 as="p"
               />
