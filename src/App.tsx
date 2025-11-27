@@ -16,6 +16,7 @@ import Collection from "./pages/Collection";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Market from "./pages/Market";
+import Friends from "./pages/Friends";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
                 <Route path="/scanner" element={<Scanner />} />
                 <Route path="/gallery" element={<Gallery />} />
                 <Route path="/market" element={<Market />} />
+                <Route path="/friends" element={<Friends />} />
                 <Route path="/collection" element={<Collection />} />
                 <Route path="/set/:setId" element={<SetDetail />} />
                 <Route path="/card/:id" element={<CardDetail />} />

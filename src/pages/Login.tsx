@@ -102,8 +102,10 @@ const Login = () => {
                   },
                   {
                     title: "Vänner",
-                    description: "Utforska och följ vänner (kommer snart)",
+                    description: "Dela länkar och lägg till andra samlare",
                     icon: Users,
+                    to: "/friends",
+                    cta: "Öppna vänner",
                   },
                 ].map((item) => {
                   const Icon = item.icon;
