@@ -16,7 +16,11 @@ export const useInstallPrompt = () => {
     setIsInPreview(inPreview);
 
     // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+      if (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        // iOS Safari
+        ('standalone' in window.navigator && (window.navigator as any).standalone)
+      ) {
       setIsInstalled(true);
       return;
     }
@@ -42,14 +46,21 @@ export const useInstallPrompt = () => {
 
   const handleInstall = async () => {
     if (!installPrompt) {
-      // In preview mode, show info message
-      alert('Installera-funktionen aktiveras när du publicerar appen. Klicka på Publish-knappen för att göra den tillgänglig!');
+      if (isInPreview) {
+        const installUrl = new URL(window.location.href);
+        installUrl.searchParams.set('forceHideBadge', 'true');
+
+        window.open(installUrl.toString(), '_blank', 'noopener');
+        alert(
+          'Öppnade appen i en ny flik. Använd webbläsarens "Installera app" eller "Lägg till på hemskärmen" i den fliken för att installera.',
+        );
+      }
       return;
     }
 
     installPrompt.prompt();
     const { outcome } = await installPrompt.userChoice;
-    
+
     if (outcome === 'accepted') {
       setInstallPrompt(null);
     }
@@ -59,6 +70,6 @@ export const useInstallPrompt = () => {
     installPrompt,
     isInstalled,
     handleInstall,
-    canInstall: isInPreview || (!!installPrompt && !isInstalled)
+    canInstall: !isInstalled && (isInPreview || !!installPrompt)
   };
 };
