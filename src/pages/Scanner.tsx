@@ -176,12 +176,23 @@ const Scanner = () => {
               </h2>
               
               {result ? (
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
                   <div>
                     <h3 className="text-2xl font-bold text-primary">{result.name}</h3>
+                    {result.description && (
+                      <p className="text-sm text-muted-foreground mt-2">{result.description}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
+                    {result.hp && (
+                      <div className="flex justify-between py-2 border-b border-border">
+                        <span className="text-muted-foreground">
+                          <TranslatedText text="HP:" />
+                        </span>
+                        <span className="font-medium">{result.hp}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between py-2 border-b border-border">
                       <span className="text-muted-foreground">
                         <TranslatedText text="Typ:" />
@@ -212,6 +223,59 @@ const Scanner = () => {
                       </span>
                       <span className="font-medium">{result.condition}</span>
                     </div>
+
+                    {result.attacks && result.attacks.length > 0 && (
+                      <div className="py-2 border-b border-border">
+                        <span className="text-muted-foreground block mb-2">
+                          <TranslatedText text="Attacker:" />
+                        </span>
+                        <div className="space-y-2 pl-2">
+                          {result.attacks.map((attack: any, idx: number) => (
+                            <div key={idx} className="space-y-1">
+                              <div className="font-medium">{attack.name}</div>
+                              {attack.damage && <div className="text-sm text-muted-foreground">Skada: {attack.damage}</div>}
+                              {attack.cost && attack.cost.length > 0 && (
+                                <div className="text-sm text-muted-foreground">
+                                  Kostnad: {attack.cost.join(", ")}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {result.weaknesses && result.weaknesses.length > 0 && (
+                      <div className="flex justify-between py-2 border-b border-border">
+                        <span className="text-muted-foreground">
+                          <TranslatedText text="Svagheter:" />
+                        </span>
+                        <span className="font-medium">
+                          {result.weaknesses.map((w: any) => `${w.type} ${w.value}`).join(", ")}
+                        </span>
+                      </div>
+                    )}
+
+                    {result.resistances && result.resistances.length > 0 && (
+                      <div className="flex justify-between py-2 border-b border-border">
+                        <span className="text-muted-foreground">
+                          <TranslatedText text="Resistanser:" />
+                        </span>
+                        <span className="font-medium">
+                          {result.resistances.map((r: any) => `${r.type} ${r.value}`).join(", ")}
+                        </span>
+                      </div>
+                    )}
+
+                    {result.retreatCost !== undefined && (
+                      <div className="flex justify-between py-2 border-b border-border">
+                        <span className="text-muted-foreground">
+                          <TranslatedText text="Reträttkostnad:" />
+                        </span>
+                        <span className="font-medium">{result.retreatCost}</span>
+                      </div>
+                    )}
+
                     <div className="flex justify-between py-2">
                       <span className="text-muted-foreground">
                         <TranslatedText text="Uppskattat värde:" />
