@@ -1,15 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Upload, Camera, Sparkles, ChevronDown } from "lucide-react";
+import { Upload, Camera, Sparkles } from "lucide-react";
 import Navigation from "@/components/Navigation";
 import CameraCapture from "@/components/CameraCapture";
 import { TranslatedText } from "@/components/TranslatedText";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { convertPriceRange } from "@/utils/currency";
 import { useScannedCards } from "@/hooks/useScannedCards";
 
 const Scanner = () => {
@@ -17,11 +13,8 @@ const Scanner = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [showCamera, setShowCamera] = useState(false);
-  const { currency, setCurrency } = useLanguage();
+  const [selectedGrade, setSelectedGrade] = useState<string>('ungraded');
   const { addCard } = useScannedCards();
-
-  const convertPrice = (priceInSEK: string): string =>
-    convertPriceRange(priceInSEK, currency);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -276,80 +269,36 @@ const Scanner = () => {
                       </div>
                     )}
 
+                    <div className="py-2 border-b border-border">
+                      <span className="text-muted-foreground block mb-2">
+                        <TranslatedText text="Gradering:" />
+                      </span>
+                      <select 
+                        value={selectedGrade}
+                        onChange={(e) => setSelectedGrade(e.target.value)}
+                        className="w-full p-2 rounded-md bg-background border border-border text-foreground"
+                      >
+                        <option value="ungraded">Ograderat</option>
+                        <option value="psa1">PSA 1</option>
+                        <option value="psa2">PSA 2</option>
+                        <option value="psa3">PSA 3</option>
+                        <option value="psa4">PSA 4</option>
+                        <option value="psa5">PSA 5</option>
+                        <option value="psa6">PSA 6</option>
+                        <option value="psa7">PSA 7</option>
+                        <option value="psa8">PSA 8</option>
+                        <option value="psa9">PSA 9</option>
+                        <option value="psa10">PSA 10</option>
+                      </select>
+                    </div>
+
                     <div className="flex justify-between py-2">
                       <span className="text-muted-foreground">
                         <TranslatedText text="Uppskattat värde:" />
                       </span>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors cursor-pointer">
-                            <span className="font-bold text-primary">
-                              {result.estimatedValue ? convertPrice(result.estimatedValue) : result.estimatedValue}
-                            </span>
-                            <ChevronDown className="w-4 h-4 text-primary" />
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-48 p-3 bg-card border border-border shadow-lg z-[100]" align="end" sideOffset={8}>
-                          <div className="space-y-1">
-                            <button
-                              onClick={() => {
-                                console.log('Changing currency to SEK');
-                                setCurrency("SEK");
-                              }}
-                              className={cn(
-                                "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
-                                currency === "SEK" 
-                                  ? "bg-primary text-primary-foreground" 
-                                  : "hover:bg-accent text-foreground"
-                              )}
-                            >
-                              SEK (kr)
-                            </button>
-                            <button
-                              onClick={() => {
-                                console.log('Changing currency to USD');
-                                setCurrency("USD");
-                              }}
-                              className={cn(
-                                "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
-                                currency === "USD" 
-                                  ? "bg-primary text-primary-foreground" 
-                                  : "hover:bg-accent text-foreground"
-                              )}
-                            >
-                              USD ($)
-                            </button>
-                            <button
-                              onClick={() => {
-                                console.log('Changing currency to EUR');
-                                setCurrency("EUR");
-                              }}
-                              className={cn(
-                                "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
-                                currency === "EUR" 
-                                  ? "bg-primary text-primary-foreground" 
-                                  : "hover:bg-accent text-foreground"
-                              )}
-                            >
-                              EUR (€)
-                            </button>
-                            <button
-                              onClick={() => {
-                                console.log('Changing currency to JPY');
-                                setCurrency("JPY");
-                              }}
-                              className={cn(
-                                "w-full text-left px-3 py-2 rounded-md transition-colors text-sm font-medium",
-                                currency === "JPY" 
-                                  ? "bg-primary text-primary-foreground" 
-                                  : "hover:bg-accent text-foreground"
-                              )}
-                            >
-                              JPY (¥)
-                            </button>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                      <span className="font-bold text-primary text-lg">
+                        {result.priceByGrade?.[selectedGrade] || result.estimatedValue || '-'}
+                      </span>
                     </div>
                   </div>
                 </div>
