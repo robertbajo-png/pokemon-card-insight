@@ -61,12 +61,24 @@ Svara ENDAST med giltig JSON i detta exakta format (utan extra text):
   "weaknesses": [{"type": "typ", "value": "värde"}],
   "resistances": [{"type": "typ", "value": "värde"}],
   "retreatCost": antal,
-  "estimatedValue": "prisintervall i SEK",
   "condition": "Near Mint/Lightly Played/Moderately Played/Heavily Played/Damaged",
-  "description": "kortbeskrivning"
+  "description": "kortbeskrivning",
+  "priceByGrade": {
+    "ungraded": "pris i SEK (t.ex. '50-100 SEK')",
+    "psa1": "pris i SEK",
+    "psa2": "pris i SEK",
+    "psa3": "pris i SEK",
+    "psa4": "pris i SEK",
+    "psa5": "pris i SEK",
+    "psa6": "pris i SEK",
+    "psa7": "pris i SEK",
+    "psa8": "pris i SEK",
+    "psa9": "pris i SEK",
+    "psa10": "pris i SEK"
+  }
 }`;
 
-      userPrompt = `Analysera detta Pokemon-kort från bilden. Identifiera setet genom att först läsa av symbolen och sedan dubbelkolla att kortnumret passar inom setets storlek. Om symbol och nummer inte stämmer, rapportera setet som "Unknown" istället för att gissa.`;
+      userPrompt = `Analysera detta Pokemon-kort från bilden. Identifiera setet genom att först läsa av symbolen och sedan dubbelkolla att kortnumret passar inom setets storlek. Om symbol och nummer inte stämmer, rapportera setet som "Unknown" istället för att gissa. Ge realistiska prisuppskattningar i SEK för varje graderingsnivå baserat på kortets sällsynthet, popularitet och nuvarande marknadsläge.`;
 
       const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
