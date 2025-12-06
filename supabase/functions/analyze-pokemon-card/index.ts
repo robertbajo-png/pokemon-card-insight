@@ -87,7 +87,7 @@ Svara ENDAST med giltig JSON i detta exakta format (utan extra text):
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
+          model: 'google/gemini-3-pro-preview',
           messages: [
             { role: 'system', content: systemPrompt },
             { 
@@ -162,7 +162,7 @@ Generera ${pageSize} olika kort. Anv√§nd riktiga Pokemon-namn och realistiska v√
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
+          model: 'google/gemini-3-pro-preview',
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
