@@ -150,7 +150,11 @@ export const getAllSets = async (): Promise<PokemonSet[]> => {
 export const getCardsBySet = async (setId: string): Promise<{ data: PokemonCard[]; totalCount: number }> => {
   try {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const proxyUrl = `${supabaseUrl}/functions/v1/pokemon-proxy?path=/cards&query=q=set.id:${setId}&pageSize=250`;
+    const queryParams = new URLSearchParams({
+      q: `set.id:${setId}`,
+      pageSize: '250'
+    });
+    const proxyUrl = `${supabaseUrl}/functions/v1/pokemon-proxy?path=/cards&query=${encodeURIComponent(queryParams.toString())}`;
     
     const response = await fetch(proxyUrl);
     const data = await response.json();

@@ -153,7 +153,7 @@ export const pokemonSets: PokemonSet[] = [
   { id: "me1", name: "Mega Evolution", series: "Mega Evolution Series", totalCards: 188, releaseDate: "2025-09-26", setCode: "MEG" },
   { id: "me2", name: "Phantasmal Flames", series: "Mega Evolution Series", totalCards: 130, releaseDate: "2025-11-14", setCode: "PFL" },
 
-  // Special Sets
+  // Special Sets & Promos (using correct Pokemon TCG API IDs)
   { id: "swshp", name: "Sword & Shield Promos", series: "Promo Sets", totalCards: 300, releaseDate: "2020-02-07", setCode: "SWSHP" },
   { id: "svp", name: "Scarlet & Violet Promos", series: "Promo Sets", totalCards: 200, releaseDate: "2023-03-31", setCode: "SVP" },
   { id: "smp", name: "Sun & Moon Promos", series: "Promo Sets", totalCards: 250, releaseDate: "2017-02-03", setCode: "SMP" },
@@ -164,9 +164,4 @@ export const pokemonSets: PokemonSet[] = [
   { id: "pop1", name: "POP Series 1", series: "Promo Sets", totalCards: 17, releaseDate: "2004-09-01", setCode: "POP1" },
   { id: "np", name: "Nintendo Promos", series: "Promo Sets", totalCards: 41, releaseDate: "2003-10-01", setCode: "NP" },
   { id: "basep", name: "Wizards Promos", series: "Promo Sets", totalCards: 53, releaseDate: "1999-07-01", setCode: "WP" },
-  
-  // Holiday/Special Mini Sets
-  { id: "trickortrade2022", name: "Trick or Trade 2022", series: "Holiday Sets", totalCards: 30, releaseDate: "2022-09-01", setCode: "TOT22" },
-  { id: "trickortrade2023", name: "Trick or Trade 2023", series: "Holiday Sets", totalCards: 30, releaseDate: "2023-09-01", setCode: "TOT23" },
-  { id: "trickortrade2024", name: "Trick or Trade 2024", series: "Holiday Sets", totalCards: 30, releaseDate: "2024-09-01", setCode: "TOT24" },
 ];
