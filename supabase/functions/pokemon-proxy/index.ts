@@ -15,7 +15,9 @@ serve(async (req) => {
     const path = url.searchParams.get('path') || '/cards';
     const queryParams = url.searchParams.get('query') || '';
     
-    const apiUrl = `https://api.pokemontcg.io/v2${path}?${queryParams}`;
+    // Decode the query params if they're URL encoded
+    const decodedQuery = decodeURIComponent(queryParams);
+    const apiUrl = `https://api.pokemontcg.io/v2${path}${decodedQuery ? '?' + decodedQuery : ''}`;
     console.log('Proxying request to:', apiUrl);
     
     const response = await fetch(apiUrl);
