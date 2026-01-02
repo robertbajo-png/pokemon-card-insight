@@ -129,6 +129,7 @@ export const pokemonSets: PokemonSet[] = [
   { id: "swsh8", name: "Fusion Strike", series: "Sword & Shield Series", totalCards: 284, releaseDate: "2021-11-12", setCode: "FST" },
   { id: "swsh9", name: "Brilliant Stars", series: "Sword & Shield Series", totalCards: 216, releaseDate: "2022-02-25", setCode: "BRS" },
   { id: "swsh10", name: "Astral Radiance", series: "Sword & Shield Series", totalCards: 216, releaseDate: "2022-05-27", setCode: "ASR" },
+  { id: "pgo", name: "Pokémon GO", series: "Sword & Shield Series", totalCards: 88, releaseDate: "2022-07-01", setCode: "PGO" },
   { id: "swsh11", name: "Lost Origin", series: "Sword & Shield Series", totalCards: 247, releaseDate: "2022-09-09", setCode: "LOR" },
   { id: "swsh12", name: "Silver Tempest", series: "Sword & Shield Series", totalCards: 245, releaseDate: "2022-11-11", setCode: "SIT" },
   { id: "swsh13", name: "Crown Zenith", series: "Sword & Shield Series", totalCards: 230, releaseDate: "2023-01-20", setCode: "CRZ" },
@@ -137,6 +138,7 @@ export const pokemonSets: PokemonSet[] = [
   { id: "sv1", name: "Scarlet & Violet Base Set", series: "Scarlet & Violet Series", totalCards: 258, releaseDate: "2023-03-31", setCode: "SVI" },
   { id: "sv2", name: "Paldea Evolved", series: "Scarlet & Violet Series", totalCards: 279, releaseDate: "2023-06-09", setCode: "PAL" },
   { id: "sv3", name: "Obsidian Flames", series: "Scarlet & Violet Series", totalCards: 230, releaseDate: "2023-08-11", setCode: "OBF" },
+  { id: "sv3pt5", name: "151", series: "Scarlet & Violet Series", totalCards: 207, releaseDate: "2023-09-22", setCode: "MEW" },
   { id: "sv4", name: "Paradox Rift", series: "Scarlet & Violet Series", totalCards: 266, releaseDate: "2023-11-03", setCode: "PAR" },
   { id: "sv5", name: "Paldean Fates", series: "Scarlet & Violet Series", totalCards: 245, releaseDate: "2024-01-26", setCode: "PAF" },
   { id: "sv6", name: "Temporal Forces", series: "Scarlet & Violet Series", totalCards: 218, releaseDate: "2024-03-22", setCode: "TEF" },
@@ -150,4 +152,21 @@ export const pokemonSets: PokemonSet[] = [
   // Mega Evolution Series
   { id: "me1", name: "Mega Evolution", series: "Mega Evolution Series", totalCards: 188, releaseDate: "2025-09-26", setCode: "MEG" },
   { id: "me2", name: "Phantasmal Flames", series: "Mega Evolution Series", totalCards: 130, releaseDate: "2025-11-14", setCode: "PFL" },
+
+  // Special Sets
+  { id: "swshp", name: "Sword & Shield Promos", series: "Promo Sets", totalCards: 300, releaseDate: "2020-02-07", setCode: "SWSHP" },
+  { id: "svp", name: "Scarlet & Violet Promos", series: "Promo Sets", totalCards: 200, releaseDate: "2023-03-31", setCode: "SVP" },
+  { id: "smp", name: "Sun & Moon Promos", series: "Promo Sets", totalCards: 250, releaseDate: "2017-02-03", setCode: "SMP" },
+  { id: "xyp", name: "XY Promos", series: "Promo Sets", totalCards: 211, releaseDate: "2014-02-05", setCode: "XYP" },
+  { id: "bwp", name: "Black & White Promos", series: "Promo Sets", totalCards: 101, releaseDate: "2011-04-25", setCode: "BWP" },
+  { id: "hsp", name: "HGSS Promos", series: "Promo Sets", totalCards: 25, releaseDate: "2010-02-10", setCode: "HSP" },
+  { id: "dpp", name: "Diamond & Pearl Promos", series: "Promo Sets", totalCards: 56, releaseDate: "2007-05-23", setCode: "DPP" },
+  { id: "pop1", name: "POP Series 1", series: "Promo Sets", totalCards: 17, releaseDate: "2004-09-01", setCode: "POP1" },
+  { id: "np", name: "Nintendo Promos", series: "Promo Sets", totalCards: 41, releaseDate: "2003-10-01", setCode: "NP" },
+  { id: "basep", name: "Wizards Promos", series: "Promo Sets", totalCards: 53, releaseDate: "1999-07-01", setCode: "WP" },
+  
+  // Holiday/Special Mini Sets
+  { id: "trickortrade2022", name: "Trick or Trade 2022", series: "Holiday Sets", totalCards: 30, releaseDate: "2022-09-01", setCode: "TOT22" },
+  { id: "trickortrade2023", name: "Trick or Trade 2023", series: "Holiday Sets", totalCards: 30, releaseDate: "2023-09-01", setCode: "TOT23" },
+  { id: "trickortrade2024", name: "Trick or Trade 2024", series: "Holiday Sets", totalCards: 30, releaseDate: "2024-09-01", setCode: "TOT24" },
 ];
