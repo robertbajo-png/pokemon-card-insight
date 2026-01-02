@@ -49,13 +49,15 @@ const Gallery = () => {
   // Get unique series for filtering
   const uniqueSeries = ["all", ...Array.from(new Set(pokemonSets.map(set => set.series)))];
 
-  // Filter sets based on search and series
-  const filteredSets = setsWithLogos.filter(set => {
-    const matchesSearch = set.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         set.setCode.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesSeries = filterSeries === "all" || set.series === filterSeries;
-    return matchesSearch && matchesSeries;
-  });
+  // Filter sets based on search and series, sorted from newest to oldest
+  const filteredSets = setsWithLogos
+    .filter(set => {
+      const matchesSearch = set.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           set.setCode.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSeries = filterSeries === "all" || set.series === filterSeries;
+      return matchesSearch && matchesSeries;
+    })
+    .sort((a, b) => new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime());
 
   const ownedCardsForSelectedSet = useMemo(() => {
     if (!selectedSet) return [];
