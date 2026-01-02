@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import PokemonCard from "@/components/PokemonCard";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { getCardsBySet, getSetById, type PokemonCard as PokemonCardType, type PokemonSet } from "@/services/pokemonTcgApi";
 import { pokemonSets } from "@/data/pokemonSets";
 import { toast } from "sonner";
@@ -15,7 +15,9 @@ const SetDetail = () => {
   const [set, setSet] = useState<PokemonSet | null>(null);
   const [cards, setCards] = useState<PokemonCardType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [useLocalData, setUseLocalData] = useState(false);
+  const [useAiCards, setUseAiCards] = useState(false);
 
   useEffect(() => {
     if (setId) {
@@ -23,74 +25,129 @@ const SetDetail = () => {
     }
   }, [setId]);
 
+  const generateCardsWithAI = async (setData: PokemonSet) => {
+    setIsGenerating(true);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const response = await fetch(`${supabaseUrl}/functions/v1/generate-set-cards`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          setId: setData.id,
+          setName: setData.name,
+          totalCards: setData.total
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate cards');
+      }
+
+      const data = await response.json();
+      if (data.data && data.data.length > 0) {
+        setCards(data.data);
+        setUseAiCards(true);
+        toast.success(`${data.data.length} kort genererade med AI!`);
+      } else {
+        throw new Error('No cards generated');
+      }
+    } catch (error) {
+      console.error('Error generating cards with AI:', error);
+      toast.error('Kunde inte generera kort med AI');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const loadSetData = async () => {
     if (!setId) return;
     
     setIsLoading(true);
     try {
-      // Try to fetch from API first
+      // Try to fetch set info from API first
       const setData = await getSetById(setId);
       
       if (setData) {
         setSet(setData);
-        // Fetch cards for this set
-        const cardsData = await getCardsBySet(setId);
-        setCards(cardsData.data);
+        // Try to fetch cards, but with a short timeout
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          const cardsData = await getCardsBySet(setId);
+          clearTimeout(timeoutId);
+          
+          if (cardsData.data.length > 0) {
+            setCards(cardsData.data);
+          } else {
+            // No cards from API, generate with AI
+            await generateCardsWithAI(setData);
+          }
+        } catch {
+          // Cards fetch failed, generate with AI
+          await generateCardsWithAI(setData);
+        }
       } else {
         // Fallback to local data if API fails
         const localSet = pokemonSets.find(s => s.id === setId);
         if (localSet) {
           setUseLocalData(true);
-          // Convert local data format to match PokemonSet interface
-          setSet({
+          const localSetData: PokemonSet = {
             id: localSet.id,
             name: localSet.name,
             series: localSet.series,
             printedTotal: localSet.totalCards,
             total: localSet.totalCards,
             releaseDate: localSet.releaseDate,
-            images: {
-              symbol: "",
-              logo: ""
-            },
+            images: { symbol: "", logo: "" },
             ptcgoCode: localSet.setCode
-          });
+          };
+          setSet(localSetData);
+          // Generate cards with AI for local set
+          await generateCardsWithAI(localSetData);
         }
       }
     } catch (error) {
       console.error("Error loading set data:", error);
-      toast.error("Kunde inte ladda set från API, försöker med lokal data...");
       
       // Fallback to local data
       const localSet = pokemonSets.find(s => s.id === setId);
       if (localSet) {
         setUseLocalData(true);
-        setSet({
+        const localSetData: PokemonSet = {
           id: localSet.id,
           name: localSet.name,
           series: localSet.series,
           printedTotal: localSet.totalCards,
           total: localSet.totalCards,
           releaseDate: localSet.releaseDate,
-          images: {
-            symbol: "",
-            logo: ""
-          },
+          images: { symbol: "", logo: "" },
           ptcgoCode: localSet.setCode
-        });
+        };
+        setSet(localSetData);
+        await generateCardsWithAI(localSetData);
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isGenerating) {
     return (
       <div className="min-h-screen bg-background">
         <Navigation />
         <div className="container mx-auto px-4 pt-24 pb-16">
-          <div className="flex items-center justify-center py-32">
-            <Loader2 className="w-12 h-12 animate-spin text-primary" />
+          <div className="flex flex-col items-center justify-center py-32 gap-4">
+            {isGenerating ? (
+              <>
+                <Sparkles className="w-12 h-12 animate-pulse text-primary" />
+                <p className="text-muted-foreground">
+                  <TranslatedText text="Genererar kort med AI..." />
+                </p>
+              </>
+            ) : (
+              <Loader2 className="w-12 h-12 animate-spin text-primary" />
+            )}
           </div>
         </div>
       </div>
@@ -163,7 +220,7 @@ const SetDetail = () => {
               <TranslatedText text={set.series} />
             </p>
             
-            <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
+            <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground flex-wrap">
               <span>
                 <TranslatedText text="Utgivning" />: {new Date(set.releaseDate).toLocaleDateString('sv-SE')}
               </span>
@@ -176,6 +233,15 @@ const SetDetail = () => {
                   <span>•</span>
                   <span>
                     <TranslatedText text="Kod" />: {set.ptcgoCode}
+                  </span>
+                </>
+              )}
+              {useAiCards && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1 text-primary">
+                    <Sparkles className="w-3 h-3" />
+                    <TranslatedText text="AI-genererade kort" />
                   </span>
                 </>
               )}
