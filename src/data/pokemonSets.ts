@@ -153,6 +153,9 @@ export const pokemonSets: PokemonSet[] = [
   { id: "me1", name: "Mega Evolution", series: "Mega Evolution Series", totalCards: 188, releaseDate: "2025-09-26", setCode: "MEG" },
   { id: "me2", name: "Phantasmal Flames", series: "Mega Evolution Series", totalCards: 130, releaseDate: "2025-11-14", setCode: "PFL" },
   { id: "me3", name: "Ascended Heroes", series: "Mega Evolution Series", totalCards: 165, releaseDate: "2026-01-30", setCode: "ASH" },
+  { id: "me4", name: "Perfect Order", series: "Mega Evolution Series", totalCards: 172, releaseDate: "2026-04-24", setCode: "POR" },
+  { id: "me5", name: "Chaos Rising", series: "Mega Evolution Series", totalCards: 158, releaseDate: "2026-07-17", setCode: "CRI" },
+  { id: "me6", name: "Pitch Black", series: "Mega Evolution Series", totalCards: 145, releaseDate: "2026-10-09", setCode: "PBL" },
 
   // Special Sets & Promos (using correct Pokemon TCG API IDs)
   { id: "swshp", name: "Sword & Shield Promos", series: "Promo Sets", totalCards: 300, releaseDate: "2020-02-07", setCode: "SWSHP" },
