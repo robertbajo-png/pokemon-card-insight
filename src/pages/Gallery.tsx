@@ -92,17 +92,13 @@ const Gallery = () => {
       
       <div className="container mx-auto px-4 pt-24 pb-16">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-4">
-              <span className="bg-gradient-hero bg-clip-text text-transparent">
-                <TranslatedText text="Pokemon TCG Set Galleri" />
-              </span>
+          <div className="mb-6">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
+              <TranslatedText text="Bibliotek" />
+            </p>
+            <h1 className="text-3xl font-bold tracking-tight">
+              <TranslatedText text="Alla set" />
             </h1>
-            <TranslatedText 
-              text="Utforska alla Pokemon kort-set från Base Set till Phantasmal Flames"
-              className="text-lg text-muted-foreground"
-              as="p"
-            />
           </div>
 
           {/* Filters */}
@@ -133,52 +129,36 @@ const Gallery = () => {
             </div>
           </div>
 
-          {/* Sets Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {/* Sets Grid — Collectr style */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {filteredSets.map((set) => (
-              <Card
+              <button
                 key={set.id}
-                className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-105"
                 onClick={() => handleSelectSet(set)}
+                className="group bg-card/60 border border-border/60 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-card hover:border-border transition"
               >
-                <CardHeader>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-mono text-muted-foreground">{set.setCode}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(set.releaseDate).getFullYear()}
-                    </span>
-                  </div>
-                  {/* Set Logo */}
+                <div className="w-full aspect-square flex items-center justify-center mb-3 rounded-xl bg-muted/30 p-3">
                   {set.logo ? (
-                    <div className="w-full h-24 flex items-center justify-center mb-4">
-                      <img 
-                        src={set.logo} 
-                        alt={set.name}
-                        className="max-h-20 w-auto object-contain"
-                        loading="lazy"
-                      />
-                    </div>
+                    <img
+                      src={set.logo}
+                      alt={set.name}
+                      className="max-h-full max-w-full object-contain group-hover:scale-105 transition"
+                      loading="lazy"
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                    />
                   ) : (
-                    <div className="text-lg font-semibold mb-2">
-                      <TranslatedText text={set.name} />
-                    </div>
+                    <span className="text-xs font-mono text-muted-foreground">{set.setCode}</span>
                   )}
-                  <CardDescription>
-                    <TranslatedText text={set.series} />
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      <TranslatedText text="Antal kort" />:
-                    </span>
-                    <span className="font-semibold">{set.totalCards}</span>
-                  </div>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    <TranslatedText text="Utgivning" />: {new Date(set.releaseDate).toLocaleDateString('sv-SE')}
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+                <h4 className="text-xs font-bold leading-tight line-clamp-2">
+                  <TranslatedText text={set.name} />
+                </h4>
+                <div className="mt-2 flex items-center space-x-2">
+                  <span className="text-[10px] text-muted-foreground font-medium">{set.totalCards}</span>
+                  <span className="w-1 h-1 bg-border rounded-full" />
+                  <span className="text-[10px] text-muted-foreground font-medium">{new Date(set.releaseDate).getFullYear()}</span>
+                </div>
+              </button>
             ))}
           </div>
 
