@@ -137,8 +137,10 @@ const Gallery = () => {
                 onClick={() => handleSelectSet(set)}
                 className="group bg-card/60 border border-border/60 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-card hover:border-border transition"
               >
-                <div className="w-full aspect-square flex items-center justify-center mb-3 rounded-xl bg-muted/30 p-3">
-                  {set.logo ? (
+                <div className="w-full aspect-square flex items-center justify-center mb-3 rounded-xl bg-muted/30 p-3 overflow-hidden">
+                  {set.packArt ? (
+                    <img src={set.packArt} alt={set.name} className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition" loading="lazy" />
+                  ) : set.logo ? (
                     <img
                       src={set.logo}
                       alt={set.name}

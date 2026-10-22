@@ -1,3 +1,5 @@
+import packArt30th from "@/assets/pack-art-30th.jpg";
+
 export interface PokemonSet {
   id: string;
   name: string;
@@ -160,7 +162,7 @@ export const pokemonSets: PokemonSet[] = [
   { id: "me3", name: "Perfect Order", series: "Mega Evolution Series", totalCards: 124, releaseDate: "2026-03-27", setCode: "POR" },
   { id: "me4", name: "Chaos Rising", series: "Mega Evolution Series", totalCards: 122, releaseDate: "2026-05-22", setCode: "CRI" },
   { id: "me5", name: "Pitch Black", series: "Mega Evolution Series", totalCards: 120, releaseDate: "2026-07-17", setCode: "PBL" },
-  { id: "me5pt5", name: "30th Celebration", series: "Mega Evolution Series", totalCards: 158, releaseDate: "2026-09-16", setCode: "30C" },
+  { id: "me5pt5", name: "30th Celebration", series: "Mega Evolution Series", totalCards: 158, releaseDate: "2026-09-16", setCode: "30C", packArt: packArt30th },
 
   // Special Sets & Promos (using correct Pokemon TCG API IDs)
   { id: "swshp", name: "Sword & Shield Promos", series: "Promo Sets", totalCards: 300, releaseDate: "2020-02-07", setCode: "SWSHP" },
