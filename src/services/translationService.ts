@@ -1,51 +1,25 @@
-import { supabase } from "@/integrations/supabase/client";
-
+import { invokeAi } from "@/services/aiFunctions";
+import { z } from "zod";
 type Language = "sv" | "en" | "de" | "fr" | "ja";
-
-// Cache for translations to avoid repeated API calls
-const translationCache: Record<string, Record<Language, string>> = {};
-
-export const translateText = async (text: string, targetLanguage: Language): Promise<string> => {
-  // Check cache first
-  const cacheKey = text.toLowerCase().trim();
-  if (translationCache[cacheKey]?.[targetLanguage]) {
-    return translationCache[cacheKey][targetLanguage];
-  }
-
-  try {
-    const { data, error } = await supabase.functions.invoke('translate', {
-      body: { text, targetLanguage }
-    });
-
-    if (error) throw error;
-
-    const translation = data?.translation || text;
-
-    // Cache the result
-    if (!translationCache[cacheKey]) {
-      translationCache[cacheKey] = {} as Record<Language, string>;
-    }
-    translationCache[cacheKey][targetLanguage] = translation;
-
-    return translation;
-  } catch (error) {
-    console.error('Translation error:', error);
-    return text; // Fallback to original text
-  }
-};
-
-export const translateBatch = async (
-  texts: string[],
-  targetLanguage: Language
-): Promise<Record<string, string>> => {
-  const results: Record<string, string> = {};
-  
-  // Translate in parallel
-  await Promise.all(
-    texts.map(async (text) => {
-      results[text] = await translateText(text, targetLanguage);
-    })
-  );
-
-  return results;
-};
+const cache = new Map<string, string>();
+const pending = new Map<string, Promise<string>>();
+export async function translateText(text: string, language: Language): Promise<string> {
+  const key = `${language}\0${text}`;
+  const cached = cache.get(key);
+  if (cached !== undefined) return cached;
+  if (pending.has(key)) return pending.get(key)!;
+  const request = (async () => {
+    try {
+      const result = z.object({ translation: z.string() }).parse(await invokeAi("translate", { text, targetLanguage: language }));
+      cache.set(key, result.translation);
+      return result.translation;
+    } catch { return text; }
+    finally { pending.delete(key); }
+  })();
+  pending.set(key, request);
+  return request;
+}
+export async function translateBatch(texts: string[], language: Language): Promise<Record<string, string>> {
+  const entries = await Promise.all(texts.map(async text => [text, await translateText(text, language)]));
+  return Object.fromEntries(entries);
+}

@@ -39,10 +39,11 @@ export function convertPriceRange(
   range: string,
   currency: Currency,
 ): string {
-  const match = range.match(/(\d+)(?:-(\d+))?\s*kr/);
+  const match = range.trim().match(/^(\d+(?:[ \u00a0]\d{3})*(?:[.,]\d{1,2})?)(?:\s*[-–—]\s*(\d+(?:[ \u00a0]\d{3})*(?:[.,]\d{1,2})?))?\s*(?:kr|SEK)$/i);
   if (!match) return range;
-  const min = parseInt(match[1]);
-  const max = match[2] ? parseInt(match[2]) : null;
+  const parse = (value: string) => Number(value.replace(/[ \u00a0]/g, "").replace(",", "."));
+  const min = parse(match[1]);
+  const max = match[2] ? parse(match[2]) : null;
   const convertedMin = Math.round(min * CURRENCY_RATES[currency]);
   const symbol = CURRENCY_SYMBOLS[currency];
   const symbolAfter = currency === "SEK" || currency === "EUR";

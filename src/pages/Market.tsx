@@ -55,16 +55,7 @@ const Market = () => {
   const handleCapture = (imageDataUrl: string) => {
     setCapturedImage(imageDataUrl);
     setShowCamera(false);
-    toast.success("Foto av kortet sparat för auktionen");
-  };
-
-  const handlePublishAuction = () => {
-    if (!capturedImage) {
-      toast.error("Ta ett foto av kortet först");
-      return;
-    }
-
-    toast.success("Auktionen är publicerad! Din annons visas för samlarna.");
+    toast.success("Foto tillagt i förhandsvisningen");
   };
 
   return (
@@ -75,7 +66,7 @@ const Market = () => {
         <div className="max-w-4xl mx-auto text-center space-y-6 mb-12">
           <div className="inline-flex items-center gap-3 bg-primary/10 text-primary px-4 py-2 rounded-full">
             <Gavel className="w-4 h-4" />
-            <TranslatedText text="Ny marknadsplats" className="text-sm font-medium" />
+            <TranslatedText text="Marknadsplats – förhandsvisning" className="text-sm font-medium" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold">
             <span className="bg-gradient-hero bg-clip-text text-transparent">
@@ -91,7 +82,7 @@ const Market = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button variant="hero" size="lg" className="gap-2" onClick={() => setShowCamera(true)}>
               <Gavel className="w-5 h-5" />
-              <TranslatedText text="Skapa auktion" />
+              <TranslatedText text="Förhandsgranska auktion" />
             </Button>
             <Link to="/collection">
               <Button variant="outline" size="lg" className="gap-2">
@@ -135,7 +126,7 @@ const Market = () => {
           <Card className="p-6 h-fit border-border/80 shadow-card">
             <div className="flex items-center justify-between mb-4">
               <div className="space-y-1">
-                <p className="text-sm text-primary font-semibold tracking-wide">Live-auktionsflöde</p>
+                <p className="text-sm text-primary font-semibold tracking-wide">Förhandsvisning av auktion</p>
                 <h2 className="text-2xl font-bold">
                   <TranslatedText text="Ta kort på ditt kort" />
                 </h2>
@@ -161,7 +152,7 @@ const Market = () => {
                       <TranslatedText text="Ingen fil, bara kort" />
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      <TranslatedText text="Öppna kameran och ta ett tydligt foto av kortet för att starta auktionen." />
+                      <TranslatedText text="Ta ett foto för att förhandsgranska en annons." />
                     </p>
                   </div>
                   <Button variant="hero" className="gap-2" onClick={() => setShowCamera(true)}>
@@ -175,7 +166,7 @@ const Market = () => {
             {capturedImage && (
               <div className="mt-4 flex items-center justify-between gap-3">
                 <p className="text-sm text-muted-foreground">
-                  <TranslatedText text="Kortet är redo för auktion." />
+                  <TranslatedText text="Fotot används i din förhandsvisning." />
                 </p>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => setShowCamera(true)}>
@@ -204,6 +195,7 @@ const Market = () => {
             </div>
 
             <div className="space-y-4">
+              <p id="auction-preview-notice" className="text-sm text-muted-foreground">Detta är en förhandsvisning. Inga annonser publiceras eller sparas. Uppgifterna försvinner när du lämnar sidan.</p>
               <div className="space-y-2">
                 <Label htmlFor="cardName">
                   <TranslatedText text="Kortnamn" />
@@ -274,9 +266,9 @@ const Market = () => {
                 </div>
               </Card>
 
-              <Button variant="hero" size="lg" className="w-full gap-2" onClick={handlePublishAuction}>
+              <Button variant="hero" size="lg" className="w-full gap-2" disabled aria-describedby="auction-preview-notice">
                 <Gavel className="w-5 h-5" />
-                <TranslatedText text="Publicera auktion" />
+                <TranslatedText text="Publicering kommer snart" />
               </Button>
             </div>
           </Card>

@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
@@ -71,20 +72,19 @@ const Gallery = () => {
     });
   }, [scannedCards, selectedSet]);
 
-  const handleSelectSet = async (set: LocalPokemonSet) => {
-    setSelectedSet(set);
+  useEffect(() => {
+    if (!selectedSet) return;
+    const controller = new AbortController();
     setIsLoadingCards(true);
     setSetCards([]);
-
-    try {
-      const { data } = await getCardsBySet(set.id);
-      setSetCards(data);
-    } catch (error) {
-      console.error("Failed to load cards for set", error);
-    } finally {
-      setIsLoadingCards(false);
-    }
-  };
+    getCardsBySet(selectedSet.id, controller.signal).then(result => {
+      if (!controller.signal.aborted) setSetCards(result.data);
+    }).catch(error => {
+      if (!controller.signal.aborted) { console.error(error); toast.error("Kunde inte ladda korten. Försök igen."); }
+    }).finally(() => { if (!controller.signal.aborted) setIsLoadingCards(false); });
+    return () => controller.abort();
+  }, [selectedSet]);
+  const handleSelectSet = (set: LocalPokemonSet) => setSelectedSet(set);
 
   return (
     <div className="min-h-screen bg-background">

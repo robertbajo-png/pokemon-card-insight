@@ -1,24 +1,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders, HttpError, errorResponse, requireUser, consumeAiQuota, readJsonBody } from "../_shared/aiGuard.ts";
+import { z } from "npm:zod@3.25.76";
 
-serve(async (req) => {
+export async function handleRequest(req: Request) {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { text, targetLanguage } = await req.json();
-    
-    if (!text || !targetLanguage) {
-      return new Response(
-        JSON.stringify({ error: "Missing text or targetLanguage" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const userId = await requireUser(req);
+    const input = z.object({
+      text: z.string().trim().min(1).max(2000),
+      targetLanguage: z.enum(["sv", "en", "de", "fr", "ja"]),
+    }).safeParse(await readJsonBody(req, 16000));
+    if (!input.success) throw new HttpError(400, "Ogiltig text eller målspråk.");
+    const { text, targetLanguage } = input.data;
+    await consumeAiQuota(userId, "translate");
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -37,12 +35,14 @@ serve(async (req) => {
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
+      signal: AbortSignal.timeout(45000),
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
+        max_tokens: 2048,
         messages: [
           {
             role: "system",
@@ -85,10 +85,8 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Translation error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return errorResponse(error);
   }
-});
+}
+
+serve(handleRequest);

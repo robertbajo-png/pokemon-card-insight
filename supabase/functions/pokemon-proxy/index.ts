@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+export async function handleRequest(req: Request) {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -15,12 +15,13 @@ serve(async (req) => {
     const path = url.searchParams.get('path') || '/cards';
     const queryParams = url.searchParams.get('query') || '';
     
-    // Decode the query params if they're URL encoded
-    const decodedQuery = decodeURIComponent(queryParams);
-    const apiUrl = `https://api.pokemontcg.io/v2${path}${decodedQuery ? '?' + decodedQuery : ''}`;
+    if (!/^\/(cards|sets)(\/[a-zA-Z0-9-]+)?$/.test(path)) {
+      return new Response(JSON.stringify({ error: "Invalid path" }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const apiUrl = `https://api.pokemontcg.io/v2${path}${queryParams ? '?' + queryParams : ''}`;
     console.log('Proxying request to:', apiUrl);
     
-    const response = await fetch(apiUrl);
+    const response = await fetch(apiUrl, { signal: AbortSignal.timeout(15000) });
     
     // Check if the response is OK
     if (!response.ok) {
@@ -74,4 +75,6 @@ serve(async (req) => {
       }
     );
   }
-});
+}
+
+serve(handleRequest);

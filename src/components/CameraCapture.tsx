@@ -1,8 +1,9 @@
-import { useRef, useState, useEffect, type ChangeEvent } from "react";
+import { useRef, useState, useEffect, useCallback, type ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Camera, X, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { prepareCardImage } from "@/utils/cardImage";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface CameraCaptureProps {
@@ -13,72 +14,54 @@ interface CameraCaptureProps {
 const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   const [hasMultipleCameras, setHasMultipleCameras] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useLanguage();
 
+  const stopCamera = useCallback(() => {
+    streamRef.current?.getTracks().forEach(track => track.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+  }, []);
+
   useEffect(() => {
-    startCamera();
-    checkMultipleCameras();
-
-    return () => {
-      stopCamera();
+    let cancelled = false;
+    let ownedStream: MediaStream | null = null;
+    const start = async () => {
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) throw new Error("Kameran stöds inte i denna webbläsare.");
+        setCameraError(null);
+        const media = await navigator.mediaDevices.getUserMedia({ video: { facingMode, width: { ideal: 1600 }, height: { ideal: 1200 } } });
+        if (cancelled || !videoRef.current) {
+          media.getTracks().forEach(track => track.stop());
+          return;
+        }
+        ownedStream = media;
+        streamRef.current = media;
+        videoRef.current.srcObject = media;
+        if (!navigator.mediaDevices.enumerateDevices) return;
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        if (!cancelled) setHasMultipleCameras(devices.filter(device => device.kind === "videoinput").length > 1);
+      } catch (error) {
+        if (!cancelled) {
+          if (ownedStream) stopCamera();
+          setCameraError("Kunde inte komma åt kameran. Kontrollera behörigheter eller använd filuppladdning.");
+          console.error("Camera error:", error);
+        }
+      }
     };
-  }, [facingMode]);
-
-  const checkMultipleCameras = async () => {
-    try {
-      if (!navigator.mediaDevices?.enumerateDevices) {
-        return;
-      }
-
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const videoDevices = devices.filter(device => device.kind === "videoinput");
-      setHasMultipleCameras(videoDevices.length > 1);
-    } catch (error) {
-      console.error("Error checking cameras:", error);
-    }
-  };
-
-  const startCamera = async () => {
-    try {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        setCameraError("Din enhet stöder inte kameran i webbläsaren. Använd filuppladdning istället.");
-        return;
-      }
-
-      setCameraError(null);
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: facingMode,
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        },
-      });
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        setStream(mediaStream);
-      }
-    } catch (error) {
-      console.error("Error accessing camera:", error);
-      setCameraError("Kunde inte komma åt kameran. Kontrollera behörigheter eller använd filuppladdning.");
-      toast.error("Kunde inte komma åt kameran. Kontrollera behörigheter.");
-    }
-  };
-
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
-    }
-  };
+    void start();
+    return () => {
+      cancelled = true;
+      if (streamRef.current === ownedStream) stopCamera();
+    };
+  }, [facingMode, stopCamera]);
 
   const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
+    if (videoRef.current?.videoWidth && videoRef.current.videoHeight && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       
@@ -101,17 +84,15 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
     setFacingMode(prev => prev === "user" ? "environment" : "user");
   };
 
-  const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    event.target.value = "";
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const result = reader.result as string;
-      onCapture(result);
-      toast.success("Foto uppladdat!");
-    };
-    reader.readAsDataURL(file);
+    try {
+      const image = await prepareCardImage(file);
+      stopCamera();
+      onCapture(image);
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Bilden kunde inte läsas."); }
   };
 
   const triggerFileUpload = () => {
@@ -122,7 +103,7 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
     <Card className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex flex-col">
       <div className="flex items-center justify-between p-4 border-b border-border">
         <h2 className="text-xl font-bold">{t("takePhotoOfCard")}</h2>
-        <Button variant="ghost" size="icon" onClick={onClose}>
+        <Button variant="ghost" size="icon" onClick={() => { stopCamera(); onClose(); }}>
           <X className="w-5 h-5" />
         </Button>
       </div>
@@ -198,7 +179,7 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/jpeg,image/png,image/webp"
         capture="environment"
         className="hidden"
         onChange={handleFileUpload}
