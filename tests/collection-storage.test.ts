@@ -136,6 +136,24 @@ it("retains both versions on conflict and supports explicit local or cloud resol
     conflict: undefined,
   });
 });
+it("rejects a stale editor snapshot after a newer cloud version has already been pulled", async () => {
+  const opened = await saveScannedCard(input, "alice");
+  const sent = (await readStoredCards("alice"))[0];
+  await acknowledgeUpload("alice", sent, {
+    ...remote(opened),
+    mutation_id: sent.mutationId!,
+  });
+  await mergeCloudCards("alice", [
+    remote({ ...opened, quantity: 7, notes: "Ändrat på andra enheten" }, 2),
+  ]);
+  await expect(
+    updateScannedCard(opened.id, { quantity: 2, notes: "" }, "alice", opened),
+  ).rejects.toThrow("Kortet har ändrats");
+  expect((await readScannedCards("alice"))[0]).toMatchObject({
+    quantity: 7,
+    notes: "Ändrat på andra enheten",
+  });
+});
 it("validates backups, preserves active edits and explicitly restores deleted records", async () => {
   const card = await saveScannedCard(input, "alice");
   const backup = parseCollectionBackup(

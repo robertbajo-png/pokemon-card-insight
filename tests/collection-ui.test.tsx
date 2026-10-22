@@ -3,6 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import Collection from "@/pages/Collection";
 import SetChecklist from "@/components/SetChecklist";
+import CollectionCardEditor from "@/components/CollectionCardEditor";
 import { scannedCardSchema } from "@/lib/cardAnalysis";
 import type { PokemonCard } from "@/services/pokemonTcgApi";
 
@@ -78,6 +79,28 @@ it("edits inventory fields and keeps the dialog open on failed persistence", asy
       location: "Pärm 2, sida 8",
       notes: "Min favorit",
     }),
+    card,
+  );
+});
+it("keeps the opened snapshot when a background sync updates the editor's parent props", async () => {
+  const view = render(
+    <CollectionCardEditor card={card} open onOpenChange={vi.fn()} />,
+  );
+  fireEvent.change(view.getByLabelText("Antal"), { target: { value: "4" } });
+  view.rerender(
+    <CollectionCardEditor
+      card={{ ...card, quantity: 7, notes: "Från andra enheten" }}
+      open
+      onOpenChange={vi.fn()}
+    />,
+  );
+  fireEvent.click(view.getByRole("button", { name: "Spara kort" }));
+  await waitFor(() =>
+    expect(mocks.update).toHaveBeenCalledWith(
+      card.id,
+      expect.objectContaining({ quantity: 4 }),
+      card,
+    ),
   );
 });
 it("supports adding a card without a paid scan", async () => {

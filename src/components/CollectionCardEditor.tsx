@@ -14,8 +14,17 @@ import { resolveSetId } from "@/lib/collection";
 import { pokemonSets } from "@/data/pokemonSets";
 import { toast } from "sonner";
 
-function CardForm({ card, close }: { card?: ScannedCard; close: () => void }) {
+function CardForm({
+  card: initialCard,
+  close,
+}: {
+  card?: ScannedCard;
+  close: () => void;
+}) {
   const { addCard, updateCard } = useScannedCards();
+  // Form values belong to the version opened by the user, even if a background
+  // sync changes the parent props while this dialog remains open.
+  const [card] = useState(initialCard);
   const [name, setName] = useState(card?.name ?? "");
   const [number, setNumber] = useState(card?.number ?? "");
   const [setId, setSetId] = useState(card ? (resolveSetId(card) ?? "") : "");
@@ -72,7 +81,7 @@ function CardForm({ card, close }: { card?: ScannedCard; close: () => void }) {
       const parsed = scannedCardSchema
         .omit({ id: true, scannedAt: true })
         .parse(input);
-      if (card) await updateCard(card.id, parsed);
+      if (card) await updateCard(card.id, parsed, card);
       else await addCard(parsed);
       toast.success("Kortet är sparat i samlingen.");
       close();

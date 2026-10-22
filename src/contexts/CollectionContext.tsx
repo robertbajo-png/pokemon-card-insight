@@ -46,7 +46,11 @@ interface CollectionState {
 }
 interface CollectionValue extends CollectionState {
   addCard: (card: NewScannedCard) => Promise<ScannedCard>;
-  updateCard: (id: string, changes: Partial<NewScannedCard>) => Promise<void>;
+  updateCard: (
+    id: string,
+    changes: Partial<NewScannedCard>,
+    expected?: ScannedCard,
+  ) => Promise<void>;
   removeCard: (id: string) => Promise<void>;
   clearCards: () => Promise<void>;
   importLocal: () => Promise<void>;
@@ -232,9 +236,13 @@ export function CollectionProvider({ children }: PropsWithChildren) {
     notify();
     return saved;
   };
-  const updateCard = async (id: string, changes: Partial<NewScannedCard>) => {
+  const updateCard = async (
+    id: string,
+    changes: Partial<NewScannedCard>,
+    expected?: ScannedCard,
+  ) => {
     ready();
-    await updateScannedCard(id, changes, owner);
+    await updateScannedCard(id, changes, owner, expected);
     notify();
   };
   const removeCard = async (id: string) => {
