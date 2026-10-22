@@ -1,4 +1,4 @@
-project_id = "lqyfvwmyckbhrqlrrykd"
+project_id = "pokemon-card-insight"
 
 # Paid AI endpoints require a valid user and also verify identity in aiGuard.ts.
 [functions.analyze-pokemon-card]

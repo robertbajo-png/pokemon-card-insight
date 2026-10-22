@@ -1,34 +1,42 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-import { corsHeaders, HttpError, errorResponse, requireUser, consumeAiQuota, readJsonBody } from "../_shared/aiGuard.ts";
+import {
+  corsHeaders,
+  HttpError,
+  errorResponse,
+  requireUser,
+  consumeAiQuota,
+  readJsonBody,
+} from "../_shared/aiGuard.ts";
 import { z } from "npm:zod@3.25.76";
+import { getAiProvider } from "../_shared/aiProvider.ts";
 
 export async function handleRequest(req: Request) {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const userId = await requireUser(req);
-    const input = z.object({
-      setId: z.string().regex(/^[a-zA-Z0-9-]{1,50}$/),
-      setName: z.string().trim().min(1).max(200),
-      totalCards: z.number().int().min(1).max(1000),
-    }).safeParse(await readJsonBody(req, 4096));
+    const input = z
+      .object({
+        setId: z.string().regex(/^[a-zA-Z0-9-]{1,50}$/),
+        setName: z.string().trim().min(1).max(200),
+        totalCards: z.number().int().min(1).max(1000),
+      })
+      .safeParse(await readJsonBody(req, 4096));
     if (!input.success) throw new HttpError(400, "Ogiltiga setparametrar.");
     const { setId, setName, totalCards } = input.data;
+    const ai = getAiProvider("generate");
     await consumeAiQuota(userId, "generate");
-    
-    console.log(`Generating cards for set: ${setName} (${setId}), total: ${totalCards}`);
-    
-    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
-    if (!lovableApiKey) {
-      throw new Error('LOVABLE_API_KEY not configured');
-    }
-    
+
+    console.log(
+      `Generating cards for set: ${setName} (${setId}), total: ${totalCards}`,
+    );
+
     const cardsToGenerate = Math.min(totalCards, 60);
-    
-    // Generate card data using Lovable AI
+
+    // Generate card data using the configured provider
     const prompt = `Generate a JSON array of exactly ${cardsToGenerate} Pokemon cards from the "${setName}" Pokemon TCG set. 
 
 For each card, provide:
@@ -51,38 +59,40 @@ Include a good mix of:
 
 Use Pokemon that would realistically be in the ${setName} set based on the era/generation it represents.`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-        signal: AbortSignal.timeout(45000),
+    const response = await fetch(ai.url, {
+      method: "POST",
+      signal: AbortSignal.timeout(45000),
+      redirect: "error",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${lovableApiKey}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${ai.apiKey}`,
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash-lite',
-        messages: [
-          { role: 'user', content: prompt }
-        ],
+        model: ai.model,
+        messages: [{ role: "user", content: prompt }],
         max_tokens: 8192,
-        temperature: 0.7
-      })
+        temperature: 0.7,
+      }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Lovable AI error:', response.status, errorText);
-      throw new HttpError(response.status === 429 ? 429 : 503, "AI-tjänsten är inte tillgänglig just nu.");
+      console.error("AI provider error:", response.status, errorText);
+      throw new HttpError(
+        response.status === 429 ? 429 : 503,
+        "AI-tjänsten är inte tillgänglig just nu.",
+      );
     }
 
     const aiResponse = await response.json();
     const textContent = aiResponse.choices?.[0]?.message?.content;
-    
+
     if (!textContent) {
-      console.error('No content in AI response:', aiResponse);
-      throw new Error('No content in AI response');
+      console.error("No content in AI response:", aiResponse);
+      throw new Error("No content in AI response");
     }
 
-    console.log('AI response received, parsing...');
+    console.log("AI response received, parsing...");
 
     // Parse the JSON from the response
     let cards;
@@ -95,43 +105,74 @@ Use Pokemon that would realistically be in the ${setName} set based on the era/g
         cards = JSON.parse(textContent);
       }
     } catch (parseError) {
-      console.error('Failed to parse AI response:', textContent.substring(0, 500));
-      throw new Error('Failed to parse card data from AI');
+      console.error(
+        "Failed to parse AI response:",
+        textContent.substring(0, 500),
+      );
+      throw new Error("Failed to parse card data from AI");
     }
 
-    cards = z.array(z.object({
-      id: z.string().optional(), name: z.string().min(1),
-      number: z.union([z.string().regex(/^[a-zA-Z0-9]{1,12}$/), z.number().int().positive()]).optional(),
-      rarity: z.string().optional(), types: z.array(z.string()).optional(),
-      supertype: z.string().optional(), hp: z.string().optional(),
-    })).min(1).max(cardsToGenerate).parse(cards);
+    cards = z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          name: z.string().min(1),
+          number: z
+            .union([
+              z.string().regex(/^[a-zA-Z0-9]{1,12}$/),
+              z.number().int().positive(),
+            ])
+            .optional(),
+          rarity: z.string().optional(),
+          types: z.array(z.string()).optional(),
+          supertype: z.string().optional(),
+          hp: z.string().optional(),
+        }),
+      )
+      .min(1)
+      .max(cardsToGenerate)
+      .parse(cards);
     // Format cards to match expected structure
-    const formattedCards = cards.map((card: { name: string; number?: string | number; rarity?: string; types?: string[]; supertype?: string; hp?: string }, index: number) => ({
-      id: `${setId}-${card.number || index + 1}`,
-      name: card.name,
-      number: String(card.number || index + 1),
-      rarity: card.rarity || 'Common',
-      types: card.types || [],
-      supertype: card.supertype || 'Pokémon',
-      hp: card.hp || '60',
-      set: {
-        id: setId,
-        name: setName,
-        series: "AI-genererat"
-      },
-      images: {
-        small: `https://images.pokemontcg.io/${setId}/${card.number || index + 1}.png`,
-        large: `https://images.pokemontcg.io/${setId}/${card.number || index + 1}_hires.png`
-      }
-    }));
+    const formattedCards = cards.map(
+      (
+        card: {
+          name: string;
+          number?: string | number;
+          rarity?: string;
+          types?: string[];
+          supertype?: string;
+          hp?: string;
+        },
+        index: number,
+      ) => ({
+        id: `${setId}-${card.number || index + 1}`,
+        name: card.name,
+        number: String(card.number || index + 1),
+        rarity: card.rarity || "Common",
+        types: card.types || [],
+        supertype: card.supertype || "Pokémon",
+        hp: card.hp || "60",
+        set: {
+          id: setId,
+          name: setName,
+          series: "AI-genererat",
+        },
+        images: {
+          small: `https://images.pokemontcg.io/${setId}/${card.number || index + 1}.png`,
+          large: `https://images.pokemontcg.io/${setId}/${card.number || index + 1}_hires.png`,
+        },
+      }),
+    );
 
     console.log(`Generated ${formattedCards.length} cards for ${setName}`);
 
     return new Response(
-      JSON.stringify({ data: formattedCards, totalCount: formattedCards.length }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        data: formattedCards,
+        totalCount: formattedCards.length,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-
   } catch (error) {
     return errorResponse(error);
   }

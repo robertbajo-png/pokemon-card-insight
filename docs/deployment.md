@@ -1,4 +1,9 @@
-# Deploying the review fixes
+# Deploying Pokemon Card Lens
+
+Production hosting is Sites with an owner-managed Supabase backend. Follow
+[the migration guide](migration-from-lovable.md) when moving from the original
+Lovable Cloud backend. Restore existing data before switching frontend settings;
+the migration guide also covers Auth and browser-local cards.
 
 Use Node 22 and npm 10.9.9 (`packageManager` and `.nvmrc` record the versions).
 Install with `npm ci`. The npm lockfile is the supported dependency lock; the
@@ -20,9 +25,12 @@ PostgreSQL engine. They do not spend AI credits or write to a deployed database.
 ## Apply the Supabase changes before releasing the frontend
 
 1. Link the Supabase CLI to the intended project and review pending migrations.
+   On a restored database, reconcile the existing schema and migration history
+   first. Do not replay migrations whose objects are already present.
 2. Apply `supabase/migrations/20261022090000_ai_usage_quotas.sql` using the usual
    migration process (for example, `supabase db push` after reviewing the plan).
-3. Ensure `LOVABLE_API_KEY` is set in Edge Function secrets. The platform supplies
+3. Ensure `AI_API_KEY` and the provider configuration from
+   `supabase/functions/.env.example` are set in Edge Function secrets. Supabase supplies
    `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`. Never put
    the service-role or AI key in frontend environment variables.
 4. Deploy all four functions so their implementation and `verify_jwt` settings
@@ -35,7 +43,8 @@ PostgreSQL engine. They do not spend AI credits or write to a deployed database.
    supabase functions deploy pokemon-proxy
    ```
 
-5. Release the frontend using the existing Lovable/hosting workflow.
+5. Build with the new public Supabase values and release the frontend through
+   the Sites source/version workflow using `.openai/hosting.json`.
 6. Confirm an unsigned AI request returns 401, a signed-in user's analysis works,
    quota exhaustion returns 429, and public browsing of card sets still works.
 
@@ -75,11 +84,10 @@ write cloud collections. Direct client INSERT/UPDATE/DELETE permissions are
 revoked; the RPC determines ownership from `auth.uid()`, never from a client
 user ID, and enforces revisions and idempotent mutation IDs.
 
-For Lovable Cloud, use the project's Database → Manage → SQL editor to apply the
-new migration if the backend is not accessible through your Supabase CLI account.
-Check whether earlier migrations have already been applied manually before
-running them: the AI quota migration was applied during the PR #21 rollout.
-GitHub code sync does not confirm that migrations or Edge Functions are deployed.
+The original Lovable Cloud backend received both migrations manually during the
+PR #21/#22 rollout. A restored backup includes those objects. Check that state
+before applying any SQL to the new backend. A GitHub merge does not confirm
+that migrations or Edge Functions have been deployed.
 The Cloud collection feature uses the existing Auth/PostgREST endpoint and does
 not require a new Edge Function, secret, API key or Storage bucket.
 
