@@ -22,6 +22,7 @@ export interface PokemonCard {
   types?: string[];
   rarity?: string;
   set: {
+    id?: string;
     name: string;
     series: string;
   };
@@ -103,6 +104,13 @@ export const getCardsBySet = async (setId: string, signal?: AbortSignal): Promis
   let totalCount = Infinity;
   for (let page = 1; cards.length < totalCount; page++) {
     const result = await searchCards({ q: `set.id:${setId}`, page, pageSize: 250, orderBy: "number" }, signal);
+    if (result.data.some(card => card.set?.id && card.set.id !== setId)) {
+      throw new Error("Korttjänsten skickade kort från fel set. Försök igen när tjänsten är uppdaterad.");
+    }
+    const seen = new Set(cards.map(card => card.id));
+    if (result.data.some(card => { if (seen.has(card.id)) return true; seen.add(card.id); return false; })) {
+      throw new Error("Kortlistan innehöll upprepade sidor och kunde inte läsas fullständigt.");
+    }
     totalCount = result.totalCount;
     if (!result.data.length && cards.length < totalCount) throw new Error("Alla kort kunde inte hämtas. Försök igen.");
     cards.push(...result.data);

@@ -5,10 +5,13 @@ import { Card } from "@/components/ui/card";
 import { useScannedCards } from "@/hooks/useScannedCards";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { convertPriceRange } from "@/utils/currency";
+import CollectionCardEditor from "./CollectionCardEditor";
+import { Button } from "./ui/button";
 
 export default function ScannedCardDetail({ id }: { id: string }) {
   const { cards, isLoading, error } = useScannedCards();
   const [grade, setGrade] = useState("ungraded");
+  const [editing, setEditing] = useState(false);
   const { currency } = useLanguage();
   const card = cards.find(candidate => candidate.id === id);
   const price = card?.priceByGrade?.[grade] ?? (grade === "ungraded" ? card?.estimatedValue : undefined);
@@ -17,12 +20,16 @@ export default function ScannedCardDetail({ id }: { id: string }) {
     <main className="container mx-auto px-4 pt-24 pb-16 max-w-5xl">
       <Link className="text-primary underline" to="/collection">Tillbaka till samlingen</Link>
       {isLoading ? <p role="status">Laddar kort...</p> : error ? <p role="alert">{error}</p> : !card ?
-        <p role="alert">Kortet finns inte längre i den här enhetens samling.</p> :
+        <p role="alert">Kortet finns inte i den aktuella samlingen. Kontrollera att du är inloggad på rätt konto.</p> :
         <div className="grid md:grid-cols-2 gap-8 mt-6">
           <Card className="p-4">{card.image ? <img src={card.image} alt={card.name} className="w-full object-contain" /> : <p>Ingen bild tillgänglig</p>}</Card>
           <Card className="p-6 space-y-4">
             <h1 className="text-3xl font-bold">{card.name}</h1>
+            <Button variant="outline" onClick={() => setEditing(true)}>Redigera kort</Button>
             <p>{card.set} · #{card.number}</p>
+            <p>{card.quantity ?? 1} exemplar · {card.language ?? "en"} · {card.variant ?? "normal"}</p>
+            {card.location && <p>Förvaringsplats: {card.location}</p>}
+            {card.notes && <p className="whitespace-pre-wrap">{card.notes}</p>}
             <p>Typ: {card.type} · Sällsynthet: {card.rarity}</p>
             {card.hp && <p>HP: {card.hp}</p>}
             {card.condition && <p>Skick: {card.condition}</p>}
@@ -37,6 +44,7 @@ export default function ScannedCardDetail({ id }: { id: string }) {
             <p className="text-xl font-bold text-primary">Uppskattat värde: {price ? convertPriceRange(price, currency) : "Pris saknas"}</p>
           </Card>
         </div>}
+      {card && <CollectionCardEditor key={card.id} card={card} open={editing} onOpenChange={setEditing} />}
     </main>
   </div>;
 }

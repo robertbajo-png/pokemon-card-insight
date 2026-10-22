@@ -30,6 +30,14 @@ describe("card API", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({ error: "upstream" }, { status: 503 })));
     await expect(getCardsBySet("sv2")).rejects.toThrow("503");
   });
+  it("rejects a stale proxy that ignores the requested set filter", async () => {
+    vi.stubGlobal("fetch",vi.fn().mockResolvedValue(Response.json({ data:[{ id:"base2-1",set:{ id:"base2" } }],totalCount:1 })));
+    await expect(getCardsBySet("base1")).rejects.toThrow("fel set");
+  });
+  it("rejects repeated pages instead of inflating checklist completion", async () => {
+    vi.stubGlobal("fetch",vi.fn().mockImplementation(async () => Response.json({ data:[{ id:"base1-1",set:{ id:"base1" } }],totalCount:2 })));
+    await expect(getCardsBySet("base1")).rejects.toThrow("upprepade sidor");
+  });
   it("aborts the fetch when a timeout expires", async () => {
     const aborted = vi.fn();
     vi.stubGlobal("fetch", vi.fn((_url, options) => new Promise((_resolve, reject) => {

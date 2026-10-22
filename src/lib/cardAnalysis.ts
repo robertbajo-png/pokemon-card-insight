@@ -6,7 +6,7 @@ export const cardAnalysisSchema = z.object({
   rarity: z.string().max(100).default("Unknown"),
   set: z.string().max(200).default("Unknown"),
   setCode: z.string().max(50).optional(),
-  number: z.union([z.string(), z.number()]).transform(String),
+  number: z.union([z.string(), z.number()]).transform(String).pipe(z.string().trim().min(1).max(100)),
   hp: z.union([z.string(), z.number()]).transform(String).optional(),
   condition: z.string().max(200).optional(),
   description: z.string().max(5000).optional(),
@@ -22,7 +22,14 @@ export const cardAnalysisSchema = z.object({
 });
 export type CardAnalysis = z.infer<typeof cardAnalysisSchema>;
 export const scannedCardSchema = cardAnalysisSchema.extend({
-  id: z.string().min(1), scannedAt: z.string().datetime(), image: z.string().optional(),
+  id: z.string().startsWith("card-").max(150), scannedAt: z.string().datetime(), image: z.string().optional(),
+  quantity: z.number().int().min(1).max(9999).default(1),
+  language: z.string().trim().max(40).default("en"),
+  variant: z.string().trim().max(80).default("normal"),
+  location: z.string().trim().max(200).default(""),
+  notes: z.string().trim().max(2000).default(""),
+  setId: z.string().max(100).optional(),
+  catalogId: z.string().max(150).optional(),
 });
 export type ScannedCard = z.infer<typeof scannedCardSchema>;
 export type NewScannedCard = Omit<z.input<typeof scannedCardSchema>, "id" | "scannedAt">;

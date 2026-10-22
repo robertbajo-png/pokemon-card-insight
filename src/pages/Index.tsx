@@ -10,7 +10,7 @@ import { pokemonSets } from "@/data/pokemonSets";
 const Index = () => {
   const { cards } = useScannedCards();
   const totalSets = pokemonSets.length;
-  const scannedCount = cards.length;
+  const scannedCount = cards.reduce((sum, card) => sum + card.quantity, 0);
 
   return (
     <div className="min-h-screen bg-background">
