@@ -8,78 +8,56 @@ import { TranslatedText } from "@/components/TranslatedText";
 import { toast } from "sonner";
 import { useScannedCards } from "@/hooks/useScannedCards";
 
+import { cardAnalysisSchema, cardToScan, type CardAnalysis } from "@/lib/cardAnalysis";
+import { invokeAi } from "@/services/aiFunctions";
+import { prepareCardImage } from "@/utils/cardImage";
+import { useAuth } from "@/contexts/AuthContext";
+import { Link } from "react-router-dom";
+
 const Scanner = () => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<CardAnalysis | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const [selectedGrade, setSelectedGrade] = useState<string>('ungraded');
   const { addCard } = useScannedCards();
 
+  const [isPreparing, setIsPreparing] = useState(false);
+  const { user } = useAuth();
+  const selectImage = async (source: File | string) => {
+    setIsPreparing(true);
+    try {
+      setSelectedImage(await prepareCardImage(source));
+      setResult(null);
+      setSelectedGrade("ungraded");
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Bilden kunde inte läsas."); }
+    finally { setIsPreparing(false); }
+  };
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setSelectedImage(e.target?.result as string);
-        setResult(null);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (file) void selectImage(file);
+    event.target.value = "";
   };
-
-  const handleCameraCapture = (imageDataUrl: string) => {
-    setSelectedImage(imageDataUrl);
-    setResult(null);
+  const handleCameraCapture = (image: string) => {
     setShowCamera(false);
+    void selectImage(image);
   };
-
   const analyzeCard = async () => {
-    if (!selectedImage) {
-      toast.error("Ladda upp en bild först");
-      return;
-    }
-
+    if (!selectedImage || isPreparing || isAnalyzing) return;
     setIsAnalyzing(true);
-    
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-pokemon-card`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            image: selectedImage,
-            action: 'analyze'
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to analyze card');
-      }
-
-      const data = await response.json();
+      const data = cardAnalysisSchema.parse(await invokeAi("analyze-pokemon-card", { image: selectedImage, action: "analyze" }));
       setResult(data);
-      addCard({
-        name: data.name ?? "Okänt kort",
-        type: data.type?.toLowerCase?.() ?? "colorless",
-        rarity: data.rarity ?? "unknown",
-        set: data.set ?? "Okänt set",
-        number: data.number?.toString?.() ?? "-",
-        condition: data.condition,
-        estimatedValue: data.estimatedValue,
-        image: selectedImage ?? undefined,
-      });
-      toast.success("Kort analyserat!");
+      try {
+        await addCard(cardToScan(data, selectedImage));
+        toast.success("Kort analyserat och sparat!");
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Kortet analyserades men kunde inte sparas.");
+      }
     } catch (error) {
-      console.error('Error analyzing card:', error);
-      toast.error("Kunde inte analysera kortet");
-    } finally {
-      setIsAnalyzing(false);
-    }
+      console.error("Error analyzing card:", error);
+      toast.error(error instanceof Error ? error.message : "Kunde inte analysera kortet.");
+    } finally { setIsAnalyzing(false); }
   };
 
   return (
@@ -106,10 +84,11 @@ const Scanner = () => {
                 <TranslatedText text="Ladda upp kort" />
               </h2>
               
+              {!user && <p className="mb-4 text-sm"><Link className="text-primary underline" to="/login">Logga in för att analysera och spara kort.</Link></p>}
               <div className="space-y-4">
                 <div 
                   className="relative aspect-[3/4] border-2 border-dashed border-border rounded-lg overflow-hidden bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                  onClick={() => document.getElementById("file-upload")?.click()}
+                  onClick={() => { if (!isAnalyzing && !isPreparing) document.getElementById("file-upload")?.click(); }}
                 >
                   {selectedImage ? (
                     <img src={selectedImage} alt="Uploaded" className="w-full h-full object-contain" />
@@ -126,7 +105,8 @@ const Scanner = () => {
                 <input
                   id="file-upload"
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp"
+                  disabled={isAnalyzing || isPreparing}
                   onChange={handleImageUpload}
                   className="hidden"
                 />
@@ -135,7 +115,7 @@ const Scanner = () => {
                   <Button
                     variant="outline"
                     className="flex-1"
-                    onClick={() => document.getElementById("file-upload")?.click()}
+                    onClick={() => { if (!isAnalyzing && !isPreparing) document.getElementById("file-upload")?.click(); }}
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     <TranslatedText text="Välj fil" />
@@ -144,6 +124,7 @@ const Scanner = () => {
                     variant="outline"
                     className="flex-1"
                     onClick={() => setShowCamera(true)}
+                    disabled={isAnalyzing || isPreparing}
                   >
                     <Camera className="w-4 h-4 mr-2" />
                     <TranslatedText text="Kamera" />
@@ -154,10 +135,10 @@ const Scanner = () => {
                   variant="hero"
                   className="w-full"
                   onClick={analyzeCard}
-                  disabled={!selectedImage || isAnalyzing}
+                  disabled={!selectedImage || isAnalyzing || isPreparing || !user}
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
-                  <TranslatedText text={isAnalyzing ? "Analyserar..." : "Analysera kort"} />
+                  <TranslatedText text={isPreparing ? "Bearbetar bild..." : isAnalyzing ? "Analyserar..." : "Analysera kort"} />
                 </Button>
               </div>
             </Card>
@@ -223,7 +204,7 @@ const Scanner = () => {
                           <TranslatedText text="Attacker:" />
                         </span>
                         <div className="space-y-2 pl-2">
-                          {result.attacks.map((attack: any, idx: number) => (
+                          {result.attacks.map((attack, idx) => (
                             <div key={idx} className="space-y-1">
                               <div className="font-medium">{attack.name}</div>
                               {attack.damage && <div className="text-sm text-muted-foreground">Skada: {attack.damage}</div>}
@@ -244,7 +225,7 @@ const Scanner = () => {
                           <TranslatedText text="Svagheter:" />
                         </span>
                         <span className="font-medium">
-                          {result.weaknesses.map((w: any) => `${w.type} ${w.value}`).join(", ")}
+                          {result.weaknesses.map((w) => `${w.type} ${w.value}`).join(", ")}
                         </span>
                       </div>
                     )}
@@ -255,7 +236,7 @@ const Scanner = () => {
                           <TranslatedText text="Resistanser:" />
                         </span>
                         <span className="font-medium">
-                          {result.resistances.map((r: any) => `${r.type} ${r.value}`).join(", ")}
+                          {result.resistances.map((r) => `${r.type} ${r.value}`).join(", ")}
                         </span>
                       </div>
                     )}

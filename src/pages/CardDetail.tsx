@@ -11,7 +11,9 @@ import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { convertPriceValue } from "@/utils/currency";
 
-const CardDetail = () => {
+import ScannedCardDetail from "@/components/ScannedCardDetail";
+
+const ApiCardDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [card, setCard] = useState<PokemonCardType | null>(null);
@@ -19,31 +21,19 @@ const CardDetail = () => {
   const { currency, setCurrency } = useLanguage();
 
   useEffect(() => {
-    if (id) {
-      loadCard(id);
-    }
-  }, [id]);
-
-  const loadCard = async (cardId: string) => {
+    if (!id) return;
+    const controller = new AbortController();
     setIsLoading(true);
-    try {
-      const data = await getCardById(cardId);
-      if (data) {
-        setCard(data);
-      } else {
-        toast.error("Kort hittades inte");
-        navigate("/gallery");
-      }
-    } catch (error) {
-      console.error("Error loading card:", error);
-      toast.error("Kunde inte ladda kort");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const convertPrice = (priceInSEK: number): string =>
-    convertPriceValue(priceInSEK, currency);
+    setCard(null);
+    getCardById(id, controller.signal).then(data => {
+      if (controller.signal.aborted) return;
+      if (data) setCard(data);
+      else { toast.error("Kort hittades inte"); navigate("/gallery"); }
+    }).catch(error => {
+      if (!controller.signal.aborted) { console.error(error); toast.error("Kunde inte ladda kort"); }
+    }).finally(() => { if (!controller.signal.aborted) setIsLoading(false); });
+    return () => controller.abort();
+  }, [id, navigate]);
 
   if (isLoading) {
     return (
@@ -281,4 +271,8 @@ const CardDetail = () => {
   );
 };
 
+const CardDetail = () => {
+  const { id } = useParams();
+  return id?.startsWith("card-") ? <ScannedCardDetail id={id} /> : <ApiCardDetail />;
+};
 export default CardDetail;

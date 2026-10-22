@@ -1,17 +1,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, HttpError, errorResponse, requireUser, consumeAiQuota, readJsonBody } from "../_shared/aiGuard.ts";
+import { z } from "npm:zod@3.25.76";
 
-serve(async (req) => {
+export async function handleRequest(req: Request) {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { setId, setName, totalCards } = await req.json();
+    const userId = await requireUser(req);
+    const input = z.object({
+      setId: z.string().regex(/^[a-zA-Z0-9-]{1,50}$/),
+      setName: z.string().trim().min(1).max(200),
+      totalCards: z.number().int().min(1).max(1000),
+    }).safeParse(await readJsonBody(req, 4096));
+    if (!input.success) throw new HttpError(400, "Ogiltiga setparametrar.");
+    const { setId, setName, totalCards } = input.data;
+    await consumeAiQuota(userId, "generate");
     
     console.log(`Generating cards for set: ${setName} (${setId}), total: ${totalCards}`);
     
@@ -45,8 +51,9 @@ Include a good mix of:
 
 Use Pokemon that would realistically be in the ${setName} set based on the era/generation it represents.`;
 
-    const response = await fetch('https://api.lovable.dev/v1/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
+        signal: AbortSignal.timeout(45000),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${lovableApiKey}`
@@ -64,7 +71,7 @@ Use Pokemon that would realistically be in the ${setName} set based on the era/g
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Lovable AI error:', response.status, errorText);
-      throw new Error(`AI API error: ${response.status}`);
+      throw new HttpError(response.status === 429 ? 429 : 503, "AI-tjänsten är inte tillgänglig just nu.");
     }
 
     const aiResponse = await response.json();
@@ -92,9 +99,15 @@ Use Pokemon that would realistically be in the ${setName} set based on the era/g
       throw new Error('Failed to parse card data from AI');
     }
 
+    cards = z.array(z.object({
+      id: z.string().optional(), name: z.string().min(1),
+      number: z.union([z.string().regex(/^[a-zA-Z0-9]{1,12}$/), z.number().int().positive()]).optional(),
+      rarity: z.string().optional(), types: z.array(z.string()).optional(),
+      supertype: z.string().optional(), hp: z.string().optional(),
+    })).min(1).max(cardsToGenerate).parse(cards);
     // Format cards to match expected structure
-    const formattedCards = cards.map((card: any, index: number) => ({
-      id: card.id || `${setId}-${index + 1}`,
+    const formattedCards = cards.map((card: { name: string; number?: string | number; rarity?: string; types?: string[]; supertype?: string; hp?: string }, index: number) => ({
+      id: `${setId}-${card.number || index + 1}`,
       name: card.name,
       number: String(card.number || index + 1),
       rarity: card.rarity || 'Common',
@@ -103,7 +116,8 @@ Use Pokemon that would realistically be in the ${setName} set based on the era/g
       hp: card.hp || '60',
       set: {
         id: setId,
-        name: setName
+        name: setName,
+        series: "AI-genererat"
       },
       images: {
         small: `https://images.pokemontcg.io/${setId}/${card.number || index + 1}.png`,
@@ -119,13 +133,8 @@ Use Pokemon that would realistically be in the ${setName} set based on the era/g
     );
 
   } catch (error) {
-    console.error('Error generating cards:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error',
-        data: []
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return errorResponse(error);
   }
-});
+}
+
+serve(handleRequest);

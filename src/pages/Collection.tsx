@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import { useMemo } from "react";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +20,7 @@ const formatDate = (dateString: string) => {
 };
 
 const Collection = () => {
-  const { cards, clearCards } = useScannedCards();
+  const { cards, clearCards, isLoading, error } = useScannedCards();
   const { currency } = useLanguage();
 
   const formattedCards = useMemo(
@@ -54,7 +56,7 @@ const Collection = () => {
           <div className="flex justify-end">
             <Button
               variant="outline"
-              onClick={clearCards}
+              onClick={async () => { try { await clearCards(); } catch (cause) { toast.error(cause instanceof Error ? cause.message : "Kunde inte rensa samlingen."); } }}
               disabled={cards.length === 0}
               className="gap-2"
             >
@@ -63,7 +65,7 @@ const Collection = () => {
             </Button>
           </div>
 
-          {cards.length === 0 ? (
+          {isLoading ? <p role="status">Laddar samlingen...</p> : error ? <p role="alert">{error}</p> : cards.length === 0 ? (
             <Card className="p-8 text-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted flex items-center justify-center">
                 <Scan className="w-7 h-7 text-muted-foreground" />
@@ -103,7 +105,7 @@ const Collection = () => {
 
                   <CardHeader className="space-y-2">
                     <div className="flex items-center justify-between gap-3">
-                      <CardTitle className="text-xl">{card.name}</CardTitle>
+                      <CardTitle className="text-xl"><Link className="hover:underline" to={`/card/${card.id}`}>{card.name}</Link></CardTitle>
                       <Badge className="capitalize">{card.type}</Badge>
                     </div>
                     <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">

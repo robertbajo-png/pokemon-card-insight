@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { createContext, useContext, useState, ReactNode, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { translateText } from "@/services/translationService";
 
 type Language = "sv" | "en" | "de" | "fr" | "ja";
@@ -267,6 +268,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     return 'en';
   };
 
+  const { user } = useAuth();
   const initialLanguage = getInitialLanguage();
   const [language, setLanguage] = useState<Language>(initialLanguage);
   const [currency, setCurrency] = useState<Currency>(languageToCurrency[initialLanguage]);
@@ -276,10 +278,13 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     return translations["sv"][key] || key;
   };
 
-  const translateAsync = async (text: string): Promise<string> => {
-    if (language === "sv") return text; // Default language, no translation needed
+  const translateAsync = useCallback(async (text: string): Promise<string> => {
+    if (language === "sv") return text;
+    const key = Object.keys(translations.sv).find(key => translations.sv[key] === text);
+    if (key && translations[language][key]) return translations[language][key];
+    if (!user) return text;
     return translateText(text, language);
-  };
+  }, [language, user]);
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, currency, setCurrency, t, translateAsync }}>

@@ -30,7 +30,7 @@ export const useInstallPrompt = () => {
     if (
       window.matchMedia('(display-mode: standalone)').matches ||
       // iOS Safari
-      ('standalone' in window.navigator && (window.navigator as any).standalone)
+      ('standalone' in window.navigator && (window.navigator as Navigator & { standalone?: boolean }).standalone)
     ) {
       setIsInstalled(true);
       return;

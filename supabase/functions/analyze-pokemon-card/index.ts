@@ -1,18 +1,38 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, HttpError, errorResponse, requireUser, consumeAiQuota, readJsonBody } from "../_shared/aiGuard.ts";
+import { z } from "npm:zod@3.25.76";
 
-serve(async (req) => {
+export async function handleRequest(req: Request) {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const requestData = await req.json();
+    const userId = await requireUser(req);
+    const input = z.object({
+      action: z.enum(["analyze", "generate"]),
+      image: z.string().max(2800000).optional(),
+      searchQuery: z.string().max(200).optional(),
+      types: z.array(z.string().max(30)).max(11).optional(),
+      rarity: z.string().max(100).optional(),
+      pageSize: z.number().int().min(1).max(30).default(20),
+    }).safeParse(await readJsonBody(req));
+    if (!input.success) throw new HttpError(400, "Ogiltiga analysparametrar.");
+    const requestData = input.data;
+    if (requestData.action === "analyze" && (!requestData.image || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(requestData.image))) {
+      throw new HttpError(400, "En JPEG-, PNG- eller WebP-bild på högst 2 MB krävs.");
+    }
+    if (requestData.action === "analyze") {
+      try {
+        if (atob(requestData.image!.split(",")[1]).length > 2 * 1024 * 1024) throw new HttpError(413, "Bilden är större än 2 MB.");
+      } catch (error) {
+        if (error instanceof HttpError) throw error;
+        throw new HttpError(400, "Bilden innehåller ogiltig base64-data.");
+      }
+    }
+    await consumeAiQuota(userId, requestData.action);
     const { image, action, searchQuery, types, rarity, pageSize = 20 } = requestData;
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
@@ -82,12 +102,14 @@ Svara ENDAST med giltig JSON i detta exakta format (utan extra text):
 
       const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
+        signal: AbortSignal.timeout(45000),
         headers: {
           'Authorization': `Bearer ${LOVABLE_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           model: 'google/gemini-3-pro-preview',
+          max_tokens: 8192,
           messages: [
             { role: 'system', content: systemPrompt },
             { 
@@ -103,7 +125,7 @@ Svara ENDAST med giltig JSON i detta exakta format (utan extra text):
 
       if (!response.ok) {
         console.error('AI gateway error:', response.status, await response.text());
-        throw new Error('AI gateway error');
+        throw new HttpError(response.status === 429 ? 429 : 503, 'AI-tjänsten är inte tillgänglig just nu.');
       }
 
       const data = await response.json();
@@ -146,7 +168,7 @@ Svara ENDAST med giltig JSON-array i detta exakta format (utan extra text):
 ]
 Generera ${pageSize} olika kort. Använd riktiga Pokemon-namn och realistiska värden.`;
 
-      let filters = [];
+      const filters = [];
       if (searchQuery) filters.push(`sökning: "${searchQuery}"`);
       if (types && types.length > 0) filters.push(`typer: ${types.join(', ')}`);
       if (rarity) filters.push(`sällsynthet: ${rarity}`);
@@ -157,12 +179,14 @@ Generera ${pageSize} olika kort. Använd riktiga Pokemon-namn och realistiska v�
 
       const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
+        signal: AbortSignal.timeout(45000),
         headers: {
           'Authorization': `Bearer ${LOVABLE_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           model: 'google/gemini-3-pro-preview',
+          max_tokens: 8192,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
@@ -172,7 +196,7 @@ Generera ${pageSize} olika kort. Använd riktiga Pokemon-namn och realistiska v�
 
       if (!response.ok) {
         console.error('AI gateway error:', response.status, await response.text());
-        throw new Error('AI gateway error');
+        throw new HttpError(response.status === 429 ? 429 : 503, 'AI-tjänsten är inte tillgänglig just nu.');
       }
 
       const data = await response.json();
@@ -197,14 +221,8 @@ Generera ${pageSize} olika kort. Använd riktiga Pokemon-namn och realistiska v�
     throw new Error('Invalid action or missing parameters');
 
   } catch (error) {
-    console.error('Error in analyze-pokemon-card function:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(
-      JSON.stringify({ error: errorMessage }), 
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
+    return errorResponse(error);
   }
-});
+}
+
+serve(handleRequest);

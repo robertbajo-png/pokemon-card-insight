@@ -1,5 +1,3 @@
-const BASE_URL = "https://api.pokemontcg.io/v2";
-
 export interface PokemonSet {
   id: string;
   name: string;
@@ -60,124 +58,59 @@ export interface SearchParams {
   orderBy?: string;
 }
 
-export const searchCards = async (params: SearchParams = {}): Promise<{ data: PokemonCard[]; totalCount: number }> => {
+async function proxyRequest<T>(path: string, query = new URLSearchParams(), signal?: AbortSignal): Promise<T> {
+  const url = new URL(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pokemon-proxy`);
+  url.search = new URLSearchParams({ path, query: query.toString() }).toString();
+  const response = await fetch(url, { signal });
+  if (!response.ok) throw new Error(`Korttjänsten svarade med ${response.status}. Försök igen.`);
+  return response.json();
+}
+
+export const searchCards = async (params: SearchParams = {}, signal?: AbortSignal): Promise<{ data: PokemonCard[]; totalCount: number }> => {
   const { q = "", page = 1, pageSize = 20, orderBy = "-set.releaseDate" } = params;
-  
-  const queryParams = new URLSearchParams({
-    page: page.toString(),
-    pageSize: pageSize.toString(),
-    orderBy,
-  });
-
-  if (q) {
-    queryParams.append("q", q);
-  }
-
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const proxyUrl = `${supabaseUrl}/functions/v1/pokemon-proxy?path=/cards&query=${queryParams.toString()}`;
-  
-  const response = await fetch(proxyUrl);
-  const data = await response.json();
-  
-  return {
-    data: data.data || [],
-    totalCount: data.totalCount || 0,
-  };
+  const query = new URLSearchParams({ page: String(page), pageSize: String(pageSize), orderBy });
+  if (q) query.set("q", q);
+  const result = await proxyRequest<{ data: PokemonCard[]; totalCount: number }>("/cards", query, signal);
+  if (!Array.isArray(result.data)) throw new Error("Korttjänsten skickade ett ogiltigt svar.");
+  return { data: result.data, totalCount: result.totalCount ?? result.data.length };
 };
 
-export const getCardById = async (id: string): Promise<PokemonCard | null> => {
-  try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const proxyUrl = `${supabaseUrl}/functions/v1/pokemon-proxy?path=/cards/${id}`;
-    
-    const response = await fetch(proxyUrl);
-    const data = await response.json();
-    return data.data || null;
-  } catch (error) {
-    console.error("Error fetching card:", error);
-    return null;
-  }
+export const getCardById = async (id: string, signal?: AbortSignal): Promise<PokemonCard | null> => {
+  const result = await proxyRequest<{ data: PokemonCard | null }>(`/cards/${encodeURIComponent(id)}`, undefined, signal);
+  return result.data ?? null;
 };
 
 export const getCardsByName = async (name: string): Promise<PokemonCard[]> => {
-  const { data } = await searchCards({ q: `name:"${name}"`, pageSize: 10 });
+  const { data } = await searchCards({ q: `name:"${name.replace(/["\\]/g, "")}"`, pageSize: 10 });
   return data;
 };
 
-export const filterCards = async (filters: {
-  types?: string[];
-  rarity?: string;
-  searchQuery?: string;
-  page?: number;
-}): Promise<{ data: PokemonCard[]; totalCount: number }> => {
+export const filterCards = async (filters: { types?: string[]; rarity?: string; searchQuery?: string; page?: number }) => {
   const queries: string[] = [];
-
-  if (filters.searchQuery) {
-    queries.push(`name:*${filters.searchQuery}*`);
-  }
-
-  if (filters.types && filters.types.length > 0) {
-    queries.push(`types:${filters.types.join(",")}`);
-  }
-
-  if (filters.rarity && filters.rarity !== "all") {
-    queries.push(`rarity:"${filters.rarity}"`);
-  }
-
-  const q = queries.length > 0 ? queries.join(" ") : undefined;
-
-  return searchCards({
-    q,
-    page: filters.page || 1,
-    pageSize: 20,
-  });
+  if (filters.searchQuery) queries.push(`name:*${filters.searchQuery.replace(/["\\]/g, "")}*`);
+  if (filters.types?.length) queries.push(`types:(${filters.types.join(" OR ")})`);
+  if (filters.rarity && filters.rarity !== "all") queries.push(`rarity:"${filters.rarity}"`);
+  return searchCards({ q: queries.join(" "), page: filters.page ?? 1, pageSize: 20 });
 };
 
-export const getAllSets = async (): Promise<PokemonSet[]> => {
-  try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const proxyUrl = `${supabaseUrl}/functions/v1/pokemon-proxy?path=/sets&query=orderBy=releaseDate`;
-    
-    const response = await fetch(proxyUrl);
-    const data = await response.json();
-    return data.data || [];
-  } catch (error) {
-    console.error("Error fetching sets:", error);
-    return [];
-  }
+export const getAllSets = async (signal?: AbortSignal): Promise<PokemonSet[]> => {
+  const result = await proxyRequest<{ data: PokemonSet[] }>("/sets", new URLSearchParams({ orderBy: "releaseDate" }), signal);
+  return result.data ?? [];
 };
 
-export const getCardsBySet = async (setId: string): Promise<{ data: PokemonCard[]; totalCount: number }> => {
-  try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const queryParams = new URLSearchParams({
-      q: `set.id:${setId}`,
-      pageSize: '250'
-    });
-    const proxyUrl = `${supabaseUrl}/functions/v1/pokemon-proxy?path=/cards&query=${encodeURIComponent(queryParams.toString())}`;
-    
-    const response = await fetch(proxyUrl);
-    const data = await response.json();
-    return {
-      data: data.data || [],
-      totalCount: data.totalCount || 0,
-    };
-  } catch (error) {
-    console.error("Error fetching cards by set:", error);
-    return { data: [], totalCount: 0 };
+export const getCardsBySet = async (setId: string, signal?: AbortSignal): Promise<{ data: PokemonCard[]; totalCount: number }> => {
+  const cards: PokemonCard[] = [];
+  let totalCount = Infinity;
+  for (let page = 1; cards.length < totalCount; page++) {
+    const result = await searchCards({ q: `set.id:${setId}`, page, pageSize: 250, orderBy: "number" }, signal);
+    totalCount = result.totalCount;
+    if (!result.data.length && cards.length < totalCount) throw new Error("Alla kort kunde inte hämtas. Försök igen.");
+    cards.push(...result.data);
   }
+  return { data: cards, totalCount };
 };
 
-export const getSetById = async (setId: string): Promise<PokemonSet | null> => {
-  try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const proxyUrl = `${supabaseUrl}/functions/v1/pokemon-proxy?path=/sets/${setId}`;
-    
-    const response = await fetch(proxyUrl);
-    const data = await response.json();
-    return data.data || null;
-  } catch (error) {
-    console.error("Error fetching set:", error);
-    return null;
-  }
+export const getSetById = async (setId: string, signal?: AbortSignal): Promise<PokemonSet | null> => {
+  const result = await proxyRequest<{ data: PokemonSet | null }>(`/sets/${encodeURIComponent(setId)}`, undefined, signal);
+  return result.data ?? null;
 };

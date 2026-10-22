@@ -13,25 +13,27 @@ export const TranslatedText = ({ text, className, as: Component = "span" }: Tran
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    let active = true;
     const translate = async () => {
       if (language === "sv") {
-        setTranslatedText(text);
+        if (active) setTranslatedText(text);
         return;
       }
 
       setIsLoading(true);
       try {
         const result = await translateAsync(text);
-        setTranslatedText(result);
+        if (active) setTranslatedText(result);
       } catch (error) {
         console.error("Translation failed:", error);
-        setTranslatedText(text);
+        if (active) setTranslatedText(text);
       } finally {
-        setIsLoading(false);
+        if (active) setIsLoading(false);
       }
     };
 
-    translate();
+    void translate();
+    return () => { active = false; };
   }, [text, language, translateAsync]);
 
   return <Component className={className}>{translatedText}</Component>;

@@ -9,6 +9,10 @@ import { pokemonSets } from "@/data/pokemonSets";
 import { toast } from "sonner";
 import { TranslatedText } from "@/components/TranslatedText";
 
+import { invokeAi } from "@/services/aiFunctions";
+import { withTimeout } from "@/utils/withTimeout";
+import { z } from "zod";
+
 const SetDetail = () => {
   const { setId } = useParams<{ setId: string }>();
   const navigate = useNavigate();
@@ -20,117 +24,60 @@ const SetDetail = () => {
   const [useAiCards, setUseAiCards] = useState(false);
 
   useEffect(() => {
-    if (setId) {
-      loadSetData();
-    }
-  }, [setId]);
-
-  const generateCardsWithAI = async (setData: PokemonSet) => {
-    setIsGenerating(true);
-    try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const response = await fetch(`${supabaseUrl}/functions/v1/generate-set-cards`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          setId: setData.id,
-          setName: setData.name,
-          totalCards: setData.total
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate cards');
-      }
-
-      const data = await response.json();
-      if (data.data && data.data.length > 0) {
-        setCards(data.data);
-        setUseAiCards(true);
-        toast.success(`${data.data.length} kort genererade med AI!`);
-      } else {
-        throw new Error('No cards generated');
-      }
-    } catch (error) {
-      console.error('Error generating cards with AI:', error);
-      toast.error('Kunde inte generera kort med AI');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const loadSetData = async () => {
     if (!setId) return;
-    
-    setIsLoading(true);
-    try {
-      // Try to fetch set info from API first
-      const setData = await getSetById(setId);
-      
-      if (setData) {
-        setSet(setData);
-        // Try to fetch cards, but with a short timeout
+    const controller = new AbortController();
+    let active = true;
+    const local = pokemonSets.find(candidate => candidate.id === setId);
+    const fallback: PokemonSet | null = local ? {
+      id: local.id, name: local.name, series: local.series, printedTotal: local.totalCards,
+      total: local.totalCards, releaseDate: local.releaseDate,
+      images: { symbol: "", logo: "" }, ptcgoCode: local.setCode,
+    } : null;
+    const generate = async (setData: PokemonSet) => {
+      if (!active) return;
+      setIsGenerating(true);
+      const result = await withTimeout(signal => invokeAi("generate-set-cards", {
+        setId: setData.id, setName: setData.name, totalCards: setData.total,
+      }, signal), controller.signal, 55000);
+      const parsed = z.object({ data: z.array(z.object({
+        id: z.string(), name: z.string(), number: z.string(),
+        images: z.object({ small: z.string().url(), large: z.string().url() }),
+        set: z.object({ name: z.string(), series: z.string().default("") }),
+        types: z.array(z.string()).optional(), rarity: z.string().optional(), hp: z.string().optional(),
+      })) }).parse(result);
+      // The runtime schema requires these fields; strictNullChecks is disabled in this project.
+      if (active) { setCards(parsed.data as PokemonCardType[]); setUseAiCards(true); }
+    };
+    const load = async () => {
+      setIsLoading(true); setIsGenerating(false); setSet(null); setCards([]);
+      setUseLocalData(false); setUseAiCards(false);
+      try {
+        let data = fallback;
         try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 5000);
-          
-          const cardsData = await getCardsBySet(setId);
-          clearTimeout(timeoutId);
-          
-          if (cardsData.data.length > 0) {
-            setCards(cardsData.data);
-          } else {
-            // No cards from API, generate with AI
-            await generateCardsWithAI(setData);
-          }
+          const remote = await withTimeout(signal => getSetById(setId, signal), controller.signal);
+          if (!active) return;
+          if (remote) data = remote;
+          else setUseLocalData(true);
         } catch {
-          // Cards fetch failed, generate with AI
-          await generateCardsWithAI(setData);
-        }
-      } else {
-        // Fallback to local data if API fails
-        const localSet = pokemonSets.find(s => s.id === setId);
-        if (localSet) {
+          if (!active) return;
           setUseLocalData(true);
-          const localSetData: PokemonSet = {
-            id: localSet.id,
-            name: localSet.name,
-            series: localSet.series,
-            printedTotal: localSet.totalCards,
-            total: localSet.totalCards,
-            releaseDate: localSet.releaseDate,
-            images: { symbol: "", logo: "" },
-            ptcgoCode: localSet.setCode
-          };
-          setSet(localSetData);
-          // Generate cards with AI for local set
-          await generateCardsWithAI(localSetData);
         }
-      }
-    } catch (error) {
-      console.error("Error loading set data:", error);
-      
-      // Fallback to local data
-      const localSet = pokemonSets.find(s => s.id === setId);
-      if (localSet) {
-        setUseLocalData(true);
-        const localSetData: PokemonSet = {
-          id: localSet.id,
-          name: localSet.name,
-          series: localSet.series,
-          printedTotal: localSet.totalCards,
-          total: localSet.totalCards,
-          releaseDate: localSet.releaseDate,
-          images: { symbol: "", logo: "" },
-          ptcgoCode: localSet.setCode
-        };
-        setSet(localSetData);
-        await generateCardsWithAI(localSetData);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        if (!data || !active) return;
+        setSet(data);
+        let result: Awaited<ReturnType<typeof getCardsBySet>> | null = null;
+        try {
+          result = await withTimeout(signal => getCardsBySet(setId, signal), controller.signal, 15000);
+        } catch { /* An unavailable card API can use the authenticated AI fallback. */ }
+        if (!active) return;
+        if (result?.data.length) setCards(result.data);
+        else await generate(data);
+      } catch (error) {
+        if (active) toast.error(error instanceof Error ? error.message : "Kunde inte ladda setet.");
+      } finally { if (active) { setIsLoading(false); setIsGenerating(false); } }
+    };
+    void load();
+    return () => { active = false; controller.abort(); };
+  }, [setId]);
 
   if (isLoading || isGenerating) {
     return (
