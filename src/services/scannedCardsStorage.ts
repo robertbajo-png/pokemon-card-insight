@@ -67,12 +67,17 @@ function openDatabase(): Promise<IDBDatabase> {
 
 async function transaction<T>(
   mode: IDBTransactionMode,
-  action: (store: IDBObjectStore, setResult: (result: T) => void) => void,
+  action: (
+    store: IDBObjectStore,
+    setResult: (result: T) => void,
+    fail: (error: Error) => void,
+  ) => void,
 ): Promise<T> {
   const db = await openDatabase();
   return new Promise<T>((resolve, reject) => {
     const tx = db.transaction(STORE, mode);
     let result: T;
+    let failure: Error | undefined;
     tx.oncomplete = () => {
       db.close();
       resolve(result);
@@ -80,18 +85,26 @@ async function transaction<T>(
     tx.onabort = () => {
       db.close();
       reject(
-        new Error(
-          "Kortet kunde inte sparas. Kontrollera enhetens lagringsutrymme och försök igen.",
-        ),
+        failure ??
+          new Error(
+            "Kortet kunde inte sparas. Kontrollera enhetens lagringsutrymme och försök igen.",
+          ),
       );
     };
     tx.onerror = () => {
       /* onabort reports the failed transaction */
     };
     try {
-      action(tx.objectStore(STORE), (value) => {
-        result = value;
-      });
+      action(
+        tx.objectStore(STORE),
+        (value) => {
+          result = value;
+        },
+        (error) => {
+          failure = error;
+          tx.abort();
+        },
+      );
     } catch (error) {
       tx.abort();
       reject(error);
@@ -186,8 +199,9 @@ export async function updateScannedCard(
   id: string,
   changes: Partial<NewScannedCard>,
   owner = GUEST,
+  expected?: ScannedCard,
 ): Promise<void> {
-  await transaction<void>("readwrite", (store) => {
+  await transaction<void>("readwrite", (store, _setResult, fail) => {
     const request = store.get(key(owner, id));
     request.onsuccess = () => {
       const row = request.result as StoredCard | undefined;
@@ -196,6 +210,18 @@ export async function updateScannedCard(
         return;
       }
       try {
+        if (
+          expected &&
+          JSON.stringify(scannedCardSchema.parse(row.card)) !==
+            JSON.stringify(scannedCardSchema.parse(expected))
+        ) {
+          fail(
+            new Error(
+              "Kortet har ändrats sedan du öppnade redigeringen. Stäng och öppna kortet igen för att läsa den senaste versionen. Dina uppgifter i formuläret finns kvar tills du stänger det.",
+            ),
+          );
+          return;
+        }
         const card = scannedCardSchema.parse({
           ...row.card,
           ...changes,
