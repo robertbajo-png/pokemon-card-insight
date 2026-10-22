@@ -9,6 +9,7 @@ export interface PokemonSet {
   logoUrl?: string;
   logo?: string;
   symbol?: string;
+  packArt?: string;
 }
 
 export const pokemonSets: PokemonSet[] = [
