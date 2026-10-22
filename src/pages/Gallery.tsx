@@ -14,6 +14,8 @@ import PokemonCard from "@/components/PokemonCard";
 import { useScannedCards } from "@/hooks/useScannedCards";
 import { getAllSets, getCardsBySet, type PokemonCard as PokemonCardType } from "@/services/pokemonTcgApi";
 import type { PokemonSet as LocalPokemonSet } from "@/data/pokemonSets";
+import SetChecklist from "@/components/SetChecklist";
+import { belongsToSet, localSetProgress } from "@/lib/collection";
 
 const Gallery = () => {
   const navigate = useNavigate();
@@ -63,13 +65,7 @@ const Gallery = () => {
   const ownedCardsForSelectedSet = useMemo(() => {
     if (!selectedSet) return [];
 
-    const normalizedName = selectedSet.name.toLowerCase();
-    const normalizedCode = selectedSet.setCode.toLowerCase();
-
-    return scannedCards.filter(card => {
-      const normalizedSet = card.set.toLowerCase();
-      return normalizedSet === normalizedName || normalizedSet === normalizedCode || normalizedSet.includes(normalizedName);
-    });
+    return scannedCards.filter(card => belongsToSet(card, selectedSet));
   }, [scannedCards, selectedSet]);
 
   useEffect(() => {
@@ -160,6 +156,7 @@ const Gallery = () => {
                   <span className="w-1 h-1 bg-border rounded-full" />
                   <span className="text-[10px] text-muted-foreground font-medium">{new Date(set.releaseDate).getFullYear()}</span>
                 </div>
+                <span className="mt-2 text-[10px] text-primary">{localSetProgress(scannedCards, set)} unika i samlingen</span>
               </button>
             ))}
           </div>
@@ -206,7 +203,7 @@ const Gallery = () => {
 
                 <div className="flex items-center gap-3">
                   <Badge variant="outline" className="text-sm">
-                    <TranslatedText text="Kort skannade i detta set" />: {ownedCardsForSelectedSet.length}
+                    <TranslatedText text="Exemplar i detta set" />: {ownedCardsForSelectedSet.reduce((sum, card) => sum + card.quantity, 0)}
                   </Badge>
                   <Badge variant="outline" className="text-sm">
                     <TranslatedText text="Totalt antal kort" />: {selectedSet.totalCards}
@@ -261,21 +258,7 @@ const Gallery = () => {
                     <TranslatedText text="Laddar kort från setet..." />
                   </div>
                 ) : setCards.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {setCards.map((card) => (
-                      <PokemonCard
-                        key={card.id}
-                        id={card.id}
-                        name={card.name}
-                        image={card.images.small}
-                        type={card.types?.[0]?.toLowerCase() || "normal"}
-                        rarity={card.rarity?.toLowerCase() || "common"}
-                        set={card.set.name}
-                        number={card.number}
-                        onClick={() => navigate(`/card/${card.id}`)}
-                      />
-                    ))}
-                  </div>
+                  <SetChecklist key={selectedSet.id} set={selectedSet} catalog={setCards} />
                 ) : (
                   <div className="text-sm text-muted-foreground">
                     <TranslatedText text="Korten i detta set kunde inte hämtas just nu." />

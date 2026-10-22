@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { CollectionProvider } from "@/contexts/CollectionContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import Index from "./pages/Index";
 import Scanner from "./pages/Scanner";
@@ -29,6 +30,7 @@ const App = () => (
   >
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <CollectionProvider>
         <LanguageProvider>
           <TooltipProvider>
             <Toaster />
@@ -51,6 +53,7 @@ const App = () => (
             </BrowserRouter>
           </TooltipProvider>
         </LanguageProvider>
+        </CollectionProvider>
       </AuthProvider>
     </QueryClientProvider>
   </ThemeProvider>
