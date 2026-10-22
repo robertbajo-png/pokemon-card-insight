@@ -146,16 +146,20 @@ export const pokemonSets: PokemonSet[] = [
   { id: "sv8", name: "Shrouded Fable", series: "Scarlet & Violet Series", totalCards: 99, releaseDate: "2024-08-02", setCode: "SFA" },
   { id: "sv9", name: "Stellar Crown", series: "Scarlet & Violet Series", totalCards: 175, releaseDate: "2024-09-13", setCode: "SCR" },
   { id: "sv10", name: "Surging Sparks", series: "Scarlet & Violet Series", totalCards: 252, releaseDate: "2024-11-08", setCode: "SSP" },
-  { id: "sv11", name: "Journey Together", series: "Scarlet & Violet Series", totalCards: 203, releaseDate: "2025-03-28", setCode: "JTO" },
-  { id: "sv12", name: "Destined Rivals", series: "Scarlet & Violet Series", totalCards: 198, releaseDate: "2025-05-30", setCode: "DRV" },
-  
+  { id: "sv8pt5", name: "Prismatic Evolutions", series: "Scarlet & Violet Series", totalCards: 180, releaseDate: "2025-01-17", setCode: "PRE" },
+  { id: "sv11", name: "Journey Together", series: "Scarlet & Violet Series", totalCards: 190, releaseDate: "2025-03-28", setCode: "JTG" },
+  { id: "sv12", name: "Destined Rivals", series: "Scarlet & Violet Series", totalCards: 244, releaseDate: "2025-05-30", setCode: "DRI" },
+  { id: "zsv10pt5", name: "Black Bolt", series: "Scarlet & Violet Series", totalCards: 172, releaseDate: "2025-07-18", setCode: "BLK" },
+  { id: "rsv10pt5", name: "White Flare", series: "Scarlet & Violet Series", totalCards: 173, releaseDate: "2025-07-18", setCode: "WHT" },
+
   // Mega Evolution Series
   { id: "me1", name: "Mega Evolution", series: "Mega Evolution Series", totalCards: 188, releaseDate: "2025-09-26", setCode: "MEG" },
   { id: "me2", name: "Phantasmal Flames", series: "Mega Evolution Series", totalCards: 130, releaseDate: "2025-11-14", setCode: "PFL" },
-  { id: "me3", name: "Ascended Heroes", series: "Mega Evolution Series", totalCards: 165, releaseDate: "2026-01-30", setCode: "ASH" },
-  { id: "me4", name: "Perfect Order", series: "Mega Evolution Series", totalCards: 172, releaseDate: "2026-04-24", setCode: "POR" },
-  { id: "me5", name: "Chaos Rising", series: "Mega Evolution Series", totalCards: 158, releaseDate: "2026-07-17", setCode: "CRI" },
-  { id: "me6", name: "Pitch Black", series: "Mega Evolution Series", totalCards: 145, releaseDate: "2026-10-09", setCode: "PBL" },
+  { id: "me2pt5", name: "Ascended Heroes", series: "Mega Evolution Series", totalCards: 295, releaseDate: "2026-01-30", setCode: "ASC" },
+  { id: "me3", name: "Perfect Order", series: "Mega Evolution Series", totalCards: 124, releaseDate: "2026-03-27", setCode: "POR" },
+  { id: "me4", name: "Chaos Rising", series: "Mega Evolution Series", totalCards: 122, releaseDate: "2026-05-22", setCode: "CRI" },
+  { id: "me5", name: "Pitch Black", series: "Mega Evolution Series", totalCards: 120, releaseDate: "2026-07-17", setCode: "PBL" },
+  { id: "me5pt5", name: "30th Celebration", series: "Mega Evolution Series", totalCards: 158, releaseDate: "2026-09-16", setCode: "30C" },
 
   // Special Sets & Promos (using correct Pokemon TCG API IDs)
   { id: "swshp", name: "Sword & Shield Promos", series: "Promo Sets", totalCards: 300, releaseDate: "2020-02-07", setCode: "SWSHP" },
