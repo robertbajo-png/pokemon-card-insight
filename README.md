@@ -4,9 +4,17 @@ Scan and identify Pokémon cards, manage a collection, and track which catalogue
 numbers are missing from each set. Collections support manual entry, editing,
 JSON backups, account-scoped offline storage, cloud sync and conflict resolution.
 
-The source runs independently of Lovable. The intended production stack is a
-React/Vite frontend hosted in Sites, plus Auth, PostgreSQL and Edge Functions in
-the owner's Supabase project. AI calls use a directly configured provider.
+The source runs independently of Lovable. The installed Windows option uses
+Docker for the app, PostgreSQL, Auth and its function handlers on this PC, following the
+WineSnap local-hosting arrangement. AI calls use an explicitly configured provider.
+
+## Local Windows app
+
+Open **http://127.0.0.1:5220/** after installation. The local confirmation-email
+inbox is **http://127.0.0.1:5225/**. Run `scripts/run-local-windows.ps1` in
+PowerShell 7 to install/build, or use `-Action Status`, `Stop`, `Resume`, `Restart`
+and `Verify`. See [local hosting](docs/local-windows-hosting.md) for startup,
+account import, backups and real-backend acceptance tests.
 
 ## Development
 
@@ -38,7 +46,8 @@ checks. They do not spend AI credits or modify a production database.
 
 - [Deployment and release checks](docs/deployment.md)
 - [Move from Lovable to Sites and your own Supabase](docs/migration-from-lovable.md)
-- The existing Sites project ID is in `.openai/hosting.json`; reuse it.
+- The earlier, unpublished Sites project ID remains in `.openai/hosting.json` for
+  a possible future cloud deployment; local hosting does not publish to it.
 - Preserve users and their UUIDs before changing the backend, and export any
   browser-local cards before changing the app's hostname.
 

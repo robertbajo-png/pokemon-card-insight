@@ -40,6 +40,7 @@ import {
 } from "@/lib/collection";
 import { pokemonSets } from "@/data/pokemonSets";
 import type { ScannedCard } from "@/lib/cardAnalysis";
+import { isLocalHosting } from "@/lib/hosting";
 
 function CardVersion({
   card,
@@ -206,7 +207,7 @@ function CollectionContent() {
           >
             <div>
               <h2 className="font-bold">
-                {row.card.name} har ändrats på två enheter
+                {row.card.name} har ändrats i två sessioner
               </h2>
               <p className="text-sm text-muted-foreground">
                 Båda versionerna finns kvar tills du väljer vilken som ska
@@ -219,7 +220,9 @@ function CollectionContent() {
                 <CardVersion card={row.card} deleted={row.deleted} />
               </div>
               <div>
-                <h3 className="font-medium mb-2">Molnet</h3>
+                <h3 className="font-medium mb-2">
+                  {isLocalHosting ? "Din lokala server" : "Molnet"}
+                </h3>
                 <CardVersion
                   card={row.conflict!.card}
                   deleted={row.conflict!.deleted}
@@ -230,7 +233,12 @@ function CollectionContent() {
               {(
                 [
                   ["local", "Behåll denna enhet"],
-                  ["cloud", "Använd molnversionen"],
+                  [
+                    "cloud",
+                    isLocalHosting
+                      ? "Använd serverversionen"
+                      : "Använd molnversionen",
+                  ],
                 ] as const
               ).map(([choice, label]) => (
                 <Button
@@ -482,7 +490,9 @@ function CollectionContent() {
                   ? "Alla kortposter i den här samlingen tas bort. Exportera en säkerhetskopia först om du vill kunna återställa dem."
                   : `Alla exemplar i posten ${deleting ? deleting.name : ""} tas bort. Ändra antal i stället om du vill behålla några exemplar.`}{" "}
                 {owner !== "guest" &&
-                  "Borttagningen synkas även till dina andra enheter."}
+                  (isLocalHosting
+                    ? "Borttagningen synkas även till dina andra inloggade webbläsare."
+                    : "Borttagningen synkas även till dina andra enheter.")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

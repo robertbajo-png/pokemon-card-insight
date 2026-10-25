@@ -18,6 +18,7 @@ dist-ssr
 backups/
 *.backup
 *.dump
+.local-build/
 
 # Editor directories and files
 .vscode/*
