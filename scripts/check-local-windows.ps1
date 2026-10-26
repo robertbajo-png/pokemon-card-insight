@@ -5,6 +5,7 @@ Test-PokemonHosting
 $settings = Get-PokemonSecrets
 try {
   $settings.aiConfigured = (Get-PokemonAiState).configured
+  $settings.publicOrigin = Get-PokemonPublicOrigin
   if ($ScanImage) {
     if (-not $settings.aiConfigured) { throw 'Configure the local AI provider before requesting a live scan.' }
     $imageFile = Get-Item -LiteralPath $ScanImage

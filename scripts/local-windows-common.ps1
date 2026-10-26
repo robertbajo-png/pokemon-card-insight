@@ -17,7 +17,7 @@ foreach ($taskIdentity in @($taskOwner, [Security.Principal.SecurityIdentifier]:
 [IO.FileSystemAclExtensions]::SetAccessControl([IO.DirectoryInfo]::new($script:PokemonState), $taskAcl)
 
 function Invoke-PokemonDocker {
-  param([string[]]$Arguments, [hashtable]$Environment = @{}, [string]$InputText, [switch]$Private)
+  param([string[]]$Arguments, [hashtable]$Environment = @{}, [string]$InputText, [switch]$Private, [switch]$CombinedOutput)
   $start = [Diagnostics.ProcessStartInfo]::new($script:PokemonDocker)
   $start.UseShellExecute = $false
   $start.CreateNoWindow = $true
@@ -50,6 +50,7 @@ function Invoke-PokemonDocker {
       }
       throw "Pokemon Docker command failed ($($process.ExitCode)): $($diagnostic.Substring([Math]::Max(0, $diagnostic.Length - 2500)))"
     }
+    if ($CombinedOutput) { return $text + "`n" + $diagnostic }
     return $text
   } finally { $start.Environment.Clear(); $process.Dispose() }
 }
@@ -125,6 +126,27 @@ function Get-PokemonAiState {
   if ($functions.Count -ne 1) { return @{ configured=$false; provider=$null } }
   $configured = @($functions[0].Config.Env | Where-Object { $_ -match '^(OPENAI_API_KEY|AI_API_KEY)=.+' }).Count -gt 0
   return @{ configured=$configured; provider=$(if ($configured) { 'OpenAI' } else { $null }) }
+}
+
+function Get-PokemonPublicOrigin {
+  $file = Join-Path $script:PokemonState 'mobile-origin.txt'
+  if (-not (Test-Path -LiteralPath $file)) { return 'http://127.0.0.1:5220' }
+  if ((Get-Item -LiteralPath $file).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Redirected origin file refused.' }
+  $origin = [IO.File]::ReadAllText($file).Trim()
+  if ($origin -ne 'http://127.0.0.1:5220' -and $origin -notmatch '^https://[a-z0-9-]+\.trycloudflare\.com$') { throw 'Unapproved public origin.' }
+  return $origin
+}
+
+function Sync-PokemonAuthOrigin {
+  $origin = Get-PokemonPublicOrigin
+  $auth = @(Get-PokemonContainers | Where-Object { $_.Config.Labels.'com.docker.compose.service' -eq 'auth' })
+  if ($auth.Count -ne 1 -or -not $auth[0].State.Running) { return }
+  if ($auth[0].Config.Env -contains "API_EXTERNAL_URL=$origin/backend/auth/v1") { return }
+  $settings = Get-PokemonSecrets
+  $settings.POKEMON_PUBLIC_ORIGIN = $origin
+  try {
+    Invoke-PokemonDocker -Arguments @('compose','--project-name','pokemon-local','--file',(Join-Path $script:PokemonRoot 'config/local-windows/compose.json'),'--env-file',(Join-Path $script:PokemonRoot 'config/local-windows/compose.env'),'up','--detach','--no-deps','--no-build','--wait','--wait-timeout','120','auth') -Environment $settings | Out-Null
+  } finally { $settings.Clear() }
 }
 
 function Test-PokemonHosting {

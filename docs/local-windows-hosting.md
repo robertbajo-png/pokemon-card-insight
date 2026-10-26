@@ -11,7 +11,9 @@ The isolated `pokemon-local` Compose project contains six services: the static
 web/proxy, PostgreSQL, Supabase Auth, PostgREST, Node function server and Mailpit. Only
 the app at port 5220 and the local email inbox at port 5225 are published, both
 bound to `127.0.0.1`. Database and administration ports are not published. No
-Internet tunnel, router forwarding or firewall change is installed.
+Internet tunnel, router forwarding or firewall change is installed by default.
+An owner-enabled, email-protected HTTPS tunnel is described in
+[mobile access](mobile-access.md); it reaches the web proxy on a separate network.
 
 Accounts and saved collections live in the named PostgreSQL volume. Guest cards
 remain in the browser's IndexedDB until explicitly imported into an account.

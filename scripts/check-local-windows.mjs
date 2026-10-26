@@ -88,11 +88,17 @@ try {
   const verify = new URL(link);
   assert.equal(
     verify.origin,
-    "http://127.0.0.1:5220",
-    "Confirmation must stay on the local app",
+    config.publicOrigin ?? "http://127.0.0.1:5220",
+    "Confirmation must use the installation's configured origin",
   );
   assert.equal(verify.pathname, "/backend/auth/v1/verify");
-  const confirmed = await fetch(verify, {
+  // Exercise our local fixture's GoTrue token without claiming an authenticated
+  // Cloudflare browser session or bypassing the external email gate.
+  const localVerify = new URL(
+    verify.pathname + verify.search,
+    "http://127.0.0.1:5220",
+  );
+  const confirmed = await fetch(localVerify, {
     redirect: "manual",
     signal: AbortSignal.timeout(15000),
   });

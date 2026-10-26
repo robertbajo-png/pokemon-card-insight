@@ -23,6 +23,9 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const onHostComputer = ["localhost", "127.0.0.1", "[::1]"].includes(
+    window.location.hostname,
+  );
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -61,17 +64,24 @@ const Login = () => {
       <Navigation />
       {isLocalHosting && (
         <p className="container mx-auto px-4 pt-20 text-sm text-muted-foreground">
-          Lokal installation · Konton och samlingar sparas på den här datorn.
-          Bekräftelsemejl finns i{" "}
-          <a
-            href="http://127.0.0.1:5225/"
-            target="_blank"
-            rel="noreferrer"
-            className="underline"
-          >
-            den lokala postlådan
-          </a>
-          .
+          Konton och samlingar sparas på datorn som kör appen.
+          {onHostComputer ? (
+            <>
+              {" "}
+              Bekräftelsemejl finns i{" "}
+              <a
+                href="http://127.0.0.1:5225/"
+                target="_blank"
+                rel="noreferrer"
+                className="underline"
+              >
+                den lokala postlådan
+              </a>
+              .
+            </>
+          ) : (
+            " Bekräftelsemejl för nya appkonton öppnas på värddatorn."
+          )}
         </p>
       )}
       <div className="container mx-auto px-4 pt-24 pb-16 flex justify-center">

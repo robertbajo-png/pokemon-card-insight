@@ -11,6 +11,8 @@ if ($Action -eq 'Status') {
   exit 0
 }
 if ($Action -eq 'Stop') {
+  $mobileScript = Join-Path $PSScriptRoot 'run-local-mobile.ps1'
+  if (Test-Path -LiteralPath $mobileScript) { & $mobileScript -Action Suspend }
   if ($containers.Count) { Invoke-PokemonDocker -Arguments (@('stop') + @($containers.Id)) | Out-Null }
   Write-Host 'Local Pokemon stopped; its database volume is retained.'
   exit 0
@@ -19,6 +21,7 @@ if ($Action -eq 'Start') {
   Write-Host 'Preparing private local backend settings...'
   $secrets = Get-PokemonSecrets -Create
   try {
+    $secrets.POKEMON_PUBLIC_ORIGIN = Get-PokemonPublicOrigin
     $aiSettings = Get-PokemonAiSettings
     foreach ($key in $aiSettings.Keys) { $secrets[$key] = $aiSettings[$key] }
     $aiSettings.Clear()
@@ -46,11 +49,16 @@ if ($Action -eq 'Start') {
     }
   }
 }
+if ($Action -eq 'Resume') { Sync-PokemonAuthOrigin }
 $deadline = [DateTime]::UtcNow.AddMinutes(3)
 do {
   try { Test-PokemonHosting; $ready=$true; break } catch { $ready=$false; $failure=$_.Exception.Message; Start-Sleep -Seconds 3 }
 } while ([DateTime]::UtcNow -lt $deadline)
 if (-not $ready) { throw "Local Pokemon did not become ready: $failure" }
+if ($Action -in @('Start','Resume')) {
+  $mobileScript = Join-Path $PSScriptRoot 'run-local-mobile.ps1'
+  if (Test-Path -LiteralPath $mobileScript) { & $mobileScript -Action Resume }
+}
 $aiState = Get-PokemonAiState
 @{ checkedAt=[DateTime]::UtcNow.ToString('o'); status='ready'; url='http://127.0.0.1:5220/'; backend='local'; aiConfigured=$aiState.configured; aiProvider=$aiState.provider } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $script:PokemonState 'status.json') -Encoding utf8
 Write-Host 'Pokemon Card Lens: http://127.0.0.1:5220/'

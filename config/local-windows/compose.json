@@ -101,11 +101,11 @@
       "environment": {
         "GOTRUE_API_HOST": "0.0.0.0",
         "GOTRUE_API_PORT": "9999",
-        "API_EXTERNAL_URL": "http://127.0.0.1:5220/backend/auth/v1",
+        "API_EXTERNAL_URL": "${POKEMON_PUBLIC_ORIGIN:-http://127.0.0.1:5220}/backend/auth/v1",
         "GOTRUE_DB_DRIVER": "postgres",
         "GOTRUE_DB_DATABASE_URL": "postgres://supabase_auth_admin:${POKEMON_DB_PASSWORD:?}@db:5432/postgres",
-        "GOTRUE_SITE_URL": "http://127.0.0.1:5220",
-        "GOTRUE_URI_ALLOW_LIST": "http://127.0.0.1:5220/",
+        "GOTRUE_SITE_URL": "${POKEMON_PUBLIC_ORIGIN:-http://127.0.0.1:5220}",
+        "GOTRUE_URI_ALLOW_LIST": "http://127.0.0.1:5220/,${POKEMON_PUBLIC_ORIGIN:-http://127.0.0.1:5220}/",
         "GOTRUE_DISABLE_SIGNUP": "false",
         "GOTRUE_EXTERNAL_EMAIL_ENABLED": "true",
         "GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED": "false",
@@ -216,6 +216,7 @@
       }
     },
     "web": {
+      "networks": ["default", "mobile"],
       "restart": "unless-stopped",
       "labels": {
         "pokemon.scope": "local-windows"
@@ -270,5 +271,12 @@
   },
   "volumes": {
     "pokemon-db": {}
+  },
+  "networks": {
+    "default": {},
+    "mobile": {
+      "name": "pokemon-local-mobile",
+      "labels": { "pokemon.scope": "local-mobile-network" }
+    }
   }
 }

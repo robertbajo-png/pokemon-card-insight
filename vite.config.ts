@@ -21,6 +21,8 @@ export default defineConfig({
         theme_color: "#FF6B35",
         background_color: "#ffffff",
         display: "standalone",
+        start_url:
+          process.env.VITE_HOSTING_MODE === "local" ? "/mobile-access" : "/",
         orientation: "portrait",
         icons: [
           {
@@ -38,6 +40,12 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Reach the external email gate when renewing mobile access; never
+        // answer backend requests with an offline copy of the app shell.
+        navigateFallbackDenylist: [
+          /^\/backend(?:\/|$)/,
+          /^\/mobile-access(?:\/|$)/,
+        ],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}"],
         runtimeCaching: [
           {

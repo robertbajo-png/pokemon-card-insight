@@ -15,6 +15,8 @@ inbox is **http://127.0.0.1:5225/**. Run `scripts/run-local-windows.ps1` in
 PowerShell 7 to install/build, or use `-Action Status`, `Stop`, `Resume`, `Restart`
 and `Verify`. See [local hosting](docs/local-windows-hosting.md) for startup,
 account import, backups and real-backend acceptance tests.
+Optional phone camera access uses an explicitly enabled, email-protected HTTPS
+link; see [mobile access](docs/mobile-access.md).
 
 ## Development
 

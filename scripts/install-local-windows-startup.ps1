@@ -12,8 +12,13 @@ if ($Remove) { if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $pat
 $runtime = Join-Path $script:PokemonState 'runtime/scripts'
 if ((Test-Path -LiteralPath $runtime) -and ((Get-Item -LiteralPath $runtime).Attributes -band [IO.FileAttributes]::ReparsePoint)) { throw 'Redirected runtime directory refused.' }
 New-Item -ItemType Directory -Path $runtime -Force | Out-Null
-foreach ($name in @('local-windows-common.ps1', 'run-local-windows.ps1', 'start-local-windows-session.ps1')) {
+foreach ($name in @('local-windows-common.ps1', 'run-local-windows.ps1', 'run-local-mobile.ps1', 'start-local-windows-session.ps1')) {
   Copy-Item -LiteralPath (Join-Path $PSScriptRoot $name) -Destination (Join-Path $runtime $name) -Force
+}
+$runtimeConfig = Join-Path (Split-Path -Parent $runtime) 'config/local-windows'
+New-Item -ItemType Directory -Path $runtimeConfig -Force | Out-Null
+foreach ($name in @('compose.json','compose.env','roles.sql','auth-helpers.sql')) {
+  Copy-Item -LiteralPath (Join-Path $script:PokemonRoot "config/local-windows/$name") -Destination (Join-Path $runtimeConfig $name) -Force
 }
 $entry = Join-Path $runtime 'start-local-windows-session.ps1'
 $shortcut.TargetPath = (Get-Process -Id $PID).Path
