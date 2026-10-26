@@ -33,7 +33,7 @@ const Index = () => {
                 <TrendingUp className="w-3 h-3" /> AI
               </span>
               <span className="text-muted-foreground text-[11px]">
-                <TranslatedText text="Skannat med Gemini" />
+                <TranslatedText text="Bildanalys med AI" />
               </span>
             </div>
 
@@ -74,7 +74,7 @@ const Index = () => {
           </div>
           <div className="bg-card/60 border border-border rounded-2xl p-4">
             <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">AI</p>
-            <p className="text-2xl font-bold mt-1">3 Pro</p>
+            <p className="text-2xl font-bold mt-1"><TranslatedText text="Bildanalys" /></p>
           </div>
         </section>
 

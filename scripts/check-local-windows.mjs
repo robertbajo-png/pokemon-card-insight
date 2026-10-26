@@ -10,6 +10,7 @@ const base = "http://127.0.0.1:5220/backend";
 const created = [];
 const checks = [];
 const mailIds = [];
+let liveScan;
 async function request(
   path,
   { token, method = "GET", body, statuses = [200] } = {},
@@ -207,16 +208,58 @@ try {
     body: { action: "analyze", image },
     statuses: [401],
   });
-  const unconfigured = await request("/functions/v1/analyze-pokemon-card", {
-    token: a1.access_token,
-    method: "POST",
-    body: { action: "analyze", image },
-    statuses: [503],
-  });
-  assert.match(unconfigured.error, /inte konfigurerad/);
-  checks.push(
-    "AI rejects anonymous access and fails closed without a provider key",
-  );
+  if (!config.aiConfigured) {
+    const unconfigured = await request("/functions/v1/analyze-pokemon-card", {
+      token: a1.access_token,
+      method: "POST",
+      body: { action: "analyze", image },
+      statuses: [503],
+    });
+    assert.match(unconfigured.error, /inte konfigurerad/);
+    checks.push(
+      "AI rejects anonymous access and fails closed without a provider key",
+    );
+  } else {
+    await request("/functions/v1/analyze-pokemon-card", {
+      token: a1.access_token,
+      method: "POST",
+      body: {},
+      statuses: [400],
+    });
+    checks.push(
+      "Configured AI rejects anonymous or invalid requests without a paid call",
+    );
+  }
+  if (config.scanImage) {
+    const analysis = await request("/functions/v1/analyze-pokemon-card", {
+      token: a1.access_token,
+      method: "POST",
+      body: { action: "analyze", image: config.scanImage },
+    });
+    assert.equal(
+      typeof analysis.name,
+      "string",
+      "Scan did not return a card name",
+    );
+    assert(
+      analysis.name.trim() && analysis.name.toLowerCase() !== "unknown",
+      "Scan did not identify the card",
+    );
+    if (config.expectedName)
+      assert.equal(
+        analysis.name.toLowerCase(),
+        config.expectedName.toLowerCase(),
+        "Unexpected card identification",
+      );
+    liveScan = {
+      name: String(analysis.name).slice(0, 200),
+      set: String(analysis.set ?? "").slice(0, 200),
+      number: String(analysis.number ?? "").slice(0, 100),
+    };
+    checks.push(
+      "One explicitly requested card-image scan completed through the real AI provider",
+    );
+  }
 } catch (error) {
   failure = error.message;
 } finally {
@@ -249,6 +292,7 @@ console.log(
     {
       passed: !failure,
       checks,
+      ...(liveScan ? { liveScan } : {}),
       fixtureUsersRemoved: created.length,
       ...(failure ? { failure } : {}),
     },

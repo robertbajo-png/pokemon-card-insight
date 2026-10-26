@@ -31,6 +31,16 @@ beforeEach(() => {
   vi.spyOn(console, "log").mockImplementation(() => {});
 });
 afterEach(() => vi.unstubAllGlobals());
+function openAiEnvironment(extra: Record<string, string> = {}) {
+  const environment: Record<string, string> = {
+    SUPABASE_URL: "https://example.supabase.co",
+    SUPABASE_ANON_KEY: "anon",
+    SUPABASE_SERVICE_ROLE_KEY: "service",
+    OPENAI_API_KEY: "openai-test-key",
+    ...extra,
+  };
+  vi.stubGlobal("Deno", { env: { get: (name: string) => environment[name] } });
+}
 function request(body: unknown, auth?: string) {
   return new Request("https://example.invalid", {
     method: "POST",
@@ -220,4 +230,89 @@ it("rejects oversized and malformed images before an AI call", async () => {
     ).status,
   ).toBe(413);
   expect(fetchMock).toHaveBeenCalledTimes(2);
+});
+
+it.each([
+  {
+    handler: analyze,
+    body: bodies[0],
+    content: '{"name":"Pikachu"}',
+    limit: 8192,
+  },
+  {
+    handler: analyze,
+    body: { action: "generate", pageSize: 1 },
+    content: '[{"name":"Pikachu"}]',
+    limit: 8192,
+  },
+  {
+    handler: generate,
+    body: bodies[1],
+    content: '[{"name":"Pikachu","number":"1"}]',
+    limit: 8192,
+  },
+  { handler: translate, body: bodies[2], content: "Hello", limit: 2048 },
+])(
+  "supports the OpenAI request contract without forwarding the user's token",
+  async ({ handler, body, content, limit }) => {
+    openAiEnvironment();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json(user))
+      .mockResolvedValueOnce(Response.json(true))
+      .mockResolvedValueOnce(
+        Response.json({ choices: [{ message: { content } }] }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    expect((await handler(request(body, "Bearer user-token"))).status).toBe(
+      200,
+    );
+    const [url, options] = fetchMock.mock.calls[2];
+    expect(url).toBe("https://api.openai.com/v1/chat/completions");
+    expect(options.headers.Authorization).toBe("Bearer openai-test-key");
+    const payload = JSON.parse(options.body);
+    expect(payload).toMatchObject({
+      model: "gpt-5.4-mini-2026-03-17",
+      max_completion_tokens: limit,
+      store: false,
+    });
+    expect(payload).not.toHaveProperty("max_tokens");
+    expect(options.redirect).toBe("error");
+  },
+);
+
+it("does not send an OpenAI key to an accidentally configured foreign provider", async () => {
+  openAiEnvironment({ AI_BASE_URL: "https://other.example/v1" });
+  const fetchMock = vi.fn().mockResolvedValue(Response.json(user));
+  vi.stubGlobal("fetch", fetchMock);
+  expect((await analyze(request(bodies[0], "Bearer user-token"))).status).toBe(
+    503,
+  );
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
+it("withholds a provider error body that contains a credential", async () => {
+  openAiEnvironment();
+  const fetchMock = vi
+    .fn()
+    .mockResolvedValueOnce(Response.json(user))
+    .mockResolvedValueOnce(Response.json(true))
+    .mockResolvedValueOnce(
+      Response.json(
+        { error: { code: "invalid_api_key", message: "private-provider-key" } },
+        { status: 401 },
+      ),
+    );
+  vi.stubGlobal("fetch", fetchMock);
+  const result = await analyze(request(bodies[0], "Bearer user-token"));
+  expect(result.status).toBe(503);
+  expect(await result.text()).not.toContain("private-provider-key");
+  expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain(
+    "private-provider-key",
+  );
+  expect(console.error).toHaveBeenCalledWith(
+    "AI provider error:",
+    401,
+    "invalid_api_key",
+  );
 });

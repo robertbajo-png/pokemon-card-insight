@@ -19,6 +19,9 @@ if ($Action -eq 'Start') {
   Write-Host 'Preparing private local backend settings...'
   $secrets = Get-PokemonSecrets -Create
   try {
+    $aiSettings = Get-PokemonAiSettings
+    foreach ($key in $aiSettings.Keys) { $secrets[$key] = $aiSettings[$key] }
+    $aiSettings.Clear()
     $compose = @('compose', '--project-name', 'pokemon-local', '--file', (Join-Path $script:PokemonRoot 'config/local-windows/compose.json'), '--env-file', (Join-Path $script:PokemonRoot 'config/local-windows/compose.env'))
     Write-Host 'Building and starting local Pokemon services...'
     Invoke-PokemonDocker -Arguments ($compose + @('up', '--detach', '--build', '--wait', '--wait-timeout', '180')) -Environment $secrets | Out-Null
@@ -48,5 +51,6 @@ do {
   try { Test-PokemonHosting; $ready=$true; break } catch { $ready=$false; $failure=$_.Exception.Message; Start-Sleep -Seconds 3 }
 } while ([DateTime]::UtcNow -lt $deadline)
 if (-not $ready) { throw "Local Pokemon did not become ready: $failure" }
-@{ checkedAt=[DateTime]::UtcNow.ToString('o'); status='ready'; url='http://127.0.0.1:5220/'; backend='local'; aiConfigured=$false } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $script:PokemonState 'status.json') -Encoding utf8
+$aiState = Get-PokemonAiState
+@{ checkedAt=[DateTime]::UtcNow.ToString('o'); status='ready'; url='http://127.0.0.1:5220/'; backend='local'; aiConfigured=$aiState.configured; aiProvider=$aiState.provider } | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $script:PokemonState 'status.json') -Encoding utf8
 Write-Host 'Pokemon Card Lens: http://127.0.0.1:5220/'

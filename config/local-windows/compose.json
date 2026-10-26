@@ -203,7 +203,8 @@
       "environment": {
         "SUPABASE_URL": "http://web:8080/backend",
         "SUPABASE_ANON_KEY": "${POKEMON_ANON_KEY:?}",
-        "SUPABASE_SERVICE_ROLE_KEY": "${POKEMON_SERVICE_KEY:?}"
+        "SUPABASE_SERVICE_ROLE_KEY": "${POKEMON_SERVICE_KEY:?}",
+        "OPENAI_API_KEY": "${POKEMON_OPENAI_API_KEY:-}"
       },
       "depends_on": {
         "auth": {

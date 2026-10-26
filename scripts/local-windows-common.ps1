@@ -26,7 +26,7 @@ function Invoke-PokemonDocker {
   $start.RedirectStandardInput = $true
   $start.WorkingDirectory = $script:PokemonRoot
   foreach ($taskKey in @($start.Environment.Keys)) {
-    if ($taskKey -match '^(DOCKER_|COMPOSE_|POKEMON_|VITE_)') { $start.Environment.Remove($taskKey) | Out-Null }
+    if ($taskKey -match '^(DOCKER_|COMPOSE_|POKEMON_|VITE_|OPENAI_|AI_)') { $start.Environment.Remove($taskKey) | Out-Null }
   }
   foreach ($taskKey in $Environment.Keys) { $start.Environment[$taskKey] = [string]$Environment[$taskKey] }
   foreach ($taskArgument in @('--context', 'desktop-linux') + $Arguments) { $start.ArgumentList.Add($taskArgument) }
@@ -100,6 +100,31 @@ function Invoke-PokemonSql([string]$Sql) {
   $db = @(Get-PokemonContainers | Where-Object { $_.Config.Labels.'com.docker.compose.service' -eq 'db' })
   if ($db.Count -ne 1 -or -not $db[0].State.Running) { throw 'Installed local database is not running.' }
   return Invoke-PokemonDocker -Arguments @('exec', '-i', $db[0].Id, 'psql', '-X', '-v', 'ON_ERROR_STOP=1', '-U', 'postgres', '-d', 'postgres', '-At') -InputText $Sql -Private
+}
+
+function Get-PokemonAiSettings {
+  $file = Join-Path $script:PokemonRoot 'supabase/functions/.env.local'
+  if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { return @{} }
+  foreach ($item in @('supabase', 'supabase/functions', 'supabase/functions/.env.local')) {
+    if ((Get-Item -LiteralPath (Join-Path $script:PokemonRoot $item)).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Redirected AI credential path refused.' }
+  }
+  $found = @()
+  foreach ($line in [IO.File]::ReadAllLines($file)) {
+    if ($line -match '^\s*(?:export\s+)?OPENAI_API_KEY\s*=\s*(.*?)\s*$') {
+      $value = $Matches[1].Trim().Trim([char]34, [char]39)
+      if ($value -notmatch '^sk-[A-Za-z0-9_-]{20,}$') { throw 'The local OpenAI key has an invalid format; contents withheld.' }
+      $found += $value
+    }
+  }
+  if ($found.Count -ne 1) { throw 'Exactly one OPENAI_API_KEY is required in the local AI credential file.' }
+  return @{ POKEMON_OPENAI_API_KEY = $found[0] }
+}
+
+function Get-PokemonAiState {
+  $functions = @(Get-PokemonContainers | Where-Object { $_.Config.Labels.'com.docker.compose.service' -eq 'functions' })
+  if ($functions.Count -ne 1) { return @{ configured=$false; provider=$null } }
+  $configured = @($functions[0].Config.Env | Where-Object { $_ -match '^(OPENAI_API_KEY|AI_API_KEY)=.+' }).Count -gt 0
+  return @{ configured=$configured; provider=$(if ($configured) { 'OpenAI' } else { $null }) }
 }
 
 function Test-PokemonHosting {

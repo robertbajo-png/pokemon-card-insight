@@ -9,7 +9,11 @@ import {
   readJsonBody,
 } from "../_shared/aiGuard.ts";
 import { z } from "npm:zod@3.25.76";
-import { getAiProvider } from "../_shared/aiProvider.ts";
+import {
+  getAiProvider,
+  aiGenerationOptions,
+  logAiProviderError,
+} from "../_shared/aiProvider.ts";
 
 export async function handleRequest(req: Request) {
   if (req.method === "OPTIONS") {
@@ -50,7 +54,7 @@ export async function handleRequest(req: Request) {
       },
       body: JSON.stringify({
         model: ai.model,
-        max_tokens: 2048,
+        ...aiGenerationOptions(ai, 2048),
         messages: [
           {
             role: "system",
@@ -77,8 +81,7 @@ export async function handleRequest(req: Request) {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      await logAiProviderError(response);
       return new Response(JSON.stringify({ error: "Translation failed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

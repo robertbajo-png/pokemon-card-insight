@@ -9,7 +9,11 @@ import {
   readJsonBody,
 } from "../_shared/aiGuard.ts";
 import { z } from "npm:zod@3.25.76";
-import { getAiProvider } from "../_shared/aiProvider.ts";
+import {
+  getAiProvider,
+  aiGenerationOptions,
+  logAiProviderError,
+} from "../_shared/aiProvider.ts";
 
 export async function handleRequest(req: Request) {
   if (req.method === "OPTIONS") {
@@ -132,7 +136,7 @@ Svara ENDAST med giltig JSON i detta exakta format (utan extra text):
         },
         body: JSON.stringify({
           model: ai.model,
-          max_tokens: 8192,
+          ...aiGenerationOptions(ai, 8192),
           messages: [
             { role: "system", content: systemPrompt },
             {
@@ -147,11 +151,7 @@ Svara ENDAST med giltig JSON i detta exakta format (utan extra text):
       });
 
       if (!response.ok) {
-        console.error(
-          "AI gateway error:",
-          response.status,
-          await response.text(),
-        );
+        await logAiProviderError(response);
         throw new HttpError(
           response.status === 429 ? 429 : 503,
           "AI-tjänsten är inte tillgänglig just nu.",
@@ -222,7 +222,7 @@ Generera ${pageSize} olika kort. Använd riktiga Pokemon-namn och realistiska v�
         },
         body: JSON.stringify({
           model: ai.model,
-          max_tokens: 8192,
+          ...aiGenerationOptions(ai, 8192),
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
@@ -231,11 +231,7 @@ Generera ${pageSize} olika kort. Använd riktiga Pokemon-namn och realistiska v�
       });
 
       if (!response.ok) {
-        console.error(
-          "AI gateway error:",
-          response.status,
-          await response.text(),
-        );
+        await logAiProviderError(response);
         throw new HttpError(
           response.status === 429 ? 429 : 503,
           "AI-tjänsten är inte tillgänglig just nu.",

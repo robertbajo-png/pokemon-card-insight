@@ -98,15 +98,30 @@ messages to **http://127.0.0.1:5225/**, not to an external mailbox. Existing
 confirmed accounts can sign in with their existing passwords. No real user's
 password is changed by the installer or its acceptance test.
 
-AI handlers are installed with authentication and atomic quotas. Provider
-credentials are a separate, explicit configuration step. This initial hosting
-configuration contains no provider key and returns 503 rather than contacting
-Lovable, borrowing another app's key or pretending an analysis succeeded.
-Local hosting by itself does not verify billable AI inference.
+AI handlers retain authentication and atomic quotas. The Windows launcher reads
+`OPENAI_API_KEY` only from the ignored `supabase/functions/.env.local` file and
+passes it only to the backend function container. It does not read another
+app's key or an inherited shell key. The key never enters a frontend build arg,
+the Docker build context, or the public web image. Run `Start` to apply a newly
+saved key; the installed containers retain their environment for `Resume` and
+Windows logon startup.
+
+With `OPENAI_API_KEY`, the provider defaults to OpenAI's HTTPS endpoint and the
+`gpt-5.4-mini-2026-03-17` model. OpenAI requests use `max_completion_tokens` and
+`store: false`; the compatible-provider configuration retains its existing
+token parameter. An OpenAI key is refused if `AI_BASE_URL` points to another
+origin. Provider failures log only HTTP status and an allowlisted error code.
+Reference: https://developers.openai.com/api/docs/models/gpt-5.4-mini
+
+Without a saved key the backend returns 503. A configured-key status describes
+credential presence, not successful billing, model access or image inference.
+Always verify a real scan before claiming that AI is active.
 
 ```powershell
 ./scripts/backup-local-windows.ps1
 ./scripts/check-local-windows.ps1 -RestartRoundTrip
+# Optional: explicitly makes one paid card-image request after configuration.
+./scripts/check-local-windows.ps1 -ScanImage ./src/assets/charizard-base-set.jpg -ExpectedName Charizard
 ```
 
 Backups are written to the protected `PokemonCardHosting/backups` directory.
@@ -114,7 +129,9 @@ They contain account password hashes and private cards; keep them outside Git
 and the web root. A local backup alone does not protect against losing the PC.
 The acceptance test creates disposable users only in this local backend, checks
 signup and local email confirmation, real Auth, owner isolation, revisions, photos, idempotency, deletion and restart
-persistence, then removes its fixtures. It makes no billable AI call.
+persistence, then removes its fixtures. The default test makes no billable AI
+call, even when a key is configured. Only an explicit `-ScanImage` requests real
+inference; its report contains the card name, set and number, not credentials.
 
 The installation on 25 October 2026 restored the 22 October source snapshot:
 two existing accounts and zero server-side collection rows. Real signup/email

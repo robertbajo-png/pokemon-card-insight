@@ -9,7 +9,11 @@ import {
   readJsonBody,
 } from "../_shared/aiGuard.ts";
 import { z } from "npm:zod@3.25.76";
-import { getAiProvider } from "../_shared/aiProvider.ts";
+import {
+  getAiProvider,
+  aiGenerationOptions,
+  logAiProviderError,
+} from "../_shared/aiProvider.ts";
 
 export async function handleRequest(req: Request) {
   if (req.method === "OPTIONS") {
@@ -70,14 +74,13 @@ Use Pokemon that would realistically be in the ${setName} set based on the era/g
       body: JSON.stringify({
         model: ai.model,
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 8192,
+        ...aiGenerationOptions(ai, 8192),
         temperature: 0.7,
       }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("AI provider error:", response.status, errorText);
+      await logAiProviderError(response);
       throw new HttpError(
         response.status === 429 ? 429 : 503,
         "AI-tjänsten är inte tillgänglig just nu.",
