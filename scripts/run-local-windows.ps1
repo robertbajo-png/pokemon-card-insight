@@ -50,6 +50,7 @@ if ($Action -eq 'Start') {
   }
 }
 if ($Action -eq 'Resume') { Sync-PokemonAuthOrigin }
+if ($Action -in @('Start','Resume','Restart')) { Reload-PokemonWeb }
 $deadline = [DateTime]::UtcNow.AddMinutes(3)
 do {
   try { Test-PokemonHosting; $ready=$true; break } catch { $ready=$false; $failure=$_.Exception.Message; Start-Sleep -Seconds 3 }

@@ -137,6 +137,13 @@ function Get-PokemonPublicOrigin {
   return $origin
 }
 
+function Reload-PokemonWeb {
+  $web = @(Get-PokemonContainers | Where-Object { $_.Config.Labels.'com.docker.compose.service' -eq 'web' })
+  if ($web.Count -eq 1 -and $web[0].State.Running) {
+    Invoke-PokemonDocker -Arguments @('exec',$web[0].Id,'nginx','-s','reload') -Private | Out-Null
+  }
+}
+
 function Sync-PokemonAuthOrigin {
   $origin = Get-PokemonPublicOrigin
   $auth = @(Get-PokemonContainers | Where-Object { $_.Config.Labels.'com.docker.compose.service' -eq 'auth' })
@@ -146,6 +153,7 @@ function Sync-PokemonAuthOrigin {
   $settings.POKEMON_PUBLIC_ORIGIN = $origin
   try {
     Invoke-PokemonDocker -Arguments @('compose','--project-name','pokemon-local','--file',(Join-Path $script:PokemonRoot 'config/local-windows/compose.json'),'--env-file',(Join-Path $script:PokemonRoot 'config/local-windows/compose.env'),'up','--detach','--no-deps','--no-build','--wait','--wait-timeout','120','auth') -Environment $settings | Out-Null
+    Reload-PokemonWeb
   } finally { $settings.Clear() }
 }
 
