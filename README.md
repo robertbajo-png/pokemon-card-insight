@@ -8,6 +8,15 @@ The source runs independently of Lovable. The installed Windows option uses
 Docker for the app, PostgreSQL, Auth and its function handlers on this PC, following the
 WineSnap local-hosting arrangement. AI calls use an explicitly configured provider.
 
+## Scan and review
+
+Choose a photo, run the analysis, then select **Kontrollera och spara**. Check
+the proposed name, set and number, and enter quantity, language, condition and
+storage location before saving. The photo and analysis stay with the card.
+A failed save keeps the review form open so you can retry without a new AI call.
+Once saved, open the collection or choose the next card. Switching accounts
+clears the scanner workspace and cancels its pending analysis.
+
 ## Local Windows app
 
 Open **http://127.0.0.1:5220/** after installation. The local confirmation-email
