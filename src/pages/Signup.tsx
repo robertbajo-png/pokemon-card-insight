@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { isLocalHosting } from "@/lib/hosting";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -31,7 +32,9 @@ const Signup = () => {
       toast.error(error.message);
     } else {
       toast.success(
-        "Registreringen lyckades! Kontrollera din e‑post för att verifiera kontot.",
+        isLocalHosting
+          ? "Kontot är skapat. Öppna den lokala postlådan för att bekräfta det."
+          : "Registreringen lyckades! Kontrollera din e‑post för att verifiera kontot.",
       );
       navigate("/login");
     }

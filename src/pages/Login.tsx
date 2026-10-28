@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Image, Library, LogOut, Scan, Users, User } from "lucide-react";
+import { isLocalHosting } from "@/lib/hosting";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -22,6 +23,9 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const onHostComputer = ["localhost", "127.0.0.1", "[::1]"].includes(
+    window.location.hostname,
+  );
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -58,6 +62,28 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
+      {isLocalHosting && (
+        <p className="container mx-auto px-4 pt-20 text-sm text-muted-foreground">
+          Konton och samlingar sparas på datorn som kör appen.
+          {onHostComputer ? (
+            <>
+              {" "}
+              Bekräftelsemejl finns i{" "}
+              <a
+                href="http://127.0.0.1:5225/"
+                target="_blank"
+                rel="noreferrer"
+                className="underline"
+              >
+                den lokala postlådan
+              </a>
+              .
+            </>
+          ) : (
+            " Bekräftelsemejl för nya appkonton öppnas på värddatorn."
+          )}
+        </p>
+      )}
       <div className="container mx-auto px-4 pt-24 pb-16 flex justify-center">
         {user ? (
           <Card className="w-full max-w-4xl">
@@ -67,11 +93,17 @@ const Login = () => {
                   <User className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl font-bold">Din profil</CardTitle>
+                  <CardTitle className="text-2xl font-bold">
+                    Din profil
+                  </CardTitle>
                   <CardDescription>Inloggad som {user.email}</CardDescription>
                 </div>
               </div>
-              <Button onClick={handleLogout} variant="outline" className="gap-2">
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="gap-2"
+              >
                 <LogOut className="w-4 h-4" />
                 Logga ut
               </Button>
@@ -95,7 +127,8 @@ const Login = () => {
                   },
                   {
                     title: "Scanna kort",
-                    description: "Lägg till nya kort via kameran eller uppladdning",
+                    description:
+                      "Lägg till nya kort via kameran eller uppladdning",
                     icon: Scan,
                     to: "/scanner",
                     cta: "Starta skanner",
@@ -118,7 +151,9 @@ const Login = () => {
                         </div>
                         <div>
                           <p className="font-semibold">{item.title}</p>
-                          <p className="text-sm text-muted-foreground">{item.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {item.description}
+                          </p>
                         </div>
                       </div>
                       {item.to ? (
@@ -126,13 +161,19 @@ const Login = () => {
                           {item.cta}
                         </Button>
                       ) : (
-                        <p className="text-xs text-muted-foreground mt-2">Tillgängligt snart</p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Tillgängligt snart
+                        </p>
                       )}
                     </div>
                   );
 
                   return item.to ? (
-                    <Link key={item.title} to={item.to} className="block h-full">
+                    <Link
+                      key={item.title}
+                      to={item.to}
+                      className="block h-full"
+                    >
                       {content}
                     </Link>
                   ) : (

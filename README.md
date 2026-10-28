@@ -1,75 +1,67 @@
-# Welcome to your Lovable project
+# Pokemon Card Lens
 
-## Project info
+Scan and identify Pokémon cards, manage a collection, and track which catalogue
+numbers are missing from each set. Collections support manual entry, editing,
+JSON backups, account-scoped offline storage, cloud sync and conflict resolution.
 
-**URL**: https://lovable.dev/projects/652b4873-084a-4a6a-80af-1dd5f9ebe2e0
+The source runs independently of Lovable. The installed Windows option uses
+Docker for the app, PostgreSQL, Auth and its function handlers on this PC, following the
+WineSnap local-hosting arrangement. AI calls use an explicitly configured provider.
 
-## How can I edit this code?
+## Scan and review
 
-There are several ways of editing your application.
+Choose a photo, run the analysis, then select **Kontrollera och spara**. Check
+the proposed name, set and number, and enter quantity, language, condition and
+storage location before saving. The photo and analysis stay with the card.
+A failed save keeps the review form open so you can retry without a new AI call.
+Once saved, open the collection or choose the next card. Switching accounts
+clears the scanner workspace and cancels its pending analysis.
 
-**Use Lovable**
+## Local Windows app
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/652b4873-084a-4a6a-80af-1dd5f9ebe2e0) and start prompting.
+Open **http://127.0.0.1:5220/** after installation. The local confirmation-email
+inbox is **http://127.0.0.1:5225/**. Run `scripts/run-local-windows.ps1` in
+PowerShell 7 to install/build, or use `-Action Status`, `Stop`, `Resume`, `Restart`
+and `Verify`. See [local hosting](docs/local-windows-hosting.md) for startup,
+account import, backups and real-backend acceptance tests.
+Optional phone camera access uses an explicitly enabled, email-protected HTTPS
+link; see [mobile access](docs/mobile-access.md).
 
-Changes made via Lovable will be committed automatically to this repo.
+## Development
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-Use Node.js 22 and npm 10.9.9. The supported dependency lock is `package-lock.json`.
-See [deployment instructions](docs/deployment.md) for checks, the required Supabase
-migration and the function deployment order.
-
-Follow these steps:
+Use Node.js 22 and npm 10.9.9. `package-lock.json` is the supported lockfile.
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
 npm ci
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+cp .env.example .env.local
+# Set the public URL and public key of the intended Supabase project.
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Never put a service-role key or AI provider key in a `VITE_*` variable. Server
+secret names and direct AI model settings are in `supabase/functions/.env.example`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Checks
 
-**Use GitHub Codespaces**
+```sh
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+The tests include local PostgreSQL/RLS, offline storage, cloud conflict and UI
+checks. They do not spend AI credits or modify a production database.
 
-## What technologies are used for this project?
+## Deployment and migration
 
-This project is built with:
+- [Deployment and release checks](docs/deployment.md)
+- [Move from Lovable to Sites and your own Supabase](docs/migration-from-lovable.md)
+- The earlier, unpublished Sites project ID remains in `.openai/hosting.json` for
+  a possible future cloud deployment; local hosting does not publish to it.
+- Preserve users and their UUIDs before changing the backend, and export any
+  browser-local cards before changing the app's hostname.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/652b4873-084a-4a6a-80af-1dd5f9ebe2e0) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Source preparation and passing tests do not prove a production migration or
+deployment has completed. The old app remains available until the new backend,
+sign-in and two-session cloud sync are verified.

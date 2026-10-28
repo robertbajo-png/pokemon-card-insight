@@ -4,6 +4,7 @@ import { useScannedCards } from "@/hooks/useScannedCards";
 import { Button } from "@/components/ui/button";
 import { GUEST } from "@/services/scannedCardsStorage";
 import { toast } from "sonner";
+import { isLocalHosting } from "@/lib/hosting";
 
 export default function CollectionSyncStatus() {
   const {
@@ -21,9 +22,13 @@ export default function CollectionSyncStatus() {
     ? "Sparat på denna enhet"
     : {
         syncing: "Synkar samlingen...",
-        synced: "Samlingen är synkad",
+        synced: isLocalHosting
+          ? "Synkad med din lokala server"
+          : "Samlingen är synkad",
         offline: "Väntar på synkning",
-        error: "Molnsynkning behöver uppmärksamhet",
+        error: isLocalHosting
+          ? "Synkningen med din lokala server behöver uppmärksamhet"
+          : "Molnsynkning behöver uppmärksamhet",
         conflict: "Välj vilken version du vill behålla",
         local: "Sparat på denna enhet",
       }[syncStatus];
@@ -45,9 +50,11 @@ export default function CollectionSyncStatus() {
             </p>
             <p className="text-xs text-muted-foreground">
               {local
-                ? "Logga in för säkerhetskopiering och samma samling på dina andra enheter."
+                ? isLocalHosting
+                  ? "Logga in för att spara samlingen i den lokala databasen på datorn."
+                  : "Logga in för säkerhetskopiering och samma samling på dina andra enheter."
                 : pending
-                  ? `${pending} ändringar finns sparade på enheten och väntar på molnet.`
+                  ? `${pending} ändringar finns sparade på enheten och väntar på ${isLocalHosting ? "din lokala server" : "molnet"}.`
                   : lastSynced
                     ? `Senast synkad ${new Date(lastSynced).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })}`
                     : "Dina kort är privata för ditt konto."}
@@ -56,7 +63,11 @@ export default function CollectionSyncStatus() {
         </div>
         {local ? (
           <Button asChild size="sm" variant="outline">
-            <Link to="/login">Logga in för molnsparning</Link>
+            <Link to="/login">
+              {isLocalHosting
+                ? "Logga in för serversparning"
+                : "Logga in för molnsparning"}
+            </Link>
           </Button>
         ) : (
           <Button

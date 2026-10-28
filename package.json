@@ -10,7 +10,11 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "local:start": "pwsh -NoProfile -File scripts/run-local-windows.ps1 -Action Start",
+    "local:stop": "pwsh -NoProfile -File scripts/run-local-windows.ps1 -Action Stop",
+    "local:status": "pwsh -NoProfile -File scripts/run-local-windows.ps1 -Action Status",
+    "local:verify": "pwsh -NoProfile -File scripts/run-local-windows.ps1 -Action Verify"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.4",
@@ -87,7 +91,6 @@
     "fake-indexeddb": "^6.2.4",
     "globals": "^15.15.0",
     "jsdom": "^26.1.0",
-    "lovable-tagger": "^1.1.11",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
