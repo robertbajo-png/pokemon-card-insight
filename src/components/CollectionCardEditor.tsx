@@ -17,6 +17,16 @@ import {
 import { resolveSetId } from "@/lib/collection";
 import { pokemonSets } from "@/data/pokemonSets";
 import { toast } from "sonner";
+import {
+  Check,
+  Pencil,
+  Plus,
+  ScanLine,
+  Layers3,
+  MapPin,
+  PackageCheck,
+  Loader2,
+} from "lucide-react";
 
 function CardForm({
   card: initialCard,
@@ -120,150 +130,197 @@ function CardForm({
     }
   };
   const selectClass =
-    "w-full rounded-md border border-input bg-background px-3 py-2 text-sm";
+    "w-full rounded-xl border border-input bg-background/60 px-3 py-2.5 text-sm font-normal text-foreground transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-card";
   return (
     <form
       onSubmit={submit}
-      className="flex min-h-0 flex-col gap-4 overflow-hidden"
+      className="flex min-h-0 flex-col gap-5 overflow-hidden"
     >
-      <div className="min-h-0 space-y-4 overflow-y-auto pr-1">
-        {draft?.image && (
-          <img
-            src={draft.image}
-            alt="Skannat kort"
-            className="mx-auto h-32 max-w-full rounded-md object-contain"
-          />
+      <div className="min-h-0 space-y-6 overflow-y-auto pr-1">
+        {source?.image && (
+          <div className="flex items-center gap-5 rounded-2xl border border-border/60 bg-background/50 p-4">
+            <img
+              src={source.image}
+              alt="Skannat kort"
+              className="h-28 w-20 shrink-0 rounded-md object-contain drop-shadow-lg"
+            />
+            <div className="min-w-0">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+                {draft ? "Ditt skannade kort" : "I din samling"}
+              </p>
+              <p className="truncate font-semibold tracking-tight">
+                {source.name}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {source.set} · #{source.number}
+              </p>
+              <p className="mt-3 text-xs text-muted-foreground">
+                Bilden följer med kortet.
+              </p>
+            </div>
+          </div>
         )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <label className="space-y-1 text-sm">
-            Kortnamn
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={200}
-              required
-            />
-          </label>
-          <label className="space-y-1 text-sm">
-            Kortnummer
-            <Input
-              value={number}
-              onChange={(e) => setNumber(e.target.value)}
-              maxLength={100}
-              placeholder="58 eller 58/102"
-              required
-            />
-          </label>
-          <label className="space-y-1 text-sm sm:col-span-2">
-            Set
-            <select
-              aria-label="Set"
-              value={setId}
-              onChange={(e) => setSetId(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">Annat set / ange namn</option>
-              {pokemonSets.map((set) => (
-                <option key={set.id} value={set.id}>
-                  {set.name} ({set.setCode})
-                </option>
-              ))}
-            </select>
-          </label>
-          {!setId && (
-            <label className="space-y-1 text-sm sm:col-span-2">
-              Setnamn
+        <section className="space-y-4" aria-label="Kortuppgifter">
+          <h3 className="flex items-center gap-2 text-sm font-semibold">
+            <Layers3 className="h-4 w-4 text-primary" />
+            Kortet
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label className="space-y-2 text-sm font-medium">
+              Kortnamn
               <Input
-                value={customSetName}
-                onChange={(e) => setCustomSetName(e.target.value)}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 maxLength={200}
                 required
               />
             </label>
-          )}
-          <label className="space-y-1 text-sm">
-            Antal
-            <Input
-              type="number"
-              min={1}
-              max={9999}
-              step={1}
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              required
-            />
-          </label>
-          <label className="space-y-1 text-sm">
-            Språk
-            <select
-              aria-label="Språk"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className={selectClass}
-            >
-              {[
-                ["en", "Engelska"],
-                ["ja", "Japanska"],
-                ["sv", "Svenska"],
-                ["de", "Tyska"],
-                ["fr", "Franska"],
-                ["it", "Italienska"],
-                ["es", "Spanska"],
-                ["ko", "Koreanska"],
-                ["zh", "Kinesiska"],
-                ["other", "Annat"],
-              ].map(([id, label]) => (
-                <option key={id} value={id}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="space-y-1 text-sm">
-            Variant
-            <Input
-              value={variant}
-              onChange={(e) => setVariant(e.target.value)}
-              maxLength={80}
-              placeholder="normal, holo, reverse holo..."
-            />
-          </label>
-          <label className="space-y-1 text-sm">
-            Skick
-            <Input
-              value={condition}
-              onChange={(e) => setCondition(e.target.value)}
-              maxLength={200}
-              placeholder="Till exempel Near Mint"
-            />
-          </label>
-          <label className="space-y-1 text-sm sm:col-span-2">
-            Förvaringsplats
-            <Input
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              maxLength={200}
-              placeholder="Pärm 2, sida 8"
-            />
-          </label>
-          <label className="space-y-1 text-sm sm:col-span-2">
-            Anteckningar
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              maxLength={2000}
-              rows={3}
-              className={selectClass}
-            />
-          </label>
-        </div>
+            <label className="space-y-2 text-sm font-medium">
+              Kortnummer
+              <Input
+                value={number}
+                onChange={(e) => setNumber(e.target.value)}
+                maxLength={100}
+                placeholder="58 eller 58/102"
+                required
+              />
+            </label>
+            <label className="space-y-2 text-sm font-medium sm:col-span-2">
+              Set
+              <select
+                aria-label="Set"
+                value={setId}
+                onChange={(e) => setSetId(e.target.value)}
+                className={selectClass}
+              >
+                <option value="">Annat set / ange namn</option>
+                {pokemonSets.map((set) => (
+                  <option key={set.id} value={set.id}>
+                    {set.name} ({set.setCode})
+                  </option>
+                ))}
+              </select>
+            </label>
+            {!setId && (
+              <label className="space-y-2 text-sm font-medium sm:col-span-2">
+                Setnamn
+                <Input
+                  value={customSetName}
+                  onChange={(e) => setCustomSetName(e.target.value)}
+                  maxLength={200}
+                  required
+                />
+              </label>
+            )}
+          </div>
+        </section>
+        <section
+          className="space-y-4 border-t border-border/60 pt-5"
+          aria-label="Exemplarsuppgifter"
+        >
+          <h3 className="flex items-center gap-2 text-sm font-semibold">
+            <PackageCheck className="h-4 w-4 text-primary" />
+            Dina exemplar
+          </h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="space-y-2 text-sm font-medium">
+              Antal
+              <Input
+                type="number"
+                min={1}
+                max={9999}
+                step={1}
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                required
+              />
+            </label>
+            <label className="space-y-2 text-sm font-medium">
+              Språk
+              <select
+                aria-label="Språk"
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                className={selectClass}
+              >
+                {[
+                  ["en", "Engelska"],
+                  ["ja", "Japanska"],
+                  ["sv", "Svenska"],
+                  ["de", "Tyska"],
+                  ["fr", "Franska"],
+                  ["it", "Italienska"],
+                  ["es", "Spanska"],
+                  ["ko", "Koreanska"],
+                  ["zh", "Kinesiska"],
+                  ["other", "Annat"],
+                ].map(([id, label]) => (
+                  <option key={id} value={id}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="space-y-2 text-sm font-medium">
+              Variant
+              <Input
+                value={variant}
+                onChange={(e) => setVariant(e.target.value)}
+                maxLength={80}
+                placeholder="normal, holo, reverse holo..."
+              />
+            </label>
+            <label className="space-y-2 text-sm font-medium">
+              Skick
+              <Input
+                value={condition}
+                onChange={(e) => setCondition(e.target.value)}
+                maxLength={200}
+                placeholder="Till exempel Near Mint"
+              />
+            </label>
+          </div>
+        </section>
+        <section
+          className="space-y-4 border-t border-border/60 pt-5"
+          aria-label="Förvaring och anteckningar"
+        >
+          <h3 className="flex items-center gap-2 text-sm font-semibold">
+            <MapPin className="h-4 w-4 text-primary" />
+            Förvaring och anteckningar
+          </h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="space-y-2 text-sm font-medium sm:col-span-2">
+              Förvaringsplats
+              <Input
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                maxLength={200}
+                placeholder="Pärm 2, sida 8"
+              />
+            </label>
+            <label className="space-y-2 text-sm font-medium sm:col-span-2">
+              Anteckningar
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                maxLength={2000}
+                rows={3}
+                className={selectClass}
+              />
+            </label>
+          </div>
+        </section>
         {error && (
-          <p role="alert" className="text-sm text-destructive">
+          <p
+            role="alert"
+            className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm leading-relaxed text-destructive"
+          >
             {error}
           </p>
         )}
       </div>
-      <div className="flex shrink-0 justify-end gap-2 border-t border-border pt-3">
+      <div className="flex shrink-0 justify-end gap-2.5 border-t border-border/70 pt-4">
         <Button
           type="button"
           variant="outline"
@@ -272,7 +329,12 @@ function CardForm({
         >
           Avbryt
         </Button>
-        <Button type="submit" disabled={saving}>
+        <Button type="submit" disabled={saving} className="min-w-32">
+          {saving ? (
+            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+          ) : (
+            <Check className="mr-1 h-4 w-4" />
+          )}
           {saving ? "Sparar..." : "Spara kort"}
         </Button>
       </div>
@@ -294,6 +356,7 @@ export default function CollectionCardEditor({
   onCreated?: (card: ScannedCard) => void;
 }) {
   const [saving, setSaving] = useState(false);
+  const EditorIcon = card ? Pencil : draft ? ScanLine : Plus;
   return (
     <Dialog
       open={open}
@@ -301,20 +364,27 @@ export default function CollectionCardEditor({
         if (!saving) onOpenChange(next);
       }}
     >
-      <DialogContent className="flex max-h-[90dvh] flex-col overflow-hidden sm:max-w-xl">
-        <DialogHeader className="shrink-0 pr-4">
-          <DialogTitle>
-            {card
-              ? "Redigera kort"
-              : draft
-                ? "Kontrollera skannat kort"
-                : "Lägg till kort manuellt"}
-          </DialogTitle>
-          <DialogDescription>
-            {draft
-              ? "Kontrollera uppgifterna mot kortet och ange vilka exemplar du vill lägga till."
-              : "Registrera dina exemplar och var du förvarar dem. Ändringarna sparas på enheten och synkas när du är inloggad."}
-          </DialogDescription>
+      <DialogContent className="flex max-h-[90dvh] w-[calc(100%_-_1.5rem)] flex-col gap-6 overflow-hidden rounded-3xl border-border/80 bg-card p-5 sm:max-w-2xl sm:p-7">
+        <DialogHeader className="shrink-0 pr-4 text-left">
+          <div className="flex items-start gap-4">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
+              <EditorIcon className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <DialogTitle className="text-xl font-semibold tracking-tight sm:text-2xl">
+                {card
+                  ? "Redigera kort"
+                  : draft
+                    ? "Kontrollera skannat kort"
+                    : "Lägg till kort manuellt"}
+              </DialogTitle>
+              <DialogDescription className="mt-2 text-sm leading-relaxed">
+                {draft
+                  ? "Kontrollera uppgifterna mot kortet och ange vilka exemplar du vill lägga till."
+                  : "Registrera dina exemplar och var du förvarar dem. Ändringarna sparas på enheten och synkas när du är inloggad."}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
         <CardForm
           key={card?.id ?? "new"}

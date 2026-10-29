@@ -1,26 +1,37 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { Image, Library, LogOut, Scan, Users, User } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Check,
+  Eye,
+  EyeOff,
+  Image,
+  Library,
+  Loader2,
+  LogOut,
+  Mail,
+  Scan,
+  User,
+  Users,
+} from "lucide-react";
 import { isLocalHosting } from "@/lib/hosting";
+import charizard from "@/assets/charizard-base-set.jpg";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
   const onHostComputer = ["localhost", "127.0.0.1", "[::1]"].includes(
@@ -28,207 +39,294 @@ const Login = () => {
   );
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Utloggad");
-      navigate("/");
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) toast.error(error.message);
+      else {
+        toast.success("Utloggad");
+        navigate("/");
+      }
+    } catch {
+      toast.error("Kunde inte logga ut. Försök igen.");
+    } finally {
+      setLoggingOut(false);
     }
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async (event: FormEvent) => {
+    event.preventDefault();
+    if (loading) return;
+    setFormError(null);
     if (!email || !password) {
+      setFormError("Fyll i e‑post och lösenord");
       toast.error("Fyll i e‑post och lösenord");
       return;
     }
-
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    setLoading(false);
-
-    if (error) {
-      toast.error(error.message);
-    } else {
-      toast.success("Inloggad!");
-      navigate("/");
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) {
+        setFormError(error.message);
+        toast.error(error.message);
+      } else {
+        toast.success("Inloggad!");
+        navigate("/");
+      }
+    } catch {
+      setFormError("Kunde inte ansluta. Försök igen om en stund.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      {isLocalHosting && (
-        <p className="container mx-auto px-4 pt-20 text-sm text-muted-foreground">
-          Konton och samlingar sparas på datorn som kör appen.
-          {onHostComputer ? (
-            <>
-              {" "}
-              Bekräftelsemejl finns i{" "}
-              <a
-                href="http://127.0.0.1:5225/"
-                target="_blank"
-                rel="noreferrer"
-                className="underline"
-              >
-                den lokala postlådan
-              </a>
-              .
-            </>
-          ) : (
-            " Bekräftelsemejl för nya appkonton öppnas på värddatorn."
-          )}
-        </p>
-      )}
-      <div className="container mx-auto px-4 pt-24 pb-16 flex justify-center">
+      <main id="main-content" tabIndex={-1} className="page-shell">
         {user ? (
-          <Card className="w-full max-w-4xl">
-            <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <CardTitle className="text-2xl font-bold">
-                    Din profil
-                  </CardTitle>
-                  <CardDescription>Inloggad som {user.email}</CardDescription>
-                </div>
+          <div className="mx-auto max-w-5xl space-y-8">
+            <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="page-eyebrow">Ditt samlarkonto</p>
+                <h1 className="page-title">Din profil.</h1>
+                <p className="page-subtitle">Allt du samlar, på ett ställe.</p>
               </div>
               <Button
-                onClick={handleLogout}
                 variant="outline"
-                className="gap-2"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="gap-2 self-start"
               >
-                <LogOut className="w-4 h-4" />
+                {loggingOut ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <LogOut className="h-4 w-4" />
+                )}
                 Logga ut
               </Button>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-4">
+            </header>
+            <section className="surface-panel flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:p-8">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
+                <User className="h-7 w-7" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  Inloggad som
+                </p>
+                <p className="mt-2 break-all text-lg font-semibold">
+                  {user.email}
+                </p>
+              </div>
+              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                <Check className="h-3.5 w-3.5" />
+                Du är inloggad
+              </span>
+            </section>
+            <section>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="section-heading">Vad vill du göra?</h2>
+                <span className="text-xs text-muted-foreground">
+                  Fortsätt utforska
+                </span>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
                 {[
                   {
-                    title: "Galleri",
-                    description: "Se dina uppladdade kort och höjdpunkter",
-                    icon: Image,
-                    to: "/gallery",
-                    cta: "Öppna galleri",
-                  },
-                  {
-                    title: "Samling",
-                    description: "Hantera dina kort och följ din statistik",
-                    icon: Library,
-                    to: "/collection",
-                    cta: "Gå till samling",
-                  },
-                  {
-                    title: "Scanna kort",
+                    title: "Skanna kort",
                     description:
-                      "Lägg till nya kort via kameran eller uppladdning",
+                      "Få ett AI-förslag och granska ditt nästa fynd.",
                     icon: Scan,
                     to: "/scanner",
-                    cta: "Starta skanner",
+                  },
+                  {
+                    title: "Min samling",
+                    description:
+                      "Se dina exemplar, anteckningar och förvaringsplatser.",
+                    icon: Library,
+                    to: "/collection",
+                  },
+                  {
+                    title: "Utforska set",
+                    description: "Hitta ett set och se vilka kort du saknar.",
+                    icon: Image,
+                    to: "/gallery",
                   },
                   {
                     title: "Vänner",
-                    description: "Dela länkar och lägg till andra samlare",
+                    description: "Hantera din lokala lista med andra samlare.",
                     icon: Users,
                     to: "/friends",
-                    cta: "Öppna vänner",
                   },
-                ].map((item) => {
-                  const Icon = item.icon;
-
-                  const content = (
-                    <div className="p-4 rounded-lg border border-border bg-card hover:shadow-card transition-all duration-300 h-full">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
-                          <Icon className="w-5 h-5 text-foreground" />
-                        </div>
-                        <div>
-                          <p className="font-semibold">{item.title}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {item.description}
-                          </p>
-                        </div>
-                      </div>
-                      {item.to ? (
-                        <Button variant="secondary" size="sm" className="mt-2">
-                          {item.cta}
-                        </Button>
-                      ) : (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Tillgängligt snart
-                        </p>
-                      )}
-                    </div>
-                  );
-
-                  return item.to ? (
-                    <Link
-                      key={item.title}
-                      to={item.to}
-                      className="block h-full"
-                    >
-                      {content}
-                    </Link>
-                  ) : (
-                    <div key={item.title} className="h-full opacity-80">
-                      {content}
-                    </div>
-                  );
-                })}
+                ].map(({ title, description, icon: Icon, to }) => (
+                  <Link
+                    key={to}
+                    to={to}
+                    className="surface-panel group flex items-start gap-4 p-5 transition-colors hover:border-primary/35"
+                  >
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted text-primary">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold">{title}</span>
+                      <span className="mt-1 block text-sm leading-relaxed text-muted-foreground">
+                        {description}
+                      </span>
+                    </span>
+                    <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                  </Link>
+                ))}
               </div>
-            </CardContent>
-          </Card>
+            </section>
+          </div>
         ) : (
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold">Logga in</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-1">
-                <Label htmlFor="email">E‑post</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+          <section className="surface-panel mx-auto grid max-w-5xl overflow-hidden lg:grid-cols-[1.05fr_1fr]">
+            <aside className="relative hidden min-h-[620px] flex-col justify-between overflow-hidden border-r border-border bg-primary/[0.045] p-9 lg:flex">
+              <div className="relative z-10">
+                <p className="page-eyebrow">För kärleken till korten</p>
+                <h2 className="mt-4 max-w-xs text-3xl font-semibold leading-tight tracking-tight">
+                  En plats för dina favoritkort.
+                </h2>
+                <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
+                  Från ditt första fynd till pärmen du aldrig slutar bläddra i.
+                </p>
+              </div>
+              <div className="relative my-7 flex justify-center">
+                <div className="absolute inset-x-8 bottom-2 h-24 rounded-full bg-primary/10 blur-3xl" />
+                <img
+                  src={charizard}
+                  alt="Charizard från Base Set"
+                  className="relative h-64 rotate-[-7deg] rounded-xl border border-primary/20 object-contain shadow-2xl transition-transform duration-500 hover:rotate-0"
                 />
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="password">Lösenord</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+              <div className="relative z-10 flex items-center gap-3 border-t border-border/70 pt-5">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-background/50">
+                  <Library className="h-4 w-4 text-primary" />
+                </span>
+                <p className="text-sm text-muted-foreground">
+                  Skanna. Samla. Upptäck.
+                </p>
               </div>
-              <Button
-                onClick={handleLogin}
-                disabled={loading}
-                className="w-full"
-              >
-                {loading ? "Loggar in..." : "Logga in"}
-              </Button>
-              <Button
-                variant="ghost"
-                className="w-full"
-                onClick={() => navigate("/signup")}
-              >
-                Har inget konto? Skapa ett
-              </Button>
-            </CardContent>
-          </Card>
+            </aside>
+            <div className="flex flex-col justify-center p-6 sm:p-10">
+              <div className="mb-8">
+                <p className="page-eyebrow">Ditt konto</p>
+                <h1 className="mt-3 text-3xl font-semibold tracking-tight">
+                  Välkommen tillbaka.
+                </h1>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                  Logga in och fortsätt där du slutade samla.
+                </p>
+              </div>
+              <form onSubmit={handleLogin} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="email">E‑post</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="username"
+                    inputMode="email"
+                    spellCheck={false}
+                    required
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="din@epost.se"
+                    className="h-12"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Lösenord</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="current-password"
+                      required
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      className="h-12 pr-12"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((value) => !value)}
+                      aria-label={
+                        showPassword ? "Dölj lösenord" : "Visa lösenord"
+                      }
+                      aria-pressed={showPassword}
+                      className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                {formError && (
+                  <p
+                    role="alert"
+                    className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive"
+                  >
+                    {formError}
+                  </p>
+                )}
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="h-12 w-full gap-2"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ArrowRight className="h-4 w-4" />
+                  )}
+                  {loading ? "Loggar in..." : "Logga in"}
+                </Button>
+              </form>
+              <div className="mt-7 border-t border-border pt-6 text-center">
+                <p className="text-sm text-muted-foreground">Ny här?</p>
+                <Link
+                  to="/signup"
+                  className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+                >
+                  Har inget konto? Skapa ett
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </div>
+              {isLocalHosting && (
+                <div className="mt-7 flex items-start gap-3 rounded-xl bg-muted/60 p-4">
+                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    Konton och samlingar sparas på datorn som kör appen.{" "}
+                    {onHostComputer ? (
+                      <>
+                        Bekräftelsemejl finns i{" "}
+                        <a
+                          href="http://127.0.0.1:5225/"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-medium text-foreground underline underline-offset-2"
+                        >
+                          den lokala postlådan
+                        </a>
+                        .
+                      </>
+                    ) : (
+                      "Bekräftelsemejl för nya appkonton öppnas på värddatorn."
+                    )}
+                  </p>
+                </div>
+              )}
+            </div>
+          </section>
         )}
-      </div>
+      </main>
     </div>
   );
 };
-
 export default Login;
