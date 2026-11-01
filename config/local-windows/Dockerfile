@@ -18,5 +18,7 @@ EXPOSE 8080
 FROM node:22-bookworm-slim AS functions
 WORKDIR /app
 COPY --from=build /app/.local-build/functions/server.mjs ./server.mjs
+COPY --from=build /app/.local-build/catalogue /app/catalogue
+RUN chmod -R a-w /app/catalogue
 USER node
 CMD ["node", "--max-old-space-size=192", "server.mjs"]

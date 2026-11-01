@@ -1,4 +1,8 @@
-import { pokemonSets, type PokemonSet as LocalSet } from "@/data/pokemonSets";
+import {
+  pokemonSets,
+  legacySetMappings,
+  type PokemonSet as LocalSet,
+} from "@/data/pokemonSets";
 import {
   scannedCardSchema,
   type NewScannedCard,
@@ -11,16 +15,87 @@ export const normalize = (value: string) =>
 export const cardNumber = (value: string) =>
   normalize(value.split("/")[0]).replace(/(^|[a-z])0+(?=\d)/g, "$1");
 
-export function resolveSetId(
-  card: Pick<ScannedCard, "setId" | "set" | "setCode">,
-): string | undefined {
-  if (card.setId) return card.setId;
-  const labels = [card.set, card.setCode].filter(Boolean).map(normalize);
-  return pokemonSets.find((set) =>
-    [set.id, set.name, set.setCode].some((label) =>
-      labels.includes(normalize(label)),
-    ),
-  )?.id;
+type SetIdentity = Pick<ScannedCard, "setId" | "set" | "setCode"> &
+  Partial<Pick<ScannedCard, "catalogId">>;
+type CardIdentity = SetIdentity & Pick<ScannedCard, "name" | "number">;
+
+const canonicalSets = new Map(pokemonSets.map((set) => [set.id, set]));
+const legacySets = new Map(legacySetMappings.map((set) => [set.id, set]));
+const names = new Map<string, Set<string>>();
+const codes = new Map<string, Set<string>>();
+function indexLabel(
+  index: Map<string, Set<string>>,
+  value: string,
+  id: string,
+) {
+  const key = normalize(value);
+  const ids = index.get(key) ?? new Set<string>();
+  ids.add(id);
+  index.set(key, ids);
+}
+for (const set of pokemonSets) {
+  for (const name of [set.id, ...set.aliases]) indexLabel(names, name, set.id);
+  for (const code of [set.id, ...set.codeAliases])
+    indexLabel(codes, code, set.id);
+}
+
+export function resolveSetId(card: SetIdentity): string | undefined {
+  const nameIds = names.get(normalize(card.set ?? "")) ?? new Set<string>();
+  const codeIds = codes.get(normalize(card.setCode ?? "")) ?? new Set<string>();
+  const labels = new Set(
+    nameIds.size && codeIds.size
+      ? [...nameIds].filter((id) => codeIds.has(id))
+      : [...nameIds, ...codeIds],
+  );
+  // Recognized labels disagree: never credit either set's checklist.
+  if (nameIds.size && codeIds.size && !labels.size) return undefined;
+
+  const storedId = card.setId ? normalize(card.setId) : undefined;
+  const canonical = storedId ? canonicalSets.get(storedId) : undefined;
+  const legacy = storedId ? legacySets.get(storedId) : undefined;
+  const legacySupported = Boolean(
+    legacy &&
+      labels.has(legacy.canonicalId) &&
+      (normalize(card.set ?? "") === normalize(legacy.name) ||
+        normalize(card.setCode ?? "") === normalize(legacy.setCode)),
+  );
+  const catalogId = card.catalogId?.trim();
+  const catalogSet = catalogId
+    ? pokemonSets.find((set) => catalogId.startsWith(`${set.id}-`))?.id
+    : undefined;
+
+  if (catalogId) {
+    if (!catalogSet || (labels.size && !labels.has(catalogSet)))
+      return undefined;
+    if (
+      storedId &&
+      canonical?.id !== catalogSet &&
+      !(legacySupported && legacy?.canonicalId === catalogSet)
+    )
+      return undefined;
+    // A catalogue prefix needs supporting labels or the same canonical set ID.
+    return labels.has(catalogSet) || canonical?.id === catalogSet
+      ? catalogSet
+      : undefined;
+  }
+  if (storedId) {
+    if (legacySupported) return legacy!.canonicalId;
+    // sv5–sv10 have two historical meanings; an ID alone cannot disambiguate them.
+    if (legacy)
+      return canonical && labels.has(canonical.id) ? canonical.id : undefined;
+    return canonical && (!labels.size || labels.has(canonical.id))
+      ? canonical.id
+      : undefined;
+  }
+  return labels.size === 1 ? [...labels][0] : undefined;
+}
+
+export function collectionCardIdentity(card: CardIdentity): string | undefined {
+  const setId = resolveSetId(card);
+  if (!setId) return undefined;
+  return card.catalogId
+    ? `catalog:${card.catalogId}`
+    : `printing:${JSON.stringify([setId, normalize(card.name), cardNumber(card.number)])}`;
 }
 
 export function belongsToSet(
@@ -30,20 +105,37 @@ export function belongsToSet(
     setCode?: string;
   },
 ): boolean {
-  const id = resolveSetId(card);
-  if (id) return id === set.id;
-  const labels = [set.name, set.ptcgoCode, set.setCode]
-    .filter(Boolean)
-    .map(normalize);
-  return [card.set, card.setCode]
-    .filter(Boolean)
-    .some((label) => labels.includes(normalize(label)));
+  return resolveSetId(card) === set.id;
 }
 
 export function samePrinting(a: ScannedCard, b: ScannedCard): boolean {
+  const aSet = resolveSetId(a),
+    bSet = resolveSetId(b);
+  let sameSet = false;
+  if (aSet || bSet) {
+    // A resolved identity must never merge with an unresolved conflict.
+    sameSet = Boolean(aSet && bSet && aSet === bSet);
+  } else {
+    const name = normalize(a.set),
+      code = normalize(a.setCode ?? "");
+    // Only genuinely unknown custom labels may use textual identity. Known but
+    // contradictory/ambiguous labels are unresolved, not custom set names.
+    sameSet =
+      !a.setId &&
+      !b.setId &&
+      !a.catalogId &&
+      !b.catalogId &&
+      Boolean(name) &&
+      name === normalize(b.set) &&
+      code === normalize(b.setCode ?? "") &&
+      !names.has(name) &&
+      !codes.has(name) &&
+      !names.has(code) &&
+      !codes.has(code);
+  }
   return (
-    (resolveSetId(a) ?? normalize(a.set)) ===
-      (resolveSetId(b) ?? normalize(b.set)) &&
+    sameSet &&
+    (!a.catalogId || !b.catalogId || a.catalogId === b.catalogId) &&
     cardNumber(a.number) === cardNumber(b.number) &&
     normalize(a.name) === normalize(b.name) &&
     a.language === b.language &&
@@ -80,22 +172,33 @@ export function setProgress(
   catalog: PokemonCard[],
 ) {
   const collection = owned.filter((card) => belongsToSet(card, set));
+  const catalogue = new Map(catalog.map((card) => [card.id, card]));
   const quantities = new Map<string, number>();
   for (const card of collection) {
-    const key = cardNumber(card.number);
-    quantities.set(key, (quantities.get(key) ?? 0) + card.quantity);
+    let id: string | undefined;
+    if (card.catalogId) {
+      if (catalogue.has(card.catalogId)) id = card.catalogId;
+    } else {
+      // Some sets print the same number on different cards. Name + number must
+      // identify exactly one catalogue entry before a manual card is credited.
+      const matches = [...catalogue.values()].filter(
+        (candidate) =>
+          cardNumber(candidate.number) === cardNumber(card.number) &&
+          normalize(candidate.name) === normalize(card.name),
+      );
+      if (matches.length === 1) id = matches[0].id;
+    }
+    if (id) quantities.set(id, (quantities.get(id) ?? 0) + card.quantity);
   }
-  // Each catalogue number counts once, regardless of copies, finish or language.
-  const numbers = new Set(catalog.map((card) => cardNumber(card.number)));
-  const ownedCount = [...numbers].filter((number) =>
-    quantities.has(number),
-  ).length;
+  const ownedCount = quantities.size;
   return {
     quantities,
     ownedCount,
-    total: numbers.size,
-    missing: numbers.size - ownedCount,
-    percent: numbers.size ? Math.round((ownedCount / numbers.size) * 100) : 0,
+    total: catalogue.size,
+    missing: catalogue.size - ownedCount,
+    percent: catalogue.size
+      ? Math.round((ownedCount / catalogue.size) * 100)
+      : 0,
   };
 }
 
@@ -103,7 +206,8 @@ export function localSetProgress(owned: ScannedCard[], set: LocalSet) {
   return new Set(
     owned
       .filter((card) => belongsToSet(card, set))
-      .map((card) => cardNumber(card.number)),
+      .map(collectionCardIdentity)
+      .filter(Boolean),
   ).size;
 }
 

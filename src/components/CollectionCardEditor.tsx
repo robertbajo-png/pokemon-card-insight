@@ -60,6 +60,7 @@ function CardForm({
     source ? (resolveSetId(source) ?? "") : "",
   );
   const [customSetName, setCustomSetName] = useState(source?.set ?? "");
+  const [setEdited, setSetEdited] = useState(false);
   const [quantity, setQuantity] = useState(String(source?.quantity ?? 1));
   const [condition, setCondition] = useState(source?.condition ?? "");
   const [language, setLanguage] = useState(source?.language ?? "en");
@@ -72,7 +73,13 @@ function CardForm({
     event.preventDefault();
     if (savingRef.current) return;
     const selected = pokemonSets.find((set) => set.id === setId);
-    const nextSet = selected?.name ?? customSetName.trim();
+    // Keep contradictory historical evidence until the user edits the set.
+    // A scan draft still adopts the canonical selection when first saved.
+    const preserveUnresolvedSet =
+      card && source && !resolveSetId(source) && !setEdited;
+    const nextSet = preserveUnresolvedSet
+      ? source.set
+      : (selected?.name ?? customSetName.trim());
     if (!name.trim() || !number.trim() || !nextSet) {
       setError("Fyll i kortnamn, set och kortnummer.");
       return;
@@ -95,8 +102,8 @@ function CardForm({
       name: name.trim(),
       number: number.trim(),
       set: nextSet,
-      setId: selected?.id,
-      setCode: selected?.setCode,
+      setId: preserveUnresolvedSet ? source.setId : selected?.id,
+      setCode: preserveUnresolvedSet ? source.setCode : selected?.setCode,
       quantity: Number(quantity),
       condition: condition.trim(),
       language,
@@ -190,7 +197,10 @@ function CardForm({
               <select
                 aria-label="Set"
                 value={setId}
-                onChange={(e) => setSetId(e.target.value)}
+                onChange={(e) => {
+                  setSetId(e.target.value);
+                  setSetEdited(true);
+                }}
                 className={selectClass}
               >
                 <option value="">Annat set / ange namn</option>
@@ -206,7 +216,10 @@ function CardForm({
                 Setnamn
                 <Input
                   value={customSetName}
-                  onChange={(e) => setCustomSetName(e.target.value)}
+                  onChange={(e) => {
+                    setCustomSetName(e.target.value);
+                    setSetEdited(true);
+                  }}
                   maxLength={200}
                   required
                 />

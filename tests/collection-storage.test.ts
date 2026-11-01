@@ -200,7 +200,7 @@ it("counts unique catalogue numbers across variants, padded numbers and copies, 
     total: 2,
     percent: 50,
   });
-  expect(progress.quantities.get("58")).toBe(7);
+  expect(progress.quantities.get("base1-58")).toBe(7);
   expect(
     belongsToSet(
       { ...base, set: "Base Set 2" },

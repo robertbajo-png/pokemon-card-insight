@@ -15,17 +15,14 @@ import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { useScannedCards } from "@/hooks/useScannedCards";
 import { pokemonSets } from "@/data/pokemonSets";
-import { cardNumber, resolveSetId } from "@/lib/collection";
+import { collectionCardIdentity, resolveSetId } from "@/lib/collection";
 import charizard from "@/assets/charizard-base-set.jpg";
 
 export default function Index() {
   const { cards, isLoading, error } = useScannedCards();
   const copies = cards.reduce((sum, card) => sum + card.quantity, 0);
   const unique = new Set(
-    cards.map(
-      (card) =>
-        (resolveSetId(card) ?? card.set) + ":" + cardNumber(card.number),
-    ),
+    cards.map((card) => collectionCardIdentity(card) ?? card.id),
   ).size;
   const sets = new Set(
     cards
@@ -36,7 +33,7 @@ export default function Index() {
     .sort((a, b) => b.scannedAt.localeCompare(a.scannedAt))
     .slice(0, 4);
   const featured = pokemonSets
-    .filter((set) => ["base1", "sv3pt5", "sv8"].includes(set.id))
+    .filter((set) => ["base1", "sv3pt5", "me55"].includes(set.id))
     .slice(0, 3);
   return (
     <div className="min-h-screen bg-background">
@@ -133,7 +130,7 @@ export default function Index() {
             {
               label: "Unika kort",
               value: unique,
-              detail: "olika kortnummer",
+              detail: "olika kort i samlingen",
               icon: BookOpen,
             },
             {

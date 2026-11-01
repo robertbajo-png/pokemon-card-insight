@@ -6,7 +6,7 @@ Main pages share `page-shell`, `page-title`, `surface-panel` and related layout 
 
 The scanner explicitly separates image selection, analysis and review. Analysis never saves a card by itself. On phones the file and camera controls precede the image area. Collection editing, persistence locks and conflict handling keep the existing data model and service boundary.
 
-Catalogue failures have a retry state and do not conceal saved collection cards. The external catalogue's availability and AI identification accuracy are separate from this visual update. Market listings remain labelled previews; contacts remain local. Homepage catalogue art is labelled as examples rather than owned cards.
+Catalogue failures have a retry state and do not conceal saved collection cards. Windows hosting now uses the [versioned local catalogue](local-catalogue.md), with canonical set IDs and complete card lists. AI identification accuracy remains a separate concern. Market listings remain labelled previews; contacts remain local. Homepage catalogue art is labelled as examples rather than owned cards.
 
 ## Bundled visual resources
 

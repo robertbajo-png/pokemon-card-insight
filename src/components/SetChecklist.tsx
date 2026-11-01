@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useScannedCards } from "@/hooks/useScannedCards";
 import {
-  cardNumber,
   catalogCardToCollection,
   normalize,
   setProgress,
@@ -61,7 +60,7 @@ export default function SetChecklist({
   );
   const ownershipReady = !isLoading && !error;
   const visible = catalog.filter((card) => {
-    const quantity = progress.quantities.get(cardNumber(card.number)) ?? 0;
+    const quantity = progress.quantities.get(card.id) ?? 0;
     return (
       (filter === "all" ||
         (filter === "owned" && quantity > 0) ||
@@ -71,7 +70,7 @@ export default function SetChecklist({
     );
   });
   const duplicateCount = catalog.filter(
-    (card) => (progress.quantities.get(cardNumber(card.number)) ?? 0) > 1,
+    (card) => (progress.quantities.get(card.id) ?? 0) > 1,
   ).length;
   const add = async (card: PokemonCard) => {
     if (isLoading || error || pending.current.has(card.id)) return;
@@ -107,7 +106,7 @@ export default function SetChecklist({
               <p className="page-eyebrow">Ett kort i taget</p>
               <h2 className="section-heading">Din checklista</h2>
               <p className="mt-2 max-w-lg text-sm leading-relaxed text-muted-foreground">
-                Ett exemplar av varje kortnummer räknas. Språk och
+                Ett exemplar av varje unikt kort räknas. Språk och
                 holo-varianter delar samma plats.
               </p>
             </div>
@@ -168,7 +167,7 @@ export default function SetChecklist({
                     Setet är komplett!
                   </span>
                 ) : (
-                  `${progress.missing} kortnummer saknas`
+                  `${progress.missing} kort saknas`
                 )}
               </p>
             </div>
@@ -233,8 +232,7 @@ export default function SetChecklist({
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
         {visible.map((card) => {
-          const quantity =
-            progress.quantities.get(cardNumber(card.number)) ?? 0;
+          const quantity = progress.quantities.get(card.id) ?? 0;
           const owned = quantity > 0 && ownershipReady;
           return (
             <article
@@ -242,7 +240,7 @@ export default function SetChecklist({
               className={`group flex flex-col overflow-hidden rounded-2xl border bg-card transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-lg ${owned ? "border-primary/30" : "border-border"}`}
             >
               <Link
-                to={`/card/${card.id}`}
+                to={`/card/${encodeURIComponent(card.id)}`}
                 aria-label={`Visa ${card.name} #${card.number}`}
                 className="relative block bg-muted/30 p-3 pb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:p-4"
               >

@@ -40,7 +40,7 @@ import { useScannedCards } from "@/hooks/useScannedCards";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { convertPriceRange } from "@/utils/currency";
 import {
-  cardNumber,
+  collectionCardIdentity,
   localSetProgress,
   normalize,
   parseCollectionBackup,
@@ -105,10 +105,7 @@ function CollectionContent() {
   const fileInput = useRef<HTMLInputElement>(null);
   const copies = cards.reduce((sum, card) => sum + card.quantity, 0);
   const unique = new Set(
-    cards.map(
-      (card) =>
-        `${resolveSetId(card) ?? normalize(card.set)}:${cardNumber(card.number)}`,
-    ),
+    cards.map((card) => collectionCardIdentity(card) ?? card.id),
   ).size;
   const visible = useMemo(
     () =>
@@ -303,7 +300,7 @@ function CollectionContent() {
               label: "Unika kort",
               value: unique,
               icon: Library,
-              detail: "Olika kortnummer",
+              detail: "Olika kort i samlingen",
             },
             {
               label: "Extra exemplar",

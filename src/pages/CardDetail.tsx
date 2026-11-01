@@ -20,6 +20,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
+import CatalogueNotice from "@/components/CatalogueNotice";
 import {
   getCardById,
   type PokemonCard as PokemonCardType,
@@ -136,6 +137,7 @@ const ApiCardDetail = () => {
                 ))}
               </div>
             </header>
+            <CatalogueNotice source={card.catalogueSource} />
             <div className="grid items-start gap-6 lg:grid-cols-[0.95fr_1.15fr]">
               <div className="space-y-4 lg:sticky lg:top-28">
                 <section className="surface-panel overflow-hidden">
@@ -310,8 +312,9 @@ const ApiCardDetail = () => {
                     </dl>
                   )}
                   <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-                    Katalogpriset är vägledande. Skick, språk och edition kan
-                    påverka värdet.
+                    {card.catalogueSource
+                      ? "Den lokala katalogkopian innehåller inga aktuella marknadspriser."
+                      : "Katalogpriset är vägledande. Skick, språk och edition kan påverka värdet."}
                   </p>
                 </section>
                 <div className="flex items-start gap-3 px-1 text-sm text-muted-foreground">

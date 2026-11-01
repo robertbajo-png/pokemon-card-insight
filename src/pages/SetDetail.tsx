@@ -14,6 +14,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import Navigation from "@/components/Navigation";
+import CatalogueNotice from "@/components/CatalogueNotice";
 import SetChecklist from "@/components/SetChecklist";
 import PokemonCard from "@/components/PokemonCard";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,11 @@ import {
 import { pokemonSets } from "@/data/pokemonSets";
 import { withTimeout } from "@/utils/withTimeout";
 import { useScannedCards } from "@/hooks/useScannedCards";
-import { belongsToSet, cardNumber } from "@/lib/collection";
+import {
+  belongsToSet,
+  collectionCardIdentity,
+  setProgress,
+} from "@/lib/collection";
 
 export default function SetDetail() {
   const { setId } = useParams<{ setId: string }>();
@@ -59,8 +64,12 @@ export default function SetDetail() {
     (sum, card) => sum + card.quantity,
     0,
   );
-  const uniqueOwned = new Set(ownedCards.map((card) => cardNumber(card.number)))
-    .size;
+  const uniqueOwned =
+    cards.length && set
+      ? setProgress(ownedCards, set, cards).ownedCount
+      : new Set(
+          ownedCards.map((card) => collectionCardIdentity(card) ?? card.id),
+        ).size;
   const collectionReady = !collection.isLoading && !collection.error;
 
   useEffect(() => {
@@ -71,7 +80,7 @@ export default function SetDetail() {
           id: local.id,
           name: local.name,
           series: local.series,
-          printedTotal: local.totalCards,
+          printedTotal: local.printedTotal,
           total: local.totalCards,
           releaseDate: local.releaseDate,
           images: {
@@ -202,6 +211,8 @@ export default function SetDetail() {
             </Button>
           </div>
         </header>
+
+        <CatalogueNotice source={set?.catalogueSource} />
 
         <section
           className="grid grid-cols-2 gap-3 sm:gap-4"
