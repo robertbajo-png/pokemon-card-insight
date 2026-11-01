@@ -1,4 +1,5 @@
-import { Card } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { ArrowUpRight, Layers3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PokemonCardProps {
@@ -9,70 +10,84 @@ interface PokemonCardProps {
   rarity: string;
   set?: string;
   number?: string;
+  quantity?: number;
   onClick?: () => void;
   className?: string;
 }
 
-const PokemonCard = ({ name, image, type, rarity, onClick, className }: PokemonCardProps) => {
-  const typeColors: Record<string, string> = {
-    fire: "from-orange-500 to-red-500",
-    water: "from-blue-500 to-cyan-500",
-    lightning: "from-yellow-400 to-yellow-600",
-    electric: "from-yellow-400 to-yellow-600",
-    grass: "from-green-500 to-emerald-500",
-    psychic: "from-purple-500 to-pink-500",
-    fighting: "from-red-600 to-orange-600",
-    darkness: "from-gray-800 to-purple-900",
-    metal: "from-gray-400 to-slate-600",
-    dragon: "from-indigo-600 to-purple-600",
-    fairy: "from-pink-400 to-rose-500",
-    colorless: "from-gray-400 to-gray-500",
-  };
-
-  const rarityBadgeColors: Record<string, string> = {
-    common: "bg-muted text-muted-foreground",
-    uncommon: "bg-accent text-accent-foreground",
-    rare: "bg-secondary text-secondary-foreground",
-    "rare holo": "bg-gradient-primary text-primary-foreground",
-    "rare ultra": "bg-gradient-primary text-primary-foreground",
-    "rare secret": "bg-gradient-primary text-primary-foreground",
-    ultra: "bg-gradient-primary text-primary-foreground",
-  };
-
-  return (
-    <Card
-      onClick={onClick}
-      className={cn(
-        "group relative overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-card",
-        className
-      )}
-    >
-      <div className={cn("absolute inset-0 bg-gradient-to-br opacity-10", typeColors[type] || "from-gray-500 to-gray-700")} />
-      
-      <div className="relative p-4">
-        <div className="aspect-[3/4] overflow-hidden rounded-lg mb-3">
-          <img
-            src={image}
-            alt={name}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <h3 className="font-bold text-lg text-foreground">{name}</h3>
-          
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm capitalize px-2 py-1 rounded-md bg-muted text-muted-foreground">
-              {type}
+export default function PokemonCard({
+  name,
+  image,
+  type,
+  rarity,
+  set,
+  number,
+  quantity,
+  onClick,
+  className,
+}: PokemonCardProps) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [image]);
+  const content = (
+    <>
+      <span className="relative block bg-muted/30 p-3 sm:p-4">
+        <span className="flex aspect-[3/4] items-center justify-center overflow-hidden rounded-lg">
+          {image && !failed ? (
+            <img
+              src={image}
+              alt={name}
+              loading="lazy"
+              onError={() => setFailed(true)}
+              className="h-full w-full object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-[1.025]"
+            />
+          ) : (
+            <span className="flex flex-col items-center gap-3 text-muted-foreground">
+              <Layers3 className="h-9 w-9 opacity-40" />
+              <span className="text-xs">Ingen kortbild</span>
             </span>
-            <span className={cn("text-xs capitalize px-2 py-1 rounded-md font-medium", rarityBadgeColors[rarity])}>
-              {rarity}
-            </span>
-          </div>
-        </div>
-      </div>
-    </Card>
+          )}
+        </span>
+        {quantity !== undefined && (
+          <span className="absolute right-2 top-2 rounded-md border border-border bg-card/95 px-2 py-1 text-[10px] font-semibold text-foreground">
+            {quantity} st
+          </span>
+        )}
+      </span>
+      <span className="block p-3 pt-3 sm:p-4">
+        <span className="mb-1.5 flex items-center justify-between gap-2 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+          <span className="truncate">{set || type}</span>
+          {number && <span className="shrink-0">#{number}</span>}
+        </span>
+        <span className="block truncate text-sm font-semibold tracking-tight">
+          {name}
+        </span>
+        <span className="mt-3 flex items-center justify-between gap-2">
+          <span className="truncate text-xs text-muted-foreground">
+            {rarity && rarity.toLowerCase() !== "unknown" ? rarity : type}
+          </span>
+          {onClick && (
+            <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+          )}
+        </span>
+      </span>
+    </>
   );
-};
-
-export default PokemonCard;
+  const classes = cn(
+    "group block min-w-0 overflow-hidden rounded-2xl border border-border bg-card text-left text-foreground transition-all duration-200",
+    onClick &&
+      "cursor-pointer hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+    className,
+  );
+  return onClick ? (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`Visa ${name}${number ? ` #${number}` : ""}`}
+      className={classes}
+    >
+      {content}
+    </button>
+  ) : (
+    <article className={classes}>{content}</article>
+  );
+}

@@ -18,6 +18,7 @@ if ($Action -eq 'Stop') {
   exit 0
 }
 if ($Action -eq 'Start') {
+  & (Join-Path $PSScriptRoot 'install-local-catalogue.ps1')
   Write-Host 'Preparing private local backend settings...'
   $secrets = Get-PokemonSecrets -Create
   try {

@@ -3,7 +3,10 @@ import { Readable } from "node:stream";
 import { handleRequest as analyze } from "../../supabase/functions/analyze-pokemon-card/index.ts";
 import { handleRequest as generate } from "../../supabase/functions/generate-set-cards/index.ts";
 import { handleRequest as translate } from "../../supabase/functions/translate/index.ts";
-import { handleRequest as catalogue } from "../../supabase/functions/pokemon-proxy/index.ts";
+import { createCatalogueHandler } from "../../supabase/functions/_shared/catalogue.ts";
+import { localCatalogue } from "./catalogue.ts";
+
+const catalogue = createCatalogueHandler(localCatalogue);
 
 const handlers = new Map([
   ["analyze-pokemon-card", analyze],
@@ -12,6 +15,13 @@ const handlers = new Map([
   ["pokemon-proxy", catalogue],
 ]);
 const server = createServer(async (incoming, outgoing) => {
+  const controller = new AbortController();
+  const abort = () =>
+    controller.abort(new DOMException("Client disconnected.", "AbortError"));
+  incoming.once("aborted", abort);
+  outgoing.once("close", () => {
+    if (!outgoing.writableFinished) abort();
+  });
   try {
     const url = new URL(incoming.url ?? "/", "http://functions:9000");
     const name = url.pathname.slice(1);
@@ -50,6 +60,7 @@ const server = createServer(async (incoming, outgoing) => {
     const request = new Request(url, {
       method,
       headers,
+      signal: controller.signal,
       ...(method !== "GET" && method !== "HEAD"
         ? { body: Buffer.concat(chunks) }
         : {}),
@@ -66,6 +77,7 @@ const server = createServer(async (incoming, outgoing) => {
       stream.pipe(outgoing);
     } else outgoing.end();
   } catch {
+    if (controller.signal.aborted || outgoing.destroyed) return;
     if (!outgoing.headersSent)
       outgoing.writeHead(503, { "Content-Type": "application/json" });
     outgoing.end('{"error":"Tjänsten kunde inte slutföra anropet."}');

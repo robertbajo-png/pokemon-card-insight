@@ -1,117 +1,219 @@
-import { toast } from "sonner";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  ArrowDownWideNarrow,
+  ArrowUpRight,
+  BookOpen,
+  Check,
+  Layers3,
+  Search,
+  Sparkles,
+  X,
+} from "lucide-react";
 import Navigation from "@/components/Navigation";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Search } from "lucide-react";
-import { TranslatedText } from "@/components/TranslatedText";
-import { pokemonSets } from "@/data/pokemonSets";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import PokemonCard from "@/components/PokemonCard";
+import { pokemonSets, type PokemonSet } from "@/data/pokemonSets";
 import { useScannedCards } from "@/hooks/useScannedCards";
-import { getAllSets, getCardsBySet, type PokemonCard as PokemonCardType } from "@/services/pokemonTcgApi";
-import type { PokemonSet as LocalPokemonSet } from "@/data/pokemonSets";
-import SetChecklist from "@/components/SetChecklist";
-import { belongsToSet, localSetProgress } from "@/lib/collection";
+import { getAllSets } from "@/services/pokemonTcgApi";
+import { localSetProgress } from "@/lib/collection";
 
-const Gallery = () => {
+function SetArtwork({
+  set,
+  featured = false,
+}: {
+  set: PokemonSet;
+  featured?: boolean;
+}) {
+  const [failed, setFailed] = useState(false);
+  const source = set.packArt || set.logo || set.logoUrl;
+  return (
+    <div
+      className={`relative flex items-center justify-center overflow-hidden ${featured ? "h-48 w-36 sm:h-56 sm:w-44" : "h-28 w-full rounded-xl bg-muted/50 sm:h-32"}`}
+    >
+      <span
+        aria-hidden="true"
+        className={`select-none font-bold tracking-[-0.08em] text-foreground/[0.07] ${featured ? "text-7xl" : "text-5xl"}`}
+      >
+        {set.setCode}
+      </span>
+      <div
+        aria-hidden="true"
+        className="absolute inset-3 rounded-lg border border-foreground/[0.04]"
+      />
+      {source && !failed && (
+        <img
+          src={source}
+          alt=""
+          loading="lazy"
+          onError={() => setFailed(true)}
+          className={`absolute object-contain transition-transform duration-500 group-hover:scale-105 ${set.packArt ? "h-[92%] w-[92%]" : "h-auto max-h-[70%] w-auto max-w-[78%]"}`}
+        />
+      )}
+    </div>
+  );
+}
+
+export default function Gallery() {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterSeries, setFilterSeries] = useState("all");
+  const [searchParams, setSearchParams] = useSearchParams();
   const [setsWithLogos, setSetsWithLogos] = useState(pokemonSets);
-  const [selectedSet, setSelectedSet] = useState<LocalPokemonSet | null>(null);
-  const [setCards, setSetCards] = useState<PokemonCardType[]>([]);
-  const [isLoadingCards, setIsLoadingCards] = useState(false);
-  const { cards: scannedCards } = useScannedCards();
+  const { cards, isLoading, error } = useScannedCards();
+  const uniqueSeries = useMemo(
+    () => ["all", ...Array.from(new Set(pokemonSets.map((set) => set.series)))],
+    [],
+  );
+  const searchQuery = searchParams.get("q") ?? "";
+  const requestedSeries = searchParams.get("serie") ?? "all";
+  const filterSeries = uniqueSeries.includes(requestedSeries)
+    ? requestedSeries
+    : "all";
+  const ownedOnly = searchParams.get("mina") === "1";
+  const progress = useMemo(
+    () =>
+      new Map(pokemonSets.map((set) => [set.id, localSetProgress(cards, set)])),
+    [cards],
+  );
+  const ownedSetCount = [...progress.values()].filter(
+    (count) => count > 0,
+  ).length;
+  const collectionReady = !isLoading && !error;
+  const updateFilter = (key: string, value: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (!value || value === "all") next.delete(key);
+    else next.set(key, value);
+    setSearchParams(next, { replace: true });
+  };
+  const resetFilters = () => setSearchParams({}, { replace: true });
+  const openSet = (set: PokemonSet) =>
+    navigate(`/set/${set.id}`, {
+      state: { gallerySearch: searchParams.toString() },
+    });
+  const filteredSets = useMemo(
+    () =>
+      setsWithLogos
+        .filter((set) => {
+          const needle = searchQuery.trim().toLocaleLowerCase("sv");
+          return (
+            `${set.name} ${set.setCode}`
+              .toLocaleLowerCase("sv")
+              .includes(needle) &&
+            (filterSeries === "all" || set.series === filterSeries) &&
+            (!ownedOnly || (progress.get(set.id) ?? 0) > 0)
+          );
+        })
+        .sort((a, b) => b.releaseDate.localeCompare(a.releaseDate)),
+    [setsWithLogos, searchQuery, filterSeries, ownedOnly, progress],
+  );
+  const featured = [...setsWithLogos]
+    .sort((a, b) => b.releaseDate.localeCompare(a.releaseDate))
+    .find((set) => set.packArt);
+  const filtered = Boolean(searchQuery || filterSeries !== "all" || ownedOnly);
 
-  // Load logos in background after initial render
   useEffect(() => {
-    const fetchLogos = async () => {
-      try {
-        const apiSets = await getAllSets();
-        const mergedSets = pokemonSets.map(localSet => {
-          const apiSet = apiSets.find(s => s.id === localSet.id);
-          return {
-            ...localSet,
-            logo: apiSet?.images?.logo || `https://images.pokemontcg.io/${localSet.id}/logo.png`,
-            symbol: apiSet?.images?.symbol || `https://images.pokemontcg.io/${localSet.id}/symbol.png`,
-          };
-        });
-        setSetsWithLogos(mergedSets);
-      } catch (error) {
-        console.log("Could not fetch logos from API", error);
-      }
-    };
-
-    fetchLogos();
-  }, []);
-
-  // Get unique series for filtering
-  const uniqueSeries = ["all", ...Array.from(new Set(pokemonSets.map(set => set.series)))];
-
-  // Filter sets based on search and series, sorted from newest to oldest
-  const filteredSets = setsWithLogos
-    .filter(set => {
-      const matchesSearch = set.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           set.setCode.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesSeries = filterSeries === "all" || set.series === filterSeries;
-      return matchesSearch && matchesSeries;
-    })
-    .sort((a, b) => new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime());
-
-  const ownedCardsForSelectedSet = useMemo(() => {
-    if (!selectedSet) return [];
-
-    return scannedCards.filter(card => belongsToSet(card, selectedSet));
-  }, [scannedCards, selectedSet]);
-
-  useEffect(() => {
-    if (!selectedSet) return;
     const controller = new AbortController();
-    setIsLoadingCards(true);
-    setSetCards([]);
-    getCardsBySet(selectedSet.id, controller.signal).then(result => {
-      if (!controller.signal.aborted) setSetCards(result.data);
-    }).catch(error => {
-      if (!controller.signal.aborted) { console.error(error); toast.error("Kunde inte ladda korten. Försök igen."); }
-    }).finally(() => { if (!controller.signal.aborted) setIsLoadingCards(false); });
+    getAllSets(controller.signal)
+      .then((remote) => {
+        if (controller.signal.aborted) return;
+        const byId = new Map(remote.map((set) => [set.id, set]));
+        setSetsWithLogos(
+          pokemonSets.map((set) => ({
+            ...set,
+            logo: byId.get(set.id)?.images?.logo || set.logo || set.logoUrl,
+            symbol:
+              byId.get(set.id)?.images?.symbol || set.symbol || set.symbolUrl,
+          })),
+        );
+      })
+      .catch(() => {
+        /* Set codes remain available when decorative artwork cannot be fetched. */
+      });
     return () => controller.abort();
-  }, [selectedSet]);
-  const handleSelectSet = (set: LocalPokemonSet) => setSelectedSet(set);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      
-      <div className="container mx-auto px-4 pt-24 pb-16">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
-            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
-              <TranslatedText text="Bibliotek" />
+      <main id="main-content" tabIndex={-1} className="page-shell space-y-8">
+        <header className="flex flex-wrap items-end justify-between gap-5">
+          <div className="max-w-xl">
+            <p className="page-eyebrow">Bibliotek</p>
+            <h1 className="page-title">Alla set</h1>
+            <p className="page-subtitle">
+              Hitta dina favoriter. Upptäck korten du saknar och bygg vidare på
+              din samling.
             </p>
-            <h1 className="text-3xl font-bold tracking-tight">
-              <TranslatedText text="Alla set" />
-            </h1>
           </div>
+          <div className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm text-muted-foreground">
+            <Layers3 className="h-4 w-4 text-primary" />
+            <span className="font-semibold text-foreground">
+              {pokemonSets.length}
+            </span>{" "}
+            set att utforska
+          </div>
+        </header>
 
-          {/* Filters */}
-          <div className="mb-8 space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        {featured && !filtered && (
+          <section
+            className="surface-panel relative flex min-h-52 items-center justify-between gap-4 overflow-hidden px-6 py-5 sm:px-8"
+            aria-label="Utvalt set"
+          >
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-16 -top-28 h-80 w-80 rounded-full bg-primary/[0.06] blur-3xl"
+            />
+            <div className="relative z-10 max-w-md py-3">
+              <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+                <Sparkles className="h-3.5 w-3.5" />
+                Utvalt i biblioteket
+              </p>
+              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+                {featured.name}
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {featured.totalCards} kort att upptäcka. Nästa favorit kanske
+                finns här.
+              </p>
+              <Button className="mt-5 gap-2" onClick={() => openSet(featured)}>
+                Utforska setet
+                <ArrowUpRight className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="relative hidden shrink-0 rotate-6 sm:block">
+              <SetArtwork set={featured} featured />
+            </div>
+          </section>
+        )}
+
+        <section aria-label="Hitta set" className="space-y-5">
+          <div className="surface-panel flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
+                aria-label="Sök efter set..."
                 placeholder="Sök efter set..."
+                maxLength={200}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                onChange={(event) => updateFilter("q", event.target.value)}
+                className="border-transparent bg-background/50 pl-10"
               />
             </div>
-
-            <div className="w-full">
-              <Select value={filterSeries} onValueChange={setFilterSeries}>
-                <SelectTrigger>
+            <div className="flex gap-2 sm:shrink-0">
+              <Select
+                value={filterSeries}
+                onValueChange={(value) => updateFilter("serie", value)}
+              >
+                <SelectTrigger
+                  aria-label="Filtrera efter serie"
+                  className="w-full border-transparent bg-background/50 sm:w-52"
+                >
                   <SelectValue placeholder="Filtrera efter serie" />
                 </SelectTrigger>
                 <SelectContent>
@@ -122,155 +224,124 @@ const Gallery = () => {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-          </div>
-
-          {/* Sets Grid — Collectr style */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {filteredSets.map((set) => (
-              <button
-                key={set.id}
-                onClick={() => handleSelectSet(set)}
-                className="group bg-card/60 border border-border/60 rounded-2xl p-4 flex flex-col items-center text-center hover:bg-card hover:border-border transition"
+              <Button
+                variant={ownedOnly ? "secondary" : "outline"}
+                aria-pressed={ownedOnly}
+                disabled={!collectionReady}
+                onClick={() => updateFilter("mina", ownedOnly ? "" : "1")}
+                className="shrink-0 gap-2"
               >
-                <div className="w-full aspect-square flex items-center justify-center mb-3 rounded-xl bg-muted/30 p-3 overflow-hidden">
-                  {set.packArt ? (
-                    <img src={set.packArt} alt={set.name} className="w-full h-full object-cover rounded-lg group-hover:scale-105 transition" loading="lazy" />
-                  ) : set.logo ? (
-                    <img
-                      src={set.logo}
-                      alt={set.name}
-                      className="max-h-full max-w-full object-contain group-hover:scale-105 transition"
-                      loading="lazy"
-                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                    />
-                  ) : (
-                    <span className="text-xs font-mono text-muted-foreground">{set.setCode}</span>
-                  )}
-                </div>
-                <h4 className="text-xs font-bold leading-tight line-clamp-2">
-                  <TranslatedText text={set.name} />
-                </h4>
-                <div className="mt-2 flex items-center space-x-2">
-                  <span className="text-[10px] text-muted-foreground font-medium">{set.totalCards}</span>
-                  <span className="w-1 h-1 bg-border rounded-full" />
-                  <span className="text-[10px] text-muted-foreground font-medium">{new Date(set.releaseDate).getFullYear()}</span>
-                </div>
-                <span className="mt-2 text-[10px] text-primary">{localSetProgress(scannedCards, set)} unika i samlingen</span>
-              </button>
-            ))}
+                <BookOpen className="h-4 w-4" />
+                Mina set
+                {collectionReady && (
+                  <span className="rounded-md bg-foreground/[0.07] px-1.5 py-0.5 text-[11px]">
+                    {ownedSetCount}
+                  </span>
+                )}
+              </Button>
+            </div>
           </div>
-
-          {filteredSets.length === 0 && (
-            <div className="text-center py-16 text-muted-foreground">
-              <TranslatedText
-                text="Inga set matchar din sökning"
-                className="text-lg"
-                as="p"
-              />
+          <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+            <div className="flex items-center gap-3 text-sm">
+              <span className="font-semibold">
+                {ownedOnly && !collectionReady
+                  ? "Dina set"
+                  : `${filteredSets.length} set`}
+              </span>
+              {filtered && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="inline-flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  Rensa filter
+                </button>
+              )}
+            </div>
+            <p className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+              <ArrowDownWideNarrow className="h-3.5 w-3.5" />
+              Nyaste först
+            </p>
+          </div>
+          {ownedOnly && !collectionReady && (
+            <div className="surface-panel px-6 py-12 text-center">
+              <p
+                role={error ? "alert" : "status"}
+                className="text-sm text-muted-foreground"
+              >
+                {error
+                  ? "Dina set kunde inte läsas just nu. Dina sparade kort finns kvar."
+                  : "Hämtar dina set..."}
+              </p>
             </div>
           )}
-
-          {selectedSet && (
-            <div className="mt-12 space-y-6">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  {selectedSet.symbol && (
-                    <img
-                      src={selectedSet.symbol}
-                      alt={`${selectedSet.name} symbol`}
-                      className="w-10 h-10 object-contain"
-                    />
-                  )}
-                  <div>
-                    <h2 className="text-2xl font-bold flex items-center gap-2">
-                      {selectedSet.logo ? (
-                        <img
-                          src={selectedSet.logo}
-                          alt={selectedSet.name}
-                          className="max-h-10 object-contain"
-                        />
-                      ) : (
-                        <TranslatedText text={selectedSet.name} />
-                      )}
-                      <Badge variant="secondary">{selectedSet.setCode}</Badge>
-                    </h2>
-                    <p className="text-muted-foreground">
-                      <TranslatedText text="Utgivning" />: {new Date(selectedSet.releaseDate).toLocaleDateString("sv-SE")}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <Badge variant="outline" className="text-sm">
-                    <TranslatedText text="Exemplar i detta set" />: {ownedCardsForSelectedSet.reduce((sum, card) => sum + card.quantity, 0)}
-                  </Badge>
-                  <Badge variant="outline" className="text-sm">
-                    <TranslatedText text="Totalt antal kort" />: {selectedSet.totalCards}
-                  </Badge>
-                  <Button variant="outline" onClick={() => navigate(`/set/${selectedSet.id}`)}>
-                    <TranslatedText text="Öppna setdetalj" />
-                  </Button>
-                </div>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 2xl:grid-cols-4">
+            {(!ownedOnly || collectionReady) &&
+              filteredSets.map((set) => {
+                const owned = progress.get(set.id) ?? 0;
+                return (
+                  <button
+                    key={set.id}
+                    type="button"
+                    onClick={() => openSet(set)}
+                    aria-label={`Öppna ${set.name}`}
+                    className="group flex min-w-0 flex-col rounded-2xl border border-border bg-card p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:p-4"
+                  >
+                    <SetArtwork set={set} />
+                    <div className="flex flex-1 flex-col px-1 pt-4">
+                      <p className="mb-1.5 truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                        {set.series}
+                      </p>
+                      <h2 className="min-h-10 text-sm font-semibold leading-5 tracking-tight sm:text-base">
+                        {set.name}
+                      </h2>
+                      <div className="mt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                        <span>{set.totalCards} kort</span>
+                        <span>{set.releaseDate.slice(0, 4)}</span>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+                        <span
+                          className={`inline-flex items-center gap-1.5 text-[11px] ${owned && collectionReady ? "text-primary" : "text-muted-foreground"}`}
+                        >
+                          {owned && collectionReady ? (
+                            <>
+                              <Check className="h-3 w-3" />
+                              {owned} unika i samlingen
+                            </>
+                          ) : (
+                            "Öppna checklistan"
+                          )}
+                        </span>
+                        <ArrowUpRight className="h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+          </div>
+          {!filteredSets.length && (!ownedOnly || collectionReady) && (
+            <div className="empty-state surface-panel py-16 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+                <Search className="h-6 w-6 text-muted-foreground" />
               </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <TranslatedText text="Dina kort i setet" />
-                  <Badge variant="secondary">{ownedCardsForSelectedSet.length}</Badge>
-                </h3>
-                {ownedCardsForSelectedSet.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {ownedCardsForSelectedSet.map((card) => (
-                      <PokemonCard
-                        key={card.id}
-                        id={card.id}
-                        name={card.name}
-                        image={card.image || selectedSet.logo || selectedSet.symbol || `https://images.pokemontcg.io/${selectedSet.id}/logo.png`}
-                        type={card.type}
-                        rarity={card.rarity}
-                        set={card.set}
-                        number={card.number}
-                        onClick={() => navigate(`/card/${card.id}`)}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-sm text-muted-foreground">
-                    <TranslatedText text="Du har inte skannat några kort från detta set ännu." />
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold">
-                    <TranslatedText text="Alla kort i setet" />
-                  </h3>
-                  {isLoadingCards && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
-                  {!isLoadingCards && setCards.length > 0 && (
-                    <Badge variant="secondary">{setCards.length}</Badge>
-                  )}
-                </div>
-
-                {isLoadingCards ? (
-                  <div className="flex items-center justify-center py-12 text-muted-foreground">
-                    <TranslatedText text="Laddar kort från setet..." />
-                  </div>
-                ) : setCards.length > 0 ? (
-                  <SetChecklist key={selectedSet.id} set={selectedSet} catalog={setCards} />
-                ) : (
-                  <div className="text-sm text-muted-foreground">
-                    <TranslatedText text="Korten i detta set kunde inte hämtas just nu." />
-                  </div>
-                )}
-              </div>
+              <h2 className="text-lg font-semibold">
+                {ownedOnly && !ownedSetCount
+                  ? "Dina set börjar med ditt första kort"
+                  : "Inga set matchar din sökning"}
+              </h2>
+              <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
+                {ownedOnly && !ownedSetCount
+                  ? "Lägg till ett kort i samlingen så hittar du dess set här."
+                  : "Prova ett annat setnamn eller ta bort något av filtren."}
+              </p>
+              <Button variant="outline" className="mt-5" onClick={resetFilters}>
+                Visa alla set
+              </Button>
             </div>
           )}
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
-};
-
-export default Gallery;
+}

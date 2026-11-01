@@ -22,4 +22,4 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.9.6
-      - run: deno check supabase/functions/analyze-pokemon-card/index.ts supabase/functions/generate-set-cards/index.ts supabase/functions/translate/index.ts supabase/functions/pokemon-proxy/index.ts
+      - run: deno check supabase/functions/analyze-pokemon-card/index.ts supabase/functions/generate-set-cards/index.ts supabase/functions/translate/index.ts supabase/functions/pokemon-proxy/index.ts supabase/functions/_shared/catalogue.ts

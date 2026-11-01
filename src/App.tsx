@@ -2,7 +2,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+import { useLayoutEffect } from "react";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CollectionProvider } from "@/contexts/CollectionContext";
@@ -21,6 +28,14 @@ import Friends from "./pages/Friends";
 
 const queryClient = new QueryClient();
 
+function PageScroll() {
+  const { pathname } = useLocation();
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [pathname]);
+  return null;
+}
+
 const App = () => (
   <ThemeProvider
     defaultTheme="dark"
@@ -36,24 +51,27 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/scanner" element={<Scanner />} />
-                  <Route
-                    path="/mobile-access"
-                    element={<Navigate to="/scanner" replace />}
-                  />
-                  <Route path="/gallery" element={<Gallery />} />
-                  <Route path="/market" element={<Market />} />
-                  <Route path="/friends" element={<Friends />} />
-                  <Route path="/collection" element={<Collection />} />
-                  <Route path="/set/:setId" element={<SetDetail />} />
-                  <Route path="/card/:id" element={<CardDetail />} />
-                  <Route path="/signup" element={<Signup />} />
-                  <Route path="/login" element={<Login />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                <PageScroll />
+                <div className="app-shell">
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/scanner" element={<Scanner />} />
+                    <Route
+                      path="/mobile-access"
+                      element={<Navigate to="/scanner" replace />}
+                    />
+                    <Route path="/gallery" element={<Gallery />} />
+                    <Route path="/market" element={<Market />} />
+                    <Route path="/friends" element={<Friends />} />
+                    <Route path="/collection" element={<Collection />} />
+                    <Route path="/set/:setId" element={<SetDetail />} />
+                    <Route path="/card/:id" element={<CardDetail />} />
+                    <Route path="/signup" element={<Signup />} />
+                    <Route path="/login" element={<Login />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </div>
               </BrowserRouter>
             </TooltipProvider>
           </LanguageProvider>

@@ -5,6 +5,7 @@ import Collection from "@/pages/Collection";
 import SetChecklist from "@/components/SetChecklist";
 import CollectionCardEditor from "@/components/CollectionCardEditor";
 import { scannedCardSchema } from "@/lib/cardAnalysis";
+import { resolveSetId } from "@/lib/collection";
 import type { PokemonCard } from "@/services/pokemonTcgApi";
 
 const mocks = vi.hoisted(() => ({
@@ -55,6 +56,30 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+it("keeps a question-mark collector ID in the card route rather than the query string", () => {
+  const special: PokemonCard = {
+    id: "ex10-?",
+    name: "Unown",
+    number: "?",
+    set: { id: "ex10", name: "Unseen Forces", series: "EX" },
+    images: {
+      small: "https://example.test/unown.png",
+      large: "https://example.test/unown.png",
+    },
+  };
+  const view = render(
+    <MemoryRouter>
+      <SetChecklist
+        set={{ id: "ex10", name: "Unseen Forces" }}
+        catalog={[special]}
+      />
+    </MemoryRouter>,
+  );
+  expect(
+    view.getByRole("link", { name: "Visa Unown #?" }).getAttribute("href"),
+  ).toBe("/card/ex10-%3F");
+});
+
 it("edits inventory fields and keeps the dialog open on failed persistence", async () => {
   const view = render(
     <MemoryRouter>
@@ -102,6 +127,124 @@ it("keeps the opened snapshot when a background sync updates the editor's parent
       card,
     ),
   );
+});
+it("preserves conflicting saved set evidence until the user explicitly changes the set", async () => {
+  const unresolved = scannedCardSchema.parse({
+    ...card,
+    setId: "sv5",
+    set: "Paldean Fates",
+    setCode: "TEF",
+  });
+  expect(resolveSetId(unresolved)).toBeUndefined();
+  const view = render(
+    <CollectionCardEditor card={unresolved} open onOpenChange={vi.fn()} />,
+  );
+  expect(
+    (view.getByLabelText("Set", { exact: true }) as HTMLSelectElement).value,
+  ).toBe("");
+  fireEvent.change(view.getByLabelText("Antal"), { target: { value: "4" } });
+  fireEvent.change(view.getByLabelText("Anteckningar"), {
+    target: { value: "Kontrollera setet senare" },
+  });
+  fireEvent.click(view.getByRole("button", { name: "Spara kort" }));
+  await waitFor(() => expect(mocks.update).toHaveBeenCalledOnce());
+  const saved = mocks.update.mock.calls[0][1];
+  expect(saved).toMatchObject({
+    setId: unresolved.setId,
+    set: unresolved.set,
+    setCode: unresolved.setCode,
+    quantity: 4,
+    notes: "Kontrollera setet senare",
+  });
+  expect(resolveSetId(saved)).toBeUndefined();
+
+  fireEvent.change(view.getByLabelText("Set", { exact: true }), {
+    target: { value: "sv4pt5" },
+  });
+  fireEvent.click(view.getByRole("button", { name: "Spara kort" }));
+  await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2));
+  const corrected = mocks.update.mock.calls[1][1];
+  expect(corrected).toMatchObject({
+    setId: "sv4pt5",
+    set: "Paldean Fates",
+    setCode: "PAF",
+    quantity: 4,
+    notes: "Kontrollera setet senare",
+  });
+  expect(resolveSetId(corrected)).toBe("sv4pt5");
+});
+it("clears a conflicting catalogue ID when an explicit canonical set correction keeps the same set name", async () => {
+  const unresolved = scannedCardSchema.parse({
+    ...card,
+    set: "Paldean Fates",
+    setId: "sv5",
+    setCode: "PAF",
+    catalogId: "sv5-1",
+  });
+  expect(resolveSetId(unresolved)).toBeUndefined();
+  const view = render(
+    <CollectionCardEditor card={unresolved} open onOpenChange={vi.fn()} />,
+  );
+  fireEvent.change(view.getByLabelText("Antal"), { target: { value: "4" } });
+  fireEvent.change(view.getByLabelText("Anteckningar"), {
+    target: { value: "Kontrollera katalogkopplingen" },
+  });
+  fireEvent.click(view.getByRole("button", { name: "Spara kort" }));
+  await waitFor(() => expect(mocks.update).toHaveBeenCalledOnce());
+  const unchangedIdentity = mocks.update.mock.calls[0][1];
+  expect(unchangedIdentity).toMatchObject({
+    set: unresolved.set,
+    setId: unresolved.setId,
+    setCode: unresolved.setCode,
+    catalogId: unresolved.catalogId,
+    quantity: 4,
+    notes: "Kontrollera katalogkopplingen",
+  });
+  expect(resolveSetId(unchangedIdentity)).toBeUndefined();
+
+  fireEvent.change(view.getByLabelText("Set", { exact: true }), {
+    target: { value: "sv4pt5" },
+  });
+  fireEvent.click(view.getByRole("button", { name: "Spara kort" }));
+  await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2));
+  const corrected = mocks.update.mock.calls[1][1];
+  expect(corrected).toMatchObject({
+    set: "Paldean Fates",
+    setId: "sv4pt5",
+    setCode: "PAF",
+    quantity: 4,
+    notes: "Kontrollera katalogkopplingen",
+  });
+  expect(corrected.catalogId).toBeUndefined();
+  expect(resolveSetId(corrected)).toBe("sv4pt5");
+});
+it("preserves canonical source set labels and catalogue IDs when editing inventory fields", async () => {
+  const canonical = scannedCardSchema.parse({
+    ...card,
+    set: "Base",
+    setId: "base1",
+    setCode: "BS",
+    catalogId: "base1-58",
+  });
+  const view = render(
+    <CollectionCardEditor card={canonical} open onOpenChange={vi.fn()} />,
+  );
+  fireEvent.change(view.getByLabelText("Antal"), { target: { value: "5" } });
+  fireEvent.change(view.getByLabelText("Anteckningar"), {
+    target: { value: "Nya pärmen" },
+  });
+  fireEvent.click(view.getByRole("button", { name: "Spara kort" }));
+  await waitFor(() => expect(mocks.update).toHaveBeenCalledOnce());
+  const saved = mocks.update.mock.calls[0][1];
+  expect(saved).toMatchObject({
+    set: "Base",
+    setId: "base1",
+    setCode: "BS",
+    catalogId: "base1-58",
+    quantity: 5,
+    notes: "Nya pärmen",
+  });
+  expect(resolveSetId(saved)).toBe("base1");
 });
 it("supports adding a card without a paid scan", async () => {
   const view = render(

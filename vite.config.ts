@@ -18,8 +18,8 @@ export default defineConfig({
         name: "Pokemon Card Lens",
         short_name: "Card Lens",
         description: "Scanna och identifiera Pokemon-kort med AI",
-        theme_color: "#FF6B35",
-        background_color: "#ffffff",
+        theme_color: "#101114",
+        background_color: "#101114",
         display: "standalone",
         start_url:
           process.env.VITE_HOSTING_MODE === "local" ? "/mobile-access" : "/",
@@ -46,7 +46,7 @@ export default defineConfig({
           /^\/backend(?:\/|$)/,
           /^\/mobile-access(?:\/|$)/,
         ],
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp}"],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff2}"],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/images\.pokemontcg\.io\/.*/i,

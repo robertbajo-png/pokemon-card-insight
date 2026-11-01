@@ -18,6 +18,11 @@
 !config/local-windows/**
 !scripts/
 !scripts/build-local-functions.mjs
+!.local-build/
+!.local-build/catalogue/
+!.local-build/catalogue/index.json
+!.local-build/catalogue/cards/
+!.local-build/catalogue/cards/*.json
 **/.env*
 **/*.backup
 **/*.dump
