@@ -73,13 +73,14 @@ function CardForm({
     event.preventDefault();
     if (savingRef.current) return;
     const selected = pokemonSets.find((set) => set.id === setId);
-    // Keep contradictory historical evidence until the user edits the set.
+    // Keep saved set evidence and aliases until the user edits the set.
     // A scan draft still adopts the canonical selection when first saved.
-    const preserveUnresolvedSet =
-      card && source && !resolveSetId(source) && !setEdited;
-    const nextSet = preserveUnresolvedSet
+    const preserveExistingSet = card && source && !setEdited;
+    const nextSet = preserveExistingSet
       ? source.set
       : (selected?.name ?? customSetName.trim());
+    const nextSetId = preserveExistingSet ? source.setId : selected?.id;
+    const nextSetCode = preserveExistingSet ? source.setCode : selected?.setCode;
     if (!name.trim() || !number.trim() || !nextSet) {
       setError("Fyll i kortnamn, set och kortnummer.");
       return;
@@ -96,14 +97,16 @@ function CardForm({
       source &&
       (name.trim() !== source.name ||
         number.trim() !== source.number ||
-        nextSet !== source.set);
+        nextSet !== source.set ||
+        (setEdited &&
+          (nextSetId !== source.setId || nextSetCode !== source.setCode)));
     const input = {
       ...(source ?? {}),
       name: name.trim(),
       number: number.trim(),
       set: nextSet,
-      setId: preserveUnresolvedSet ? source.setId : selected?.id,
-      setCode: preserveUnresolvedSet ? source.setCode : selected?.setCode,
+      setId: nextSetId,
+      setCode: nextSetCode,
       quantity: Number(quantity),
       condition: condition.trim(),
       language,
