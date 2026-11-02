@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { isLocalHosting } from "@/lib/hosting";
 import charizard from "@/assets/charizard-base-set.jpg";
+import { authLink, getAuthReturn } from "@/lib/authReturn";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -33,6 +34,7 @@ const Login = () => {
   const [loggingOut, setLoggingOut] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const onHostComputer = ["localhost", "127.0.0.1", "[::1]"].includes(
     window.location.hostname,
@@ -75,7 +77,7 @@ const Login = () => {
         toast.error(error.message);
       } else {
         toast.success("Inloggad!");
-        navigate("/");
+        navigate(getAuthReturn(location.search), { replace: true });
       }
     } catch {
       setFormError("Kunde inte ansluta. Försök igen om en stund.");
@@ -291,7 +293,7 @@ const Login = () => {
               <div className="mt-7 border-t border-border pt-6 text-center">
                 <p className="text-sm text-muted-foreground">Ny här?</p>
                 <Link
-                  to="/signup"
+                  to={authLink("/signup", location)}
                   className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
                 >
                   Har inget konto? Skapa ett

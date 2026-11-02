@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useMemo, useRef, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
 import {
@@ -49,6 +49,7 @@ import {
 import { pokemonSets } from "@/data/pokemonSets";
 import type { ScannedCard } from "@/lib/cardAnalysis";
 import { isLocalHosting } from "@/lib/hosting";
+import { catalogueNavigationState } from "@/lib/catalogueNavigation";
 
 function CardVersion({
   card,
@@ -97,8 +98,19 @@ function CollectionContent() {
     resolve,
   } = useScannedCards();
   const { currency } = useLanguage();
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("all");
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const query = searchParams.get("q") ?? "";
+  const filter =
+    searchParams.get("filter") === "duplicates" ? "duplicates" : "all";
+  const updateFilters = (values: { q?: string; filter?: string }) => {
+    const next = new URLSearchParams(searchParams);
+    for (const [key, value] of Object.entries(values)) {
+      if (!value || (key === "filter" && value === "all")) next.delete(key);
+      else next.set(key, value);
+    }
+    setSearchParams(next, { replace: true, state: location.state });
+  };
   const [editor, setEditor] = useState<{ card?: ScannedCard } | null>(null);
   const [deleting, setDeleting] = useState<ScannedCard | "all" | null>(null);
   const [busy, setBusy] = useState(false);
@@ -399,7 +411,7 @@ function CollectionContent() {
                 aria-label="Sök i samlingen"
                 placeholder="Sök kort, set, nummer eller plats..."
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => updateFilters({ q: e.target.value })}
                 className="h-11 rounded-xl bg-background/60 pl-10"
               />
             </div>
@@ -408,7 +420,7 @@ function CollectionContent() {
               <select
                 aria-label="Visa kort"
                 value={filter}
-                onChange={(e) => setFilter(e.target.value)}
+                onChange={(e) => updateFilters({ filter: e.target.value })}
                 className="h-11 w-full rounded-xl border border-input bg-background/60 pr-8 pl-10 text-sm sm:min-w-48"
               >
                 <option value="all">Alla kort</option>
@@ -477,8 +489,7 @@ function CollectionContent() {
             <Button
               variant="outline"
               onClick={() => {
-                setQuery("");
-                setFilter("all");
+                updateFilters({ q: "", filter: "all" });
               }}
             >
               Rensa filter
@@ -493,6 +504,7 @@ function CollectionContent() {
               >
                 <Link
                   to={`/card/${card.id}`}
+                  state={catalogueNavigationState(location)}
                   className="relative block aspect-[3/4] overflow-hidden border-b border-border/50 bg-gradient-to-b from-muted/30 to-background/50 p-3 sm:p-5"
                 >
                   {card.image ? (
@@ -517,6 +529,7 @@ function CollectionContent() {
                     <h2 className="truncate text-base font-semibold tracking-tight sm:text-lg">
                       <Link
                         to={`/card/${card.id}`}
+                        state={catalogueNavigationState(location)}
                         className="transition-colors hover:text-primary"
                       >
                         {card.name}

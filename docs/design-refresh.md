@@ -4,7 +4,13 @@ The application uses a shared graphite and warm gold theme, with an ivory light 
 
 Main pages share `page-shell`, `page-title`, `surface-panel` and related layout classes. Each page exposes `main#main-content` for the keyboard skip link. Route changes reset scroll position, while changes to gallery search parameters keep the current page in place. Gallery filters are retained in the URL and in the set detail's return link.
 
+Collection and checklist searches and ownership filters are also retained in the URL. Opening a card carries a validated return view so its back link restores those filters, including the original gallery context. Set library search accepts canonical names, historical aliases, source codes and IDs, and ignores accents (for example, `pokemon go` finds `Pokémon GO`).
+
 The scanner explicitly separates image selection, analysis and review. Analysis never saves a card by itself. On phones the file and camera controls precede the image area. Collection editing, persistence locks and conflict handling keep the existing data model and service boundary.
+
+Authentication returns to the original app route, including search filters and invitation parameters. Only known internal routes are accepted. Scanner users sign in before selecting a photo; the app does not carry photographs between accounts. Analysis has a one-minute client deadline and an explicit control to stop waiting without discarding the selected image. Aborted or superseded requests cannot replace a later result.
+
+The camera opens as a named modal with keyboard focus containment, Escape dismissal and focus restoration. Closing it stops its media stream. Route navigation places keyboard focus at the main content; query-only filter changes keep the current position.
 
 Catalogue failures have a retry state and do not conceal saved collection cards. Windows hosting now uses the [versioned local catalogue](local-catalogue.md), with canonical set IDs and complete card lists. AI identification accuracy remains a separate concern. Market listings remain labelled previews; contacts remain local. Homepage catalogue art is labelled as examples rather than owned cards.
 

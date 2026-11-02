@@ -1,5 +1,5 @@
-import { Link, useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -31,10 +31,16 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { convertPriceValue } from "@/utils/currency";
 import { withTimeout } from "@/utils/withTimeout";
 import ScannedCardDetail from "@/components/ScannedCardDetail";
+import { catalogueReturn } from "@/lib/catalogueNavigation";
 
 const ApiCardDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const back = useMemo(
+    () => catalogueReturn(location.state, "/gallery"),
+    [location.state],
+  );
   const [card, setCard] = useState<PokemonCardType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +62,7 @@ const ApiCardDetail = () => {
         if (data) setCard(data);
         else {
           toast.error("Kort hittades inte");
-          navigate("/gallery");
+          navigate(back.to, { replace: true, state: back.state });
         }
       })
       .catch((cause) => {
@@ -72,7 +78,7 @@ const ApiCardDetail = () => {
         if (!controller.signal.aborted) setIsLoading(false);
       });
     return () => controller.abort();
-  }, [id, navigate, retry]);
+  }, [id, navigate, retry, back]);
   const marketValue = card?.cardmarket?.prices?.trendPrice
     ? convertPriceValue(card.cardmarket.prices.trendPrice * 11, currency)
     : "Pris ej tillgängligt";
@@ -81,11 +87,12 @@ const ApiCardDetail = () => {
       <Navigation />
       <main id="main-content" tabIndex={-1} className="page-shell space-y-7">
         <Link
-          to="/gallery"
+          to={back.to}
+          state={back.state}
           className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Tillbaka till galleri
+          {back.label}
         </Link>
         {isLoading ? (
           <section
@@ -154,7 +161,17 @@ const ApiCardDetail = () => {
                   </div>
                 </section>
                 <Button asChild variant="outline" className="w-full gap-2">
-                  <Link to={card.set.id ? "/set/" + card.set.id : "/gallery"}>
+                  <Link
+                    to={
+                      card.set.id &&
+                      back.to.split("?")[0] === `/set/${card.set.id}`
+                        ? back.to
+                        : card.set.id
+                          ? `/set/${card.set.id}`
+                          : "/gallery"
+                    }
+                    state={back.state}
+                  >
                     Visa setet
                     <ArrowRight className="h-4 w-4" />
                   </Link>

@@ -25,6 +25,13 @@ import { useScannedCards } from "@/hooks/useScannedCards";
 import { getAllSets } from "@/services/pokemonTcgApi";
 import { localSetProgress } from "@/lib/collection";
 
+const searchable = (value: string) =>
+  value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("sv")
+    .trim();
+
 function SetArtwork({
   set,
   featured = false,
@@ -87,7 +94,7 @@ export default function Gallery() {
   const collectionReady = !isLoading && !error;
   const updateFilter = (key: string, value: string) => {
     const next = new URLSearchParams(searchParams);
-    if (!value || value === "all") next.delete(key);
+    if (!value || (key === "serie" && value === "all")) next.delete(key);
     else next.set(key, value);
     setSearchParams(next, { replace: true });
   };
@@ -100,11 +107,16 @@ export default function Gallery() {
     () =>
       setsWithLogos
         .filter((set) => {
-          const needle = searchQuery.trim().toLocaleLowerCase("sv");
+          const needle = searchable(searchQuery);
           return (
-            `${set.name} ${set.setCode}`
-              .toLocaleLowerCase("sv")
-              .includes(needle) &&
+            [
+              set.name,
+              set.canonicalName,
+              set.setCode,
+              set.id,
+              ...set.aliases,
+              ...set.codeAliases,
+            ].some((label) => searchable(label).includes(needle)) &&
             (filterSeries === "all" || set.series === filterSeries) &&
             (!ownedOnly || (progress.get(set.id) ?? 0) > 0)
           );

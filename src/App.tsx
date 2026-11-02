@@ -32,6 +32,7 @@ function PageScroll() {
   const { pathname } = useLocation();
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.getElementById("main-content")?.focus({ preventScroll: true });
   }, [pathname]);
   return null;
 }

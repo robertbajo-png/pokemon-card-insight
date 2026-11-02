@@ -30,6 +30,7 @@ import { useTheme } from "next-themes";
 import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { isLocalHosting } from "@/lib/hosting";
 import { cn } from "@/lib/utils";
+import { authLink } from "@/lib/authReturn";
 
 // Navigation must work for guests and never requires an AI translation request.
 const navigationTranslations: Record<
@@ -219,7 +220,9 @@ const mobileLinks = [
 ];
 
 export default function Navigation() {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
+  const loginLink = authLink("/login", location);
   const { user } = useAuth();
   const { language, setLanguage } = useLanguage();
   const navText = (text: string) =>
@@ -334,7 +337,7 @@ export default function Navigation() {
               {navText("Installera appen")}
             </Button>
           )}
-          <Link to="/login" className="app-nav-item mt-4">
+          <Link to={loginLink} className="app-nav-item mt-4">
             <span className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-muted">
               <UserRound className="h-4 w-4" />
             </span>
@@ -421,7 +424,7 @@ export default function Navigation() {
           </Button>
           <span className="hidden h-5 border-l border-border sm:block" />
           <Link
-            to="/login"
+            to={loginLink}
             aria-label={navText(user ? "Öppna profil" : "Öppna konto")}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
           >
