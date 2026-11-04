@@ -33,6 +33,7 @@ import { prepareCardImage } from "@/utils/cardImage";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { authLink } from "@/lib/authReturn";
+import { usePwaUpdateBlocker } from "@/hooks/usePwaUpdate";
 
 const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
   const location = useLocation();
@@ -51,6 +52,9 @@ const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
   const analysisRequest = useRef<AbortController | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const busy = isPreparing || isAnalyzing;
+  usePwaUpdateBlocker(
+    busy || showCamera || Boolean(selectedImage && !savedCard),
+  );
   useEffect(
     () => () => {
       imageRequest.current++;
@@ -361,6 +365,15 @@ const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
                 onClick={cancelAnalysis}
               >
                 Avbryt väntan
+              </Button>
+            )}
+            {selectedImage && !result && !busy && (
+              <Button
+                variant="ghost"
+                className="order-3 mt-2 w-full text-muted-foreground"
+                onClick={nextCard}
+              >
+                Ta bort vald bild
               </Button>
             )}
             {analysisError && (

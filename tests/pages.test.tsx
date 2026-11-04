@@ -263,6 +263,28 @@ it("does not enable AI analysis for signed-out users", () => {
   expect(view.queryByRole("img", { name: "Vald kortbild" })).toBeNull();
   expect(mocks.invoke).not.toHaveBeenCalled();
 });
+it("can discard a selected photo before analysis without an AI call or collection write", async () => {
+  const view = render(
+    <MemoryRouter initialEntries={["/scanner"]}>
+      <Scanner />
+    </MemoryRouter>,
+  );
+  fireEvent.change(view.container.querySelector('input[type="file"]')!, {
+    target: { files: [new File(["x"], "card.jpg", { type: "image/jpeg" })] },
+  });
+  const discard = await view.findByRole("button", {
+    name: "Ta bort vald bild",
+  });
+  expect(view.getByRole("img", { name: "Vald kortbild" })).toBeTruthy();
+  fireEvent.click(discard);
+  expect(view.queryByRole("img", { name: "Vald kortbild" })).toBeNull();
+  expect(
+    (view.getByRole("button", { name: "Analysera kort" }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(true);
+  expect(mocks.invoke).not.toHaveBeenCalled();
+  expect(mocks.save).not.toHaveBeenCalled();
+});
 it("cancels waiting, retains the image and ignores a late result while a new scan is running", async () => {
   let finishFirst!: (data: unknown) => void;
   let finishSecond!: (data: unknown) => void;

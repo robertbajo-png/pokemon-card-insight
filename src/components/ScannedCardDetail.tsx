@@ -20,6 +20,7 @@ import { convertPriceRange } from "@/utils/currency";
 import CollectionCardEditor from "./CollectionCardEditor";
 import { Button } from "./ui/button";
 import { catalogueReturn } from "@/lib/catalogueNavigation";
+import SetLinkStatus from "@/components/SetLinkStatus";
 
 export default function ScannedCardDetail({ id }: { id: string }) {
   const { cards, isLoading, error } = useScannedCards();
@@ -117,6 +118,11 @@ export default function ScannedCardDetail({ id }: { id: string }) {
                 Redigera kort
               </Button>
             </header>
+            <SetLinkStatus
+              card={card}
+              onReview={() => setEditing(true)}
+              showDescription
+            />
             <div className="grid items-start gap-6 lg:grid-cols-[0.95fr_1.15fr]">
               <div className="space-y-4 lg:sticky lg:top-28">
                 <section className="surface-panel overflow-hidden">

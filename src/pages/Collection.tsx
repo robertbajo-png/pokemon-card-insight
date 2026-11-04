@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import CollectionCardEditor from "@/components/CollectionCardEditor";
 import CollectionSyncStatus from "@/components/CollectionSyncStatus";
+import SetLinkStatus from "@/components/SetLinkStatus";
 import { useScannedCards } from "@/hooks/useScannedCards";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { convertPriceRange } from "@/utils/currency";
@@ -45,6 +46,7 @@ import {
   normalize,
   parseCollectionBackup,
   resolveSetId,
+  setLinkStatus,
 } from "@/lib/collection";
 import { pokemonSets } from "@/data/pokemonSets";
 import type { ScannedCard } from "@/lib/cardAnalysis";
@@ -101,8 +103,10 @@ function CollectionContent() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") ?? "";
-  const filter =
-    searchParams.get("filter") === "duplicates" ? "duplicates" : "all";
+  const requestedFilter = searchParams.get("filter") ?? "all";
+  const filter = ["duplicates", "unlinked"].includes(requestedFilter)
+    ? requestedFilter
+    : "all";
   const updateFilters = (values: { q?: string; filter?: string }) => {
     const next = new URLSearchParams(searchParams);
     for (const [key, value] of Object.entries(values)) {
@@ -119,11 +123,16 @@ function CollectionContent() {
   const unique = new Set(
     cards.map((card) => collectionCardIdentity(card) ?? card.id),
   ).size;
+  const unlinkedCount = useMemo(
+    () => cards.filter((card) => setLinkStatus(card) === "unlinked").length,
+    [cards],
+  );
   const visible = useMemo(
     () =>
       cards.filter(
         (card) =>
           (filter !== "duplicates" || card.quantity > 1) &&
+          (filter !== "unlinked" || setLinkStatus(card) === "unlinked") &&
           normalize(
             `${card.name} ${card.set} ${card.number} ${card.location}`,
           ).includes(normalize(query)),
@@ -230,6 +239,29 @@ function CollectionContent() {
           </div>
         </header>
         <CollectionSyncStatus />
+        {!isLoading && !error && unlinkedCount > 0 && (
+          <section className="surface-panel flex flex-wrap items-center justify-between gap-4 border-primary/20 p-5 sm:p-6">
+            <div className="max-w-xl">
+              <h2 className="section-heading">
+                {unlinkedCount}{" "}
+                {unlinkedCount === 1
+                  ? "kortpost behöver"
+                  : "kortposter behöver"}{" "}
+                setkontroll
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Korten finns kvar i samlingen men räknas inte i setens
+                checklistor än. Välj rätt set för att koppla dem.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => updateFilters({ filter: "unlinked", q: "" })}
+            >
+              Visa kort att kontrollera
+            </Button>
+          </section>
+        )}
         {conflicts?.map((row) => (
           <section
             key={row.key}
@@ -425,6 +457,9 @@ function CollectionContent() {
               >
                 <option value="all">Alla kort</option>
                 <option value="duplicates">Flera exemplar</option>
+                <option value="unlinked">
+                  Kontrollera set ({unlinkedCount})
+                </option>
               </select>
             </div>
           </div>
@@ -481,10 +516,14 @@ function CollectionContent() {
           <div className="empty-state surface-panel px-6 py-14 text-center">
             <Search className="mx-auto mb-4 h-7 w-7 text-muted-foreground" />
             <h3 className="text-lg font-semibold">
-              Inga kort matchar ditt filter.
+              {filter === "unlinked" && unlinkedCount === 0
+                ? "Inga kort behöver setkontroll."
+                : "Inga kort matchar ditt filter."}
             </h3>
             <p className="mt-2 mb-5 text-sm text-muted-foreground">
-              Prova ett annat namn, set eller en annan förvaringsplats.
+              {filter === "unlinked" && unlinkedCount === 0
+                ? "Visa alla kort för att fortsätta med din samling."
+                : "Prova ett annat namn, set eller en annan förvaringsplats."}
             </p>
             <Button
               variant="outline"
@@ -539,6 +578,10 @@ function CollectionContent() {
                       {card.set} · #{card.number}
                     </p>
                   </div>
+                  <SetLinkStatus
+                    card={card}
+                    onReview={() => setEditor({ card })}
+                  />
                   <div className="flex flex-wrap gap-1.5">
                     <Badge
                       variant="outline"

@@ -12,6 +12,10 @@ Authentication returns to the original app route, including search filters and i
 
 The camera opens as a named modal with keyboard focus containment, Escape dismissal and focus restoration. Closing it stops its media stream. Route navigation places keyboard focus at the main content; query-only filter changes keep the current position.
 
+Unresolved catalogue evidence is labelled "Kontrollera set" in the collection and saved card detail. A dedicated collection filter opens the existing editor; corrections require an explicit set choice. Unknown text-only sets are neutrally labelled "Utanför katalogen". Neither status changes saved records or credits a checklist automatically.
+
+App updates use a waiting service worker and an explicit in-app notice. The requesting tab reloads only after its accepted worker controls it, with a second check for transient work. Other tabs show a choice and retain their current view. An open collection editor or an unsaved scan blocks updating; a selected image can be discarded without analysis. Background checks are throttled and skip offline/hidden states. When migrating from the former automatic registration, save work and close the old app tabs once before reopening; legacy running clients do not contain the new notice.
+
 Catalogue failures have a retry state and do not conceal saved collection cards. Windows hosting now uses the [versioned local catalogue](local-catalogue.md), with canonical set IDs and complete card lists. AI identification accuracy remains a separate concern. Market listings remain labelled previews; contacts remain local. Homepage catalogue art is labelled as examples rather than owned cards.
 
 ## Bundled visual resources

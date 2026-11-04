@@ -14,8 +14,9 @@ import {
   type NewScannedCard,
   type ScannedCard,
 } from "@/lib/cardAnalysis";
-import { resolveSetId } from "@/lib/collection";
+import { resolveSetId, setLinkStatus } from "@/lib/collection";
 import { pokemonSets } from "@/data/pokemonSets";
+import { usePwaUpdateBlocker } from "@/hooks/usePwaUpdate";
 import { toast } from "sonner";
 import {
   Check,
@@ -61,6 +62,8 @@ function CardForm({
   );
   const [customSetName, setCustomSetName] = useState(source?.set ?? "");
   const [setEdited, setSetEdited] = useState(false);
+  const needsSetReview =
+    source && setLinkStatus(source) === "unlinked" && !setEdited;
   const [quantity, setQuantity] = useState(String(source?.quantity ?? 1));
   const [condition, setCondition] = useState(source?.condition ?? "");
   const [language, setLanguage] = useState(source?.language ?? "en");
@@ -80,7 +83,9 @@ function CardForm({
       ? source.set
       : (selected?.name ?? customSetName.trim());
     const nextSetId = preserveExistingSet ? source.setId : selected?.id;
-    const nextSetCode = preserveExistingSet ? source.setCode : selected?.setCode;
+    const nextSetCode = preserveExistingSet
+      ? source.setCode
+      : selected?.setCode;
     if (!name.trim() || !number.trim() || !nextSet) {
       setError("Fyll i kortnamn, set och kortnummer.");
       return;
@@ -98,6 +103,7 @@ function CardForm({
       (name.trim() !== source.name ||
         number.trim() !== source.number ||
         nextSet !== source.set ||
+        (setEdited && !resolveSetId(source)) ||
         (setEdited &&
           (nextSetId !== source.setId || nextSetCode !== source.setCode)));
     const input = {
@@ -199,6 +205,7 @@ function CardForm({
               Set
               <select
                 aria-label="Set"
+                aria-describedby={needsSetReview ? "set-link-help" : undefined}
                 value={setId}
                 onChange={(e) => {
                   setSetId(e.target.value);
@@ -213,6 +220,15 @@ function CardForm({
                   </option>
                 ))}
               </select>
+              {needsSetReview && (
+                <p
+                  id="set-link-help"
+                  className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs font-normal leading-6 text-muted-foreground"
+                >
+                  Setuppgifterna kan inte kopplas säkert till katalogen. Välj
+                  rätt set för att kortet ska räknas i checklistan.
+                </p>
+              )}
             </label>
             {!setId && (
               <label className="space-y-2 text-sm font-medium sm:col-span-2">
@@ -372,6 +388,7 @@ export default function CollectionCardEditor({
   onCreated?: (card: ScannedCard) => void;
 }) {
   const [saving, setSaving] = useState(false);
+  usePwaUpdateBlocker(open || saving);
   const EditorIcon = card ? Pencil : draft ? ScanLine : Plus;
   return (
     <Dialog

@@ -37,7 +37,7 @@ function cataloguePath(value: unknown): string | undefined {
     const filter = input.get("filter");
     const allowed =
       pathname === "/collection"
-        ? ["duplicates"]
+        ? ["duplicates", "unlinked"]
         : ["owned", "missing", "duplicates"];
     if (filter && allowed.includes(filter)) output.set("filter", filter);
   }

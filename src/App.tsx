@@ -25,6 +25,7 @@ import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Market from "./pages/Market";
 import Friends from "./pages/Friends";
+import PwaUpdateNotice from "./components/PwaUpdateNotice";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const App = () => (
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </div>
+                <PwaUpdateNotice />
               </BrowserRouter>
             </TooltipProvider>
           </LanguageProvider>

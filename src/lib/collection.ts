@@ -98,6 +98,32 @@ export function collectionCardIdentity(card: CardIdentity): string | undefined {
     : `printing:${JSON.stringify([setId, normalize(card.name), cardNumber(card.number)])}`;
 }
 
+export function setLinkStatus(
+  card: SetIdentity,
+): "linked" | "unlinked" | "outside-catalogue" {
+  if (resolveSetId(card)) return "linked";
+  const name = normalize(card.set ?? "");
+  const code = normalize(card.setCode ?? "");
+  // The schema has no provenance flag for an intentionally custom set. Only
+  // wholly unknown labels without an asserted catalogue identity are neutral.
+  const unknownLabels =
+    !names.has(name) &&
+    !codes.has(name) &&
+    !names.has(code) &&
+    !codes.has(code);
+  if (
+    !card.setId &&
+    !card.catalogId &&
+    name &&
+    name !== "unknown" &&
+    name !== "okänt" &&
+    unknownLabels
+  ) {
+    return "outside-catalogue";
+  }
+  return "unlinked";
+}
+
 export function belongsToSet(
   card: ScannedCard,
   set: Pick<PokemonSet, "id" | "name"> & {
