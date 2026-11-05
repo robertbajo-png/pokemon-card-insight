@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { useMemo, useRef, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
 import {
@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import CollectionCardEditor from "@/components/CollectionCardEditor";
 import CollectionSyncStatus from "@/components/CollectionSyncStatus";
+import SetLinkStatus from "@/components/SetLinkStatus";
 import { useScannedCards } from "@/hooks/useScannedCards";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { convertPriceRange } from "@/utils/currency";
@@ -45,10 +46,12 @@ import {
   normalize,
   parseCollectionBackup,
   resolveSetId,
+  setLinkStatus,
 } from "@/lib/collection";
 import { pokemonSets } from "@/data/pokemonSets";
 import type { ScannedCard } from "@/lib/cardAnalysis";
 import { isLocalHosting } from "@/lib/hosting";
+import { catalogueNavigationState } from "@/lib/catalogueNavigation";
 
 function CardVersion({
   card,
@@ -97,8 +100,21 @@ function CollectionContent() {
     resolve,
   } = useScannedCards();
   const { currency } = useLanguage();
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("all");
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const query = searchParams.get("q") ?? "";
+  const requestedFilter = searchParams.get("filter") ?? "all";
+  const filter = ["duplicates", "unlinked"].includes(requestedFilter)
+    ? requestedFilter
+    : "all";
+  const updateFilters = (values: { q?: string; filter?: string }) => {
+    const next = new URLSearchParams(searchParams);
+    for (const [key, value] of Object.entries(values)) {
+      if (!value || (key === "filter" && value === "all")) next.delete(key);
+      else next.set(key, value);
+    }
+    setSearchParams(next, { replace: true, state: location.state });
+  };
   const [editor, setEditor] = useState<{ card?: ScannedCard } | null>(null);
   const [deleting, setDeleting] = useState<ScannedCard | "all" | null>(null);
   const [busy, setBusy] = useState(false);
@@ -107,11 +123,16 @@ function CollectionContent() {
   const unique = new Set(
     cards.map((card) => collectionCardIdentity(card) ?? card.id),
   ).size;
+  const unlinkedCount = useMemo(
+    () => cards.filter((card) => setLinkStatus(card) === "unlinked").length,
+    [cards],
+  );
   const visible = useMemo(
     () =>
       cards.filter(
         (card) =>
           (filter !== "duplicates" || card.quantity > 1) &&
+          (filter !== "unlinked" || setLinkStatus(card) === "unlinked") &&
           normalize(
             `${card.name} ${card.set} ${card.number} ${card.location}`,
           ).includes(normalize(query)),
@@ -218,6 +239,29 @@ function CollectionContent() {
           </div>
         </header>
         <CollectionSyncStatus />
+        {!isLoading && !error && unlinkedCount > 0 && (
+          <section className="surface-panel flex flex-wrap items-center justify-between gap-4 border-primary/20 p-5 sm:p-6">
+            <div className="max-w-xl">
+              <h2 className="section-heading">
+                {unlinkedCount}{" "}
+                {unlinkedCount === 1
+                  ? "kortpost behöver"
+                  : "kortposter behöver"}{" "}
+                setkontroll
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                Korten finns kvar i samlingen men räknas inte i setens
+                checklistor än. Välj rätt set för att koppla dem.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => updateFilters({ filter: "unlinked", q: "" })}
+            >
+              Visa kort att kontrollera
+            </Button>
+          </section>
+        )}
         {conflicts?.map((row) => (
           <section
             key={row.key}
@@ -399,7 +443,7 @@ function CollectionContent() {
                 aria-label="Sök i samlingen"
                 placeholder="Sök kort, set, nummer eller plats..."
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => updateFilters({ q: e.target.value })}
                 className="h-11 rounded-xl bg-background/60 pl-10"
               />
             </div>
@@ -408,11 +452,14 @@ function CollectionContent() {
               <select
                 aria-label="Visa kort"
                 value={filter}
-                onChange={(e) => setFilter(e.target.value)}
+                onChange={(e) => updateFilters({ filter: e.target.value })}
                 className="h-11 w-full rounded-xl border border-input bg-background/60 pr-8 pl-10 text-sm sm:min-w-48"
               >
                 <option value="all">Alla kort</option>
                 <option value="duplicates">Flera exemplar</option>
+                <option value="unlinked">
+                  Kontrollera set ({unlinkedCount})
+                </option>
               </select>
             </div>
           </div>
@@ -469,16 +516,19 @@ function CollectionContent() {
           <div className="empty-state surface-panel px-6 py-14 text-center">
             <Search className="mx-auto mb-4 h-7 w-7 text-muted-foreground" />
             <h3 className="text-lg font-semibold">
-              Inga kort matchar ditt filter.
+              {filter === "unlinked" && unlinkedCount === 0
+                ? "Inga kort behöver setkontroll."
+                : "Inga kort matchar ditt filter."}
             </h3>
             <p className="mt-2 mb-5 text-sm text-muted-foreground">
-              Prova ett annat namn, set eller en annan förvaringsplats.
+              {filter === "unlinked" && unlinkedCount === 0
+                ? "Visa alla kort för att fortsätta med din samling."
+                : "Prova ett annat namn, set eller en annan förvaringsplats."}
             </p>
             <Button
               variant="outline"
               onClick={() => {
-                setQuery("");
-                setFilter("all");
+                updateFilters({ q: "", filter: "all" });
               }}
             >
               Rensa filter
@@ -493,6 +543,7 @@ function CollectionContent() {
               >
                 <Link
                   to={`/card/${card.id}`}
+                  state={catalogueNavigationState(location)}
                   className="relative block aspect-[3/4] overflow-hidden border-b border-border/50 bg-gradient-to-b from-muted/30 to-background/50 p-3 sm:p-5"
                 >
                   {card.image ? (
@@ -517,6 +568,7 @@ function CollectionContent() {
                     <h2 className="truncate text-base font-semibold tracking-tight sm:text-lg">
                       <Link
                         to={`/card/${card.id}`}
+                        state={catalogueNavigationState(location)}
                         className="transition-colors hover:text-primary"
                       >
                         {card.name}
@@ -526,6 +578,10 @@ function CollectionContent() {
                       {card.set} · #{card.number}
                     </p>
                   </div>
+                  <SetLinkStatus
+                    card={card}
+                    onReview={() => setEditor({ card })}
+                  />
                   <div className="flex flex-wrap gap-1.5">
                     <Badge
                       variant="outline"

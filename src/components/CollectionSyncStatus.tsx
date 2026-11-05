@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   Cloud,
   CloudOff,
@@ -14,8 +14,10 @@ import { Button } from "@/components/ui/button";
 import { GUEST } from "@/services/scannedCardsStorage";
 import { toast } from "sonner";
 import { isLocalHosting } from "@/lib/hosting";
+import { authLink } from "@/lib/authReturn";
 
 export default function CollectionSyncStatus() {
+  const location = useLocation();
   const {
     owner,
     syncStatus,
@@ -92,7 +94,7 @@ export default function CollectionSyncStatus() {
             variant="outline"
             className="w-full shrink-0 rounded-full px-4 sm:w-auto"
           >
-            <Link to="/login">
+            <Link to={authLink("/login", location)}>
               {isLocalHosting
                 ? "Logga in för serversparning"
                 : "Logga in för molnsparning"}

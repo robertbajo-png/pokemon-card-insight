@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   Check,
   CheckCheck,
@@ -19,6 +19,7 @@ import {
 } from "@/lib/collection";
 import type { PokemonCard, PokemonSet } from "@/services/pokemonTcgApi";
 import { toast } from "sonner";
+import { catalogueNavigationState } from "@/lib/catalogueNavigation";
 
 function CatalogueArtwork({ card }: { card: PokemonCard }) {
   const [failed, setFailed] = useState(false);
@@ -50,8 +51,22 @@ export default function SetChecklist({
   catalog: PokemonCard[];
 }) {
   const { cards, addCard, isLoading, error } = useScannedCards();
-  const [filter, setFilter] = useState("all");
-  const [query, setQuery] = useState("");
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedFilter = searchParams.get("filter") ?? "all";
+  const filter = ["owned", "missing", "duplicates"].includes(requestedFilter)
+    ? requestedFilter
+    : "all";
+  const query = searchParams.get("q") ?? "";
+  const updateFilters = (values: { q?: string; filter?: string }) => {
+    const next = new URLSearchParams(searchParams);
+    for (const [key, value] of Object.entries(values)) {
+      if (!value || (key === "filter" && value === "all")) next.delete(key);
+      else next.set(key, value);
+    }
+    // Preserve the Gallery -> set context while replacing this view's filters.
+    setSearchParams(next, { replace: true, state: location.state });
+  };
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const pending = useRef(new Set<string>());
   const progress = useMemo(
@@ -193,7 +208,7 @@ export default function SetChecklist({
               aria-label={String(label)}
               aria-pressed={filter === id}
               disabled={!ownershipReady && id !== "all"}
-              onClick={() => setFilter(String(id))}
+              onClick={() => updateFilters({ filter: String(id) })}
               className="gap-1.5 rounded-lg px-2.5 text-xs sm:px-3.5 sm:text-sm"
             >
               {label}
@@ -215,14 +230,14 @@ export default function SetChecklist({
             aria-label="Sök i checklistan"
             placeholder="Namn eller kortnummer"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => updateFilters({ q: event.target.value })}
           />
           {query && (
             <button
               type="button"
               aria-label="Rensa sökning i checklistan"
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              onClick={() => setQuery("")}
+              onClick={() => updateFilters({ q: "" })}
             >
               <X className="h-4 w-4" />
             </button>
@@ -241,6 +256,7 @@ export default function SetChecklist({
             >
               <Link
                 to={`/card/${encodeURIComponent(card.id)}`}
+                state={catalogueNavigationState(location)}
                 aria-label={`Visa ${card.name} #${card.number}`}
                 className="relative block bg-muted/30 p-3 pb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:p-4"
               >
@@ -321,8 +337,7 @@ export default function SetChecklist({
             variant="outline"
             className="mt-5"
             onClick={() => {
-              setFilter("all");
-              setQuery("");
+              updateFilters({ filter: "all", q: "" });
             }}
           >
             Visa alla kort

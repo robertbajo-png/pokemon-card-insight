@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import charizard from "@/assets/charizard-base-set.jpg";
+import { authLink, getAuthReturn } from "@/lib/authReturn";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -27,7 +28,16 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
+  const confirmation = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const onHostComputer = ["localhost", "127.0.0.1", "[::1]"].includes(
+    window.location.hostname,
+  );
+  useEffect(() => {
+    if (submittedEmail) confirmation.current?.focus();
+  }, [submittedEmail]);
   const handleSignup = async (event: FormEvent) => {
     event.preventDefault();
     if (loading) return;
@@ -39,17 +49,15 @@ const Signup = () => {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabase.auth.signUp({ email, password });
       if (error) {
         setFormError(error.message);
         toast.error(error.message);
+      } else if (data?.session) {
+        navigate(getAuthReturn(location.search), { replace: true });
       } else {
-        toast.success(
-          isLocalHosting
-            ? "Kontot är skapat. Öppna den lokala postlådan för att bekräfta det."
-            : "Registreringen lyckades! Kontrollera din e‑post för att verifiera kontot.",
-        );
-        navigate("/login");
+        setSubmittedEmail(email);
+        setPassword("");
       }
     } catch {
       setFormError("Kunde inte ansluta. Försök igen om en stund.");
@@ -102,103 +110,163 @@ const Signup = () => {
             <div className="mb-8">
               <p className="page-eyebrow">Välkommen till Card Lens</p>
               <h1 className="mt-3 text-3xl font-semibold tracking-tight">
-                Skapa konto.
+                {submittedEmail ? "Kontrollera din e-post." : "Skapa konto."}
               </h1>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                En egen plats för korten du vill hålla koll på.
+                {submittedEmail
+                  ? "Bekräfta adressen och fortsätt sedan där du var."
+                  : "En egen plats för korten du vill hålla koll på."}
               </p>
             </div>
-            <form onSubmit={handleSignup} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="email">E‑post</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  inputMode="email"
-                  autoComplete="username"
-                  spellCheck={false}
-                  required
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="din@epost.se"
-                  className="h-12"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Lösenord</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    required
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    className="h-12 pr-12"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((value) => !value)}
-                    aria-label={
-                      showPassword ? "Dölj lösenord" : "Visa lösenord"
-                    }
-                    aria-pressed={showPassword}
-                    className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Välj ett unikt lösenord för ditt konto.
-                </p>
-              </div>
-              {formError && (
+            {submittedEmail ? (
+              <div
+                ref={confirmation}
+                tabIndex={-1}
+                className="space-y-5 rounded-2xl border border-primary/20 bg-primary/[0.04] p-5"
+              >
                 <p
-                  role="alert"
-                  className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive"
+                  role="status"
+                  className="break-words text-sm leading-relaxed"
                 >
-                  {formError}
+                  Om adressen kan registreras får du en bekräftelselänk för{" "}
+                  <strong>{submittedEmail}</strong>.
                 </p>
-              )}
-              <Button
-                type="submit"
-                disabled={loading}
-                className="h-12 w-full gap-2"
-              >
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <ArrowRight className="h-4 w-4" />
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  Bekräfta adressen via länken innan du loggar in. Har du redan
+                  ett konto kan du logga in direkt.
+                </p>
+                {isLocalHosting && (
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {onHostComputer ? (
+                      <>
+                        Öppna bekräftelsemejlet i{" "}
+                        <a
+                          href="http://127.0.0.1:5225/"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-medium text-primary underline underline-offset-2"
+                        >
+                          den lokala postlådan
+                        </a>
+                        .
+                      </>
+                    ) : (
+                      "Bekräftelsemejlet öppnas i den lokala postlådan på datorn som kör appen."
+                    )}
+                  </p>
                 )}
-                {loading ? "Skapar..." : "Skapa konto"}
-              </Button>
-            </form>
-            <div className="mt-6 flex items-start gap-3 rounded-xl border border-border bg-muted/30 p-4">
-              <Mail className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-              <div className="space-y-1 text-xs leading-relaxed">
-                <p className="font-medium text-foreground">
-                  Bekräfta din e-postadress
-                </p>
-                <p className="text-muted-foreground">
-                  {isLocalHosting
-                    ? "Bekräftelsemejlet öppnas i den lokala postlådan på datorn som kör appen."
-                    : "Vi skickar ett mejl med en länk för att bekräfta ditt konto."}
-                </p>
+                <Button asChild className="w-full gap-2">
+                  <Link to={authLink("/login", location)}>
+                    Fortsätt till inloggning
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setSubmittedEmail(null)}
+                >
+                  Ändra e-postadress
+                </Button>
               </div>
-            </div>
-            <div className="mt-7 border-t border-border pt-6 text-center">
-              <Link
-                to="/login"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
-              >
-                Har redan konto? Logga in
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </div>
+            ) : (
+              <form onSubmit={handleSignup} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="email">E‑post</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="username"
+                    spellCheck={false}
+                    required
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="din@epost.se"
+                    className="h-12"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Lösenord</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="new-password"
+                      required
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      className="h-12 pr-12"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((value) => !value)}
+                      aria-label={
+                        showPassword ? "Dölj lösenord" : "Visa lösenord"
+                      }
+                      aria-pressed={showPassword}
+                      className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-lg text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Välj ett unikt lösenord för ditt konto.
+                  </p>
+                </div>
+                {formError && (
+                  <p
+                    role="alert"
+                    className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive"
+                  >
+                    {formError}
+                  </p>
+                )}
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="h-12 w-full gap-2"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ArrowRight className="h-4 w-4" />
+                  )}
+                  {loading ? "Skapar..." : "Skapa konto"}
+                </Button>
+              </form>
+            )}
+            {!submittedEmail && (
+              <>
+                <div className="mt-6 flex items-start gap-3 rounded-xl border border-border bg-muted/30 p-4">
+                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <div className="space-y-1 text-xs leading-relaxed">
+                    <p className="font-medium text-foreground">
+                      Bekräfta din e-postadress
+                    </p>
+                    <p className="text-muted-foreground">
+                      {isLocalHosting
+                        ? "Bekräftelsemejlet öppnas i den lokala postlådan på datorn som kör appen."
+                        : "Vi skickar ett mejl med en länk för att bekräfta ditt konto."}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-7 border-t border-border pt-6 text-center">
+                  <Link
+                    to={authLink("/login", location)}
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+                  >
+                    Har redan konto? Logga in
+                    <ArrowUpRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              </>
+            )}
             <p className="mt-5 flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <Check className="h-3.5 w-3.5" />
               En egen plats för din samling.

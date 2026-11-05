@@ -25,6 +25,7 @@ import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Market from "./pages/Market";
 import Friends from "./pages/Friends";
+import PwaUpdateNotice from "./components/PwaUpdateNotice";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ function PageScroll() {
   const { pathname } = useLocation();
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.getElementById("main-content")?.focus({ preventScroll: true });
   }, [pathname]);
   return null;
 }
@@ -72,6 +74,7 @@ const App = () => (
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </div>
+                <PwaUpdateNotice />
               </BrowserRouter>
             </TooltipProvider>
           </LanguageProvider>

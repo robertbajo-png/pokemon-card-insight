@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   Upload,
   Camera,
@@ -14,6 +14,7 @@ import {
   LockKeyhole,
   RotateCcw,
   Info,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
@@ -31,8 +32,11 @@ import { invokeAi } from "@/services/aiFunctions";
 import { prepareCardImage } from "@/utils/cardImage";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { authLink } from "@/lib/authReturn";
+import { usePwaUpdateBlocker } from "@/hooks/usePwaUpdate";
 
 const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
+  const location = useLocation();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPreparing, setIsPreparing] = useState(false);
@@ -42,10 +46,15 @@ const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [savedCard, setSavedCard] = useState<ScannedCard | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState("");
   const imageRequest = useRef(0);
   const analysisRequest = useRef<AbortController | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const busy = isPreparing || isAnalyzing;
+  usePwaUpdateBlocker(
+    busy || showCamera || Boolean(selectedImage && !savedCard),
+  );
   useEffect(
     () => () => {
       imageRequest.current++;
@@ -64,6 +73,8 @@ const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
       setSavedCard(null);
       setReviewOpen(false);
       setSelectedGrade("ungraded");
+      setAnalysisError(null);
+      setAnnouncement("Bilden är klar. Starta analysen när du vill.");
     } catch (error) {
       if (request === imageRequest.current)
         toast.error(
@@ -75,7 +86,7 @@ const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
   };
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) void selectImage(file);
+    if (file && signedIn && !busy) void selectImage(file);
     event.target.value = "";
   };
   const analyzeCard = async () => {
@@ -90,6 +101,21 @@ const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
     const request = new AbortController();
     analysisRequest.current = request;
     setIsAnalyzing(true);
+    setAnalysisError(null);
+    setAnnouncement("Analyserar kortet. Vänta medan bilden läses.");
+    const timeout = setTimeout(() => {
+      if (analysisRequest.current !== request) return;
+      analysisRequest.current = null;
+      request.abort();
+      setIsAnalyzing(false);
+      setAnnouncement("");
+      setAnalysisError(
+        "Analysen tog för lång tid. Bilden finns kvar så att du kan försöka igen.",
+      );
+    }, 60_000);
+    request.signal.addEventListener("abort", () => clearTimeout(timeout), {
+      once: true,
+    });
     try {
       const data = cardAnalysisSchema.parse(
         await invokeAi(
@@ -98,16 +124,33 @@ const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
           request.signal,
         ),
       );
-      if (!request.signal.aborted) setResult(data);
+      if (!request.signal.aborted && analysisRequest.current === request) {
+        setResult(data);
+        setAnnouncement(
+          `Analysen är klar: ${data.name}. Kontrollera uppgifterna innan du sparar.`,
+        );
+      }
     } catch (error) {
       if (request.signal.aborted) return;
-      toast.error(
+      setAnnouncement("");
+      setAnalysisError(
         error instanceof Error ? error.message : "Kunde inte analysera kortet.",
       );
     } finally {
-      analysisRequest.current = null;
-      if (!request.signal.aborted) setIsAnalyzing(false);
+      clearTimeout(timeout);
+      if (analysisRequest.current === request) {
+        analysisRequest.current = null;
+        setIsAnalyzing(false);
+      }
     }
+  };
+  const cancelAnalysis = () => {
+    const request = analysisRequest.current;
+    if (!request) return;
+    analysisRequest.current = null;
+    request.abort();
+    setIsAnalyzing(false);
+    setAnnouncement("Väntan avbröts. Bilden finns kvar.");
   };
   const nextCard = () => {
     imageRequest.current++;
@@ -117,6 +160,8 @@ const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
     setSelectedGrade("ungraded");
     setReviewOpen(false);
     setIsPreparing(false);
+    setAnalysisError(null);
+    setAnnouncement("");
   };
   const activeStep = result ? 2 : selectedImage ? 1 : 0;
   const facts = result
@@ -172,21 +217,22 @@ const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
           </ol>
         </header>
         {!signedIn && (
-          <aside className="mb-6 flex items-center gap-3 rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 text-xs leading-6">
+          <aside className="mb-6 grid grid-cols-[auto_1fr] items-center gap-3 rounded-xl border border-primary/15 bg-primary/5 px-4 py-4 text-xs leading-6 sm:flex sm:flex-wrap">
             <LockKeyhole className="h-4 w-4 shrink-0 text-primary" />
-            <p>
-              <Link
-                className="font-semibold text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-primary"
-                to="/login"
-              >
-                Logga in för att analysera och spara kort.
-              </Link>
-              <span className="ml-1 text-muted-foreground">
-                Du kan välja bilden redan nu.
-              </span>
+            <p className="min-w-0 flex-1 text-muted-foreground">
+              Logga in innan du väljer bild. Då kan du analysera kortet och
+              spara det i din egen samling.
             </p>
+            <Button asChild size="sm" className="col-span-2 w-full sm:w-auto">
+              <Link to={authLink("/login", location)}>
+                Logga in för att skanna <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
           </aside>
         )}
+        <p aria-live="polite" aria-atomic="true" className="sr-only">
+          {announcement}
+        </p>
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <section
             className="surface-panel flex min-w-0 flex-col p-5 sm:p-6"
@@ -210,13 +256,13 @@ const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
               type="file"
               accept="image/jpeg,image/png,image/webp"
               aria-label="Välj kortbild"
-              disabled={busy}
+              disabled={busy || !signedIn}
               onChange={handleImageUpload}
               className="hidden"
             />
             <button
               type="button"
-              disabled={busy}
+              disabled={busy || !signedIn}
               aria-label="Välj kortbild från enheten"
               className={cn(
                 "scanner-upload order-2 sm:order-1",
@@ -225,14 +271,14 @@ const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
               onClick={() => fileInput.current?.click()}
               onDragOver={(event) => {
                 event.preventDefault();
-                if (!busy) setDragging(true);
+                if (!busy && signedIn) setDragging(true);
               }}
               onDragLeave={() => setDragging(false)}
               onDrop={(event) => {
                 event.preventDefault();
                 setDragging(false);
                 const file = event.dataTransfer.files[0];
-                if (file && !busy) void selectImage(file);
+                if (file && !busy && signedIn) void selectImage(file);
               }}
             >
               {selectedImage ? (
@@ -272,7 +318,7 @@ const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
             <div className="order-1 mb-4 grid grid-cols-2 gap-3 sm:order-2 sm:mb-0 sm:mt-4">
               <Button
                 variant="outline"
-                disabled={busy}
+                disabled={busy || !signedIn}
                 onClick={() => fileInput.current?.click()}
               >
                 <Upload className="h-4 w-4" />
@@ -280,7 +326,7 @@ const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
               </Button>
               <Button
                 variant="outline"
-                disabled={busy}
+                disabled={busy || !signedIn}
                 onClick={() => setShowCamera(true)}
               >
                 <Camera className="h-4 w-4" />
@@ -294,7 +340,11 @@ const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
               disabled={!selectedImage || busy || !signedIn || Boolean(result)}
               onClick={analyzeCard}
             >
-              <Sparkles className="h-4 w-4" />
+              {isAnalyzing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
               <TranslatedText
                 text={
                   isPreparing
@@ -308,6 +358,32 @@ const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
               />
               {!busy && !result && <ArrowRight className="ml-auto h-4 w-4" />}
             </Button>
+            {isAnalyzing && (
+              <Button
+                variant="ghost"
+                className="order-3 mt-2 w-full"
+                onClick={cancelAnalysis}
+              >
+                Avbryt väntan
+              </Button>
+            )}
+            {selectedImage && !result && !busy && (
+              <Button
+                variant="ghost"
+                className="order-3 mt-2 w-full text-muted-foreground"
+                onClick={nextCard}
+              >
+                Ta bort vald bild
+              </Button>
+            )}
+            {analysisError && (
+              <p
+                role="alert"
+                className="order-3 mt-3 rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-xs leading-6 text-destructive"
+              >
+                {analysisError}
+              </p>
+            )}
             <div className="order-4 mt-5 flex items-start gap-2.5 border-t border-border pt-4 text-[10px] leading-5 text-muted-foreground">
               <Focus className="mt-0.5 h-4 w-4 shrink-0 text-primary/65" />
               <p>
@@ -320,6 +396,7 @@ const ScannerWorkspace = ({ signedIn }: { signedIn: boolean }) => {
           <section
             className="surface-panel min-w-0 overflow-hidden"
             aria-labelledby="result-heading"
+            aria-busy={isAnalyzing}
           >
             <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-5 sm:px-6">
               <div>

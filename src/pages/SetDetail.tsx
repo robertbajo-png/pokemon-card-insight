@@ -26,6 +26,7 @@ import {
 } from "@/services/pokemonTcgApi";
 import { pokemonSets } from "@/data/pokemonSets";
 import { withTimeout } from "@/utils/withTimeout";
+import { catalogueNavigationState } from "@/lib/catalogueNavigation";
 import { useScannedCards } from "@/hooks/useScannedCards";
 import {
   belongsToSet,
@@ -282,7 +283,11 @@ export default function SetDetail() {
                     set={card.set}
                     number={card.number}
                     quantity={card.quantity}
-                    onClick={() => navigate(`/card/${card.id}`)}
+                    onClick={() =>
+                      navigate(`/card/${card.id}`, {
+                        state: catalogueNavigationState(location),
+                      })
+                    }
                   />
                 ))}
               </div>

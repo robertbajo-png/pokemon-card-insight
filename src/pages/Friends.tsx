@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import {
   ArrowRight,
   Copy,
@@ -16,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { isLocalHosting } from "@/lib/hosting";
+import { authLink } from "@/lib/authReturn";
 
 interface Friend {
   id: string;
@@ -26,6 +32,8 @@ const STORAGE_KEY = "friends-list";
 const Friends = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const loginLink = authLink("/login", location);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
   useEffect(() => {
@@ -96,7 +104,7 @@ const Friends = () => {
   const handleAcceptInvite = () => {
     if (!user) {
       toast.error("Logga in för att lägga till vänner.");
-      navigate("/login");
+      navigate(loginLink);
       return;
     }
     if (!inviteId || isOwnInvite) return;
@@ -137,7 +145,10 @@ const Friends = () => {
                 Logga in för att skapa och ta emot väninbjudningar. Kontakterna
                 sparas i din egen lista på den här enheten.
               </p>
-              <Button onClick={() => navigate("/login")} className="mt-7 gap-2">
+              <Button
+                onClick={() => navigate(loginLink)}
+                className="mt-7 gap-2"
+              >
                 Logga in för att fortsätta
                 <ArrowRight className="h-4 w-4" />
               </Button>

@@ -63,10 +63,11 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
-async function scan() {
+async function scan(beforeAnalyze?: () => void) {
   const view = render(
     <MemoryRouter>
       <Scanner />
@@ -79,6 +80,7 @@ async function scan() {
   await waitFor(() =>
     expect((button as HTMLButtonElement).disabled).toBe(false),
   );
+  beforeAnalyze?.();
   fireEvent.click(button);
   return view;
 }
@@ -235,7 +237,7 @@ it("discards an in-flight scan on account switch instead of showing another acco
 it("does not enable AI analysis for signed-out users", () => {
   mocks.user = null;
   const view = render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={["/scanner"]}>
       <Scanner />
     </MemoryRouter>,
   );
@@ -244,6 +246,97 @@ it("does not enable AI analysis for signed-out users", () => {
       .disabled,
   ).toBe(true);
   expect(view.getByRole("link", { name: /Logga in/ })).toBeTruthy();
+  expect(
+    view.getByRole("link", { name: /Logga in/ }).getAttribute("href"),
+  ).toBe("/login?returnTo=%2Fscanner");
+  expect(
+    (view.getByRole("button", { name: "Välj fil" }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(true);
+  expect(
+    (view.getByRole("button", { name: "Kamera" }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(true);
+  fireEvent.change(view.container.querySelector('input[type="file"]')!, {
+    target: { files: [new File(["x"], "card.jpg", { type: "image/jpeg" })] },
+  });
+  expect(view.queryByRole("img", { name: "Vald kortbild" })).toBeNull();
+  expect(mocks.invoke).not.toHaveBeenCalled();
+});
+it("can discard a selected photo before analysis without an AI call or collection write", async () => {
+  const view = render(
+    <MemoryRouter initialEntries={["/scanner"]}>
+      <Scanner />
+    </MemoryRouter>,
+  );
+  fireEvent.change(view.container.querySelector('input[type="file"]')!, {
+    target: { files: [new File(["x"], "card.jpg", { type: "image/jpeg" })] },
+  });
+  const discard = await view.findByRole("button", {
+    name: "Ta bort vald bild",
+  });
+  expect(view.getByRole("img", { name: "Vald kortbild" })).toBeTruthy();
+  fireEvent.click(discard);
+  expect(view.queryByRole("img", { name: "Vald kortbild" })).toBeNull();
+  expect(
+    (view.getByRole("button", { name: "Analysera kort" }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(true);
+  expect(mocks.invoke).not.toHaveBeenCalled();
+  expect(mocks.save).not.toHaveBeenCalled();
+});
+it("cancels waiting, retains the image and ignores a late result while a new scan is running", async () => {
+  let finishFirst!: (data: unknown) => void;
+  let finishSecond!: (data: unknown) => void;
+  mocks.invoke
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishFirst = resolve;
+        }),
+    )
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishSecond = resolve;
+        }),
+    );
+  const view = await scan();
+  const firstSignal = mocks.invoke.mock.calls[0][2] as AbortSignal;
+  fireEvent.click(view.getByRole("button", { name: "Avbryt väntan" }));
+  expect(firstSignal.aborted).toBe(true);
+  expect(view.getByRole("img", { name: "Vald kortbild" })).toBeTruthy();
+  fireEvent.click(view.getByRole("button", { name: "Analysera kort" }));
+  await act(async () =>
+    finishFirst({ name: "Old card", number: "1", set: "Base Set" }),
+  );
+  expect(view.queryByRole("heading", { name: "Old card" })).toBeNull();
+  expect(
+    (view.getByRole("button", { name: "Analyserar..." }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(true);
+  expect(view.getByRole("button", { name: "Avbryt väntan" })).toBeTruthy();
+  await act(async () =>
+    finishSecond({ name: "Pikachu", number: "58", set: "Base Set" }),
+  );
+  expect(view.getByRole("heading", { name: "Pikachu" })).toBeTruthy();
+  expect(view.getByText(/Analysen är klar: Pikachu/)).toBeTruthy();
+  expect(mocks.save).not.toHaveBeenCalled();
+});
+it("ends a stalled analysis after one minute and keeps the photo available for retry", async () => {
+  mocks.invoke.mockImplementation(() => new Promise(() => {}));
+  const view = await scan(() => vi.useFakeTimers());
+  await act(async () => vi.advanceTimersByTime(60_000));
+  expect((mocks.invoke.mock.calls[0][2] as AbortSignal).aborted).toBe(true);
+  expect(view.getByRole("alert").textContent).toContain(
+    "Analysen tog för lång tid",
+  );
+  expect(view.getByRole("img", { name: "Vald kortbild" })).toBeTruthy();
+  expect(
+    (view.getByRole("button", { name: "Analysera kort" }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(false);
+  expect(mocks.save).not.toHaveBeenCalled();
 });
 it("opens a local scanned card through the real detail route without fetching an API ID", async () => {
   mocks.cards = [

@@ -6,7 +6,7 @@ import {
   type ChangeEvent,
 } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Camera, X, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { prepareCardImage } from "@/utils/cardImage";
@@ -28,6 +28,7 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
   const { t } = useLanguage();
 
   const stopCamera = useCallback(() => {
@@ -134,112 +135,137 @@ const CameraCapture = ({ onCapture, onClose }: CameraCaptureProps) => {
   };
 
   return (
-    <Card className="fixed inset-0 z-[100] h-[100dvh] rounded-none bg-background/95 backdrop-blur-sm flex flex-col">
-      <div className="flex shrink-0 items-center justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] border-b border-border">
-        <h2 className="text-xl font-bold">{t("takePhotoOfCard")}</h2>
-        <Button
-          aria-label="Stäng kameran"
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            stopCamera();
-            onClose();
+    <DialogPrimitive.Root
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          stopCamera();
+          onClose();
+        }
+      }}
+    >
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-[100] bg-background/95" />
+        <DialogPrimitive.Content
+          aria-modal="true"
+          className="fixed inset-0 z-[100] h-[100dvh] rounded-none border bg-background/95 text-card-foreground shadow-sm backdrop-blur-sm outline-none flex flex-col"
+          onOpenAutoFocus={() => {
+            returnFocusRef.current =
+              document.activeElement instanceof HTMLElement
+                ? document.activeElement
+                : null;
+          }}
+          onCloseAutoFocus={(event) => {
+            // This conditional camera has no Radix Trigger of its own.
+            event.preventDefault();
+            if (returnFocusRef.current?.isConnected)
+              returnFocusRef.current.focus({ preventScroll: true });
           }}
         >
-          <X className="w-5 h-5" />
-        </Button>
-      </div>
-
-      <div className="flex-1 min-h-0 relative overflow-hidden bg-black">
-        {!cameraError ? (
-          <>
-            <video
-              ref={videoRef}
-              autoPlay
-              muted
-              playsInline
-              onLoadedData={() => setCameraReady(true)}
-              className="w-full h-full object-cover"
-            />
-
-            {/* Camera guide overlay */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-[80%] max-w-md aspect-[3/4] border-4 border-primary/50 rounded-xl">
-                <div className="absolute top-2 left-2 right-2 text-center">
-                  <span className="text-white text-sm bg-black/50 px-3 py-1 rounded-full">
-                    {t("placeCardInFrame")}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </>
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-4 text-center bg-background">
-            <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center">
-              <Camera className="w-8 h-8" />
-            </div>
-            <p className="text-lg font-semibold">{cameraError}</p>
-            <p className="text-sm text-muted-foreground max-w-sm">
-              Ladda upp ett foto direkt från mobilen för att fortsätta.
-            </p>
-            <Button
-              variant="hero"
-              className="gap-2"
-              onClick={triggerFileUpload}
-            >
-              <Camera className="w-4 h-4" />
-              <span>Välj eller ta foto</span>
-            </Button>
+          <div className="flex shrink-0 items-center justify-between p-4 pt-[max(1rem,env(safe-area-inset-top))] border-b border-border">
+            <DialogPrimitive.Title className="text-xl font-bold">
+              {t("takePhotoOfCard")}
+            </DialogPrimitive.Title>
+            <DialogPrimitive.Close asChild>
+              <Button aria-label="Stäng kameran" variant="ghost" size="icon">
+                <X className="w-5 h-5" />
+              </Button>
+            </DialogPrimitive.Close>
           </div>
-        )}
-      </div>
 
-      <div className="shrink-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-4">
-        <div className="flex items-center justify-center gap-4">
-          {hasMultipleCameras && !cameraError && (
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label="Växla kamera"
-              onClick={switchCamera}
-              className="rounded-full w-14 h-14"
-            >
-              <RotateCcw className="w-6 h-6" />
-            </Button>
-          )}
+          <div className="flex-1 min-h-0 relative overflow-hidden bg-black">
+            {!cameraError ? (
+              <>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  onLoadedData={() => setCameraReady(true)}
+                  className="w-full h-full object-cover"
+                />
 
-          <Button
-            variant="hero"
-            size="icon"
-            aria-label={cameraError ? "Välj eller ta foto" : "Ta foto"}
-            disabled={!cameraError && !cameraReady}
-            onClick={cameraError ? triggerFileUpload : capturePhoto}
-            className="rounded-full w-16 h-16"
-          >
-            <Camera className="w-8 h-8" />
-          </Button>
+                {/* Camera guide overlay */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-[80%] max-w-md aspect-[3/4] border-4 border-primary/50 rounded-xl">
+                    <div className="absolute top-2 left-2 right-2 text-center">
+                      <span className="text-white text-sm bg-black/50 px-3 py-1 rounded-full">
+                        {t("placeCardInFrame")}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-4 text-center bg-background">
+                <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                  <Camera className="w-8 h-8" />
+                </div>
+                <p className="text-lg font-semibold">{cameraError}</p>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  Ladda upp ett foto direkt från mobilen för att fortsätta.
+                </p>
+                <Button
+                  variant="hero"
+                  className="gap-2"
+                  onClick={triggerFileUpload}
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>Välj eller ta foto</span>
+                </Button>
+              </div>
+            )}
+          </div>
 
-          <div className="w-14 h-14" />
-        </div>
+          <div className="shrink-0 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] space-y-4">
+            <div className="flex items-center justify-center gap-4">
+              {hasMultipleCameras && !cameraError && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Växla kamera"
+                  onClick={switchCamera}
+                  className="rounded-full w-14 h-14"
+                >
+                  <RotateCcw className="w-6 h-6" />
+                </Button>
+              )}
 
-        <p className="text-center text-sm text-muted-foreground">
-          {cameraError
-            ? "Alternativ: ladda upp ett foto via mobilen"
-            : t("pressToTakePhoto")}
-        </p>
-      </div>
+              <Button
+                variant="hero"
+                size="icon"
+                aria-label={cameraError ? "Välj eller ta foto" : "Ta foto"}
+                disabled={!cameraError && !cameraReady}
+                onClick={cameraError ? triggerFileUpload : capturePhoto}
+                className="rounded-full w-16 h-16"
+              >
+                <Camera className="w-8 h-8" />
+              </Button>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        capture="environment"
-        className="hidden"
-        onChange={handleFileUpload}
-      />
+              <div className="w-14 h-14" />
+            </div>
 
-      <canvas ref={canvasRef} className="hidden" />
-    </Card>
+            <DialogPrimitive.Description className="text-center text-sm text-muted-foreground">
+              {cameraError
+                ? "Alternativ: ladda upp ett foto via mobilen"
+                : t("pressToTakePhoto")}
+            </DialogPrimitive.Description>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            capture="environment"
+            hidden
+            className="hidden"
+            onChange={handleFileUpload}
+          />
+
+          <canvas ref={canvasRef} className="hidden" />
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 };
 

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
   CalendarDays,
@@ -19,9 +19,16 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { convertPriceRange } from "@/utils/currency";
 import CollectionCardEditor from "./CollectionCardEditor";
 import { Button } from "./ui/button";
+import { catalogueReturn } from "@/lib/catalogueNavigation";
+import SetLinkStatus from "@/components/SetLinkStatus";
 
 export default function ScannedCardDetail({ id }: { id: string }) {
   const { cards, isLoading, error } = useScannedCards();
+  const location = useLocation();
+  const back = useMemo(
+    () => catalogueReturn(location.state, "/collection"),
+    [location.state],
+  );
   const [grade, setGrade] = useState("ungraded");
   const [editing, setEditing] = useState(false);
   const { currency } = useLanguage();
@@ -44,13 +51,14 @@ export default function ScannedCardDetail({ id }: { id: string }) {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
-      <main className="page-shell space-y-7">
+      <main id="main-content" tabIndex={-1} className="page-shell space-y-7">
         <Link
           className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-          to="/collection"
+          to={back.to}
+          state={back.state}
         >
           <ArrowLeft className="h-4 w-4" />
-          Tillbaka till samlingen
+          {back.label}
         </Link>
         {isLoading ? (
           <section
@@ -81,7 +89,12 @@ export default function ScannedCardDetail({ id }: { id: string }) {
               inloggad på rätt konto.
             </p>
             <Button asChild variant="outline" className="mt-6">
-              <Link to="/collection">Öppna samlingen</Link>
+              <Link
+                to={back.to.startsWith("/collection") ? back.to : "/collection"}
+                state={back.state}
+              >
+                Öppna samlingen
+              </Link>
             </Button>
           </section>
         ) : (
@@ -105,6 +118,11 @@ export default function ScannedCardDetail({ id }: { id: string }) {
                 Redigera kort
               </Button>
             </header>
+            <SetLinkStatus
+              card={card}
+              onReview={() => setEditing(true)}
+              showDescription
+            />
             <div className="grid items-start gap-6 lg:grid-cols-[0.95fr_1.15fr]">
               <div className="space-y-4 lg:sticky lg:top-28">
                 <section className="surface-panel overflow-hidden">

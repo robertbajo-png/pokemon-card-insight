@@ -12,7 +12,8 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
+      injectRegister: null,
       includeAssets: ["favicon.ico", "robots.txt"],
       manifest: {
         name: "Pokemon Card Lens",
@@ -40,6 +41,8 @@ export default defineConfig({
         ],
       },
       workbox: {
+        skipWaiting: false,
+        clientsClaim: true,
         // Reach the external email gate when renewing mobile access; never
         // answer backend requests with an offline copy of the app shell.
         navigateFallbackDenylist: [
