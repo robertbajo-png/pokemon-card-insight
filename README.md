@@ -17,6 +17,15 @@ A failed save keeps the review form open so you can retry without a new AI call.
 Once saved, open the collection or choose the next card. Switching accounts
 clears the scanner workspace and cancels its pending analysis.
 
+## Missing-card list
+
+Open a set's checklist and choose **Lista att ta med** to view every missing
+catalogue card, independently of the current search or ownership filter. Copy
+the list to a note or download a UTF-8 text file for your next card swap. Each
+catalogue printing has its own row, including cards that share a printed number.
+The list reflects the current collection and contains no photos or personal
+notes. Creating it does not change the collection or call AI.
+
 ## Local Windows app
 
 Open **http://127.0.0.1:5220/** after installation. The local confirmation-email
