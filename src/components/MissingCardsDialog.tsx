@@ -31,19 +31,20 @@ export default function MissingCardsDialog({
   const [copying, setCopying] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [error, setError] = useState("");
-  const generation = useRef(0);
+  const generation = useRef({ value: 0 });
   const text = formatMissingCards(set, cards);
   useEffect(() => {
+    const counter = generation.current;
     setCopying(false);
     setFeedback("");
     setError("");
     if (disabled) setOpen(false);
     return () => {
-      generation.current++;
+      counter.value++;
     };
   }, [text, disabled]);
   const changeOpen = (next: boolean) => {
-    generation.current++;
+    generation.current.value++;
     setOpen(next);
     setCopying(false);
     setFeedback("");
@@ -51,18 +52,18 @@ export default function MissingCardsDialog({
   };
   const copy = async () => {
     if (copying || disabled || !cards.length) return;
-    const request = ++generation.current;
+    const request = ++generation.current.value;
     setCopying(true);
     setFeedback("");
     setError("");
     try {
       await navigator.clipboard.writeText(text);
-      if (generation.current === request) setFeedback("Listan är kopierad.");
+      if (generation.current.value === request) setFeedback("Listan är kopierad.");
     } catch {
-      if (generation.current === request)
+      if (generation.current.value === request)
         setError("Kunde inte kopiera. Ladda ner textfilen i stället.");
     } finally {
-      if (generation.current === request) setCopying(false);
+      if (generation.current.value === request) setCopying(false);
     }
   };
   const download = () => {
