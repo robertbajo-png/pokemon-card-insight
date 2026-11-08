@@ -20,6 +20,8 @@ import {
 import type { PokemonCard, PokemonSet } from "@/services/pokemonTcgApi";
 import { toast } from "sonner";
 import { catalogueNavigationState } from "@/lib/catalogueNavigation";
+import MissingCardsDialog from "@/components/MissingCardsDialog";
+import { missingCards } from "@/lib/missingCards";
 
 function CatalogueArtwork({ card }: { card: PokemonCard }) {
   const [failed, setFailed] = useState(false);
@@ -50,7 +52,7 @@ export default function SetChecklist({
   set: Pick<PokemonSet, "id" | "name">;
   catalog: PokemonCard[];
 }) {
-  const { cards, addCard, isLoading, error } = useScannedCards();
+  const { cards, addCard, isLoading, error, owner } = useScannedCards();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedFilter = searchParams.get("filter") ?? "all";
@@ -74,6 +76,10 @@ export default function SetChecklist({
     [cards, set, catalog],
   );
   const ownershipReady = !isLoading && !error;
+  const missing = useMemo(
+    () => missingCards(catalog, progress.quantities),
+    [catalog, progress.quantities],
+  );
   const visible = catalog.filter((card) => {
     const quantity = progress.quantities.get(card.id) ?? 0;
     return (
@@ -185,6 +191,17 @@ export default function SetChecklist({
                   `${progress.missing} kort saknas`
                 )}
               </p>
+            </div>
+            <div className="flex flex-col items-start justify-between gap-3 border-t border-border/60 pt-4 sm:flex-row sm:items-center">
+              <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
+                Ta med listan över saknade kort till nästa kortbyte.
+              </p>
+              <MissingCardsDialog
+                key={`${owner}:${set.id}`}
+                set={set}
+                cards={missing}
+                disabled={busy.size > 0}
+              />
             </div>
           </>
         )}
