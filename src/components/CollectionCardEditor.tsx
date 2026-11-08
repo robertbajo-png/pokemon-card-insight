@@ -67,6 +67,7 @@ function CardForm({
   const [quantity, setQuantity] = useState(String(source?.quantity ?? 1));
   const [condition, setCondition] = useState(source?.condition ?? "");
   const [language, setLanguage] = useState(source?.language ?? "en");
+  const [languageEdited, setLanguageEdited] = useState(false);
   const [variant, setVariant] = useState(source?.variant ?? "normal");
   const [location, setLocation] = useState(source?.location ?? "");
   const [notes, setNotes] = useState(source?.notes ?? "");
@@ -210,6 +211,14 @@ function CardForm({
                 onChange={(e) => {
                   setSetId(e.target.value);
                   setSetEdited(true);
+                  if (!source && !languageEdited) {
+                    setLanguage(
+                      pokemonSets.find((set) => set.id === e.target.value)
+                        ?.region === "jp"
+                        ? "ja"
+                        : "en",
+                    );
+                  }
                 }}
                 className={selectClass}
               >
@@ -272,7 +281,10 @@ function CardForm({
               <select
                 aria-label="Språk"
                 value={language}
-                onChange={(e) => setLanguage(e.target.value)}
+                onChange={(e) => {
+                  setLanguage(e.target.value);
+                  setLanguageEdited(true);
+                }}
                 className={selectClass}
               >
                 {[

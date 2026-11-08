@@ -26,6 +26,18 @@ catalogue printing has its own row, including cards that share a printed number.
 The list reflects the current collection and contains no photos or personal
 notes. Creating it does not change the collection or call AI.
 
+## Japanese special sets
+
+Enable **Visa japanska specialset** in the set library to include the verified
+Japanese special-set catalogue. Japanese editions have distinct set/card IDs,
+their own checklists and Japanese card names. New catalogue additions use the
+Japanese language; existing saved cards are not remapped.
+
+The bundled TCGdex snapshot currently includes five complete special-set lists
+(1,033 cards). Some sources have no card images; the app labels these honestly.
+See [Japanese catalogue provenance and refresh](docs/japanese-catalogue.md).
+Browsing, checklists and missing-card exports do not require AI calls.
+
 ## Local Windows app
 
 Open **http://127.0.0.1:5220/** after installation. The local confirmation-email

@@ -1,10 +1,22 @@
+import {
+  getJapaneseCard,
+  getJapaneseCardsBySet,
+  getJapaneseSet,
+} from "./japaneseCatalogue";
+
 export interface CatalogueSource {
   kind: "snapshot";
   revision: string;
   updatedAt: string;
+  provider?: "tcgdex";
+  language?: "ja";
+  details?: "basic";
 }
 
 export interface PokemonSet {
+  language?: "en" | "ja";
+  region?: "jp";
+  nativeName?: string;
   catalogueSource?: CatalogueSource;
   id: string;
   name: string;
@@ -20,6 +32,7 @@ export interface PokemonSet {
 }
 
 export interface PokemonCard {
+  language?: "en" | "ja";
   catalogueSource?: CatalogueSource;
   id: string;
   name: string;
@@ -121,6 +134,7 @@ export const getCardById = async (
   id: string,
   signal?: AbortSignal,
 ): Promise<PokemonCard | null> => {
+  if (id.startsWith("jp-")) return getJapaneseCard(id, signal);
   const result = await proxyRequest<{ data: PokemonCard | null }>(
     `/cards/${encodeURIComponent(id)}`,
     undefined,
@@ -172,6 +186,10 @@ export const getCardsBySet = async (
   setId: string,
   signal?: AbortSignal,
 ): Promise<{ data: PokemonCard[]; totalCount: number }> => {
+  if (setId.startsWith("jp-")) {
+    const data = await getJapaneseCardsBySet(setId, signal);
+    return { data, totalCount: data.length };
+  }
   const cards: PokemonCard[] = [];
   let totalCount = Infinity;
   for (let page = 1; cards.length < totalCount; page++) {
@@ -218,6 +236,10 @@ export const getSetById = async (
   setId: string,
   signal?: AbortSignal,
 ): Promise<PokemonSet | null> => {
+  if (setId.startsWith("jp-")) {
+    if (signal?.aborted) throw new DOMException("Aborted", "AbortError");
+    return getJapaneseSet(setId);
+  }
   const result = await proxyRequest<{ data: PokemonSet | null }>(
     `/sets/${encodeURIComponent(setId)}`,
     undefined,

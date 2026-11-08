@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { pokemonSets, catalogueRevision } from "@/data/pokemonSets";
+import {
+  internationalPokemonSets as pokemonSets,
+  catalogueRevision,
+} from "@/data/pokemonSets";
 import { scannedCardSchema, type ScannedCard } from "@/lib/cardAnalysis";
 import {
   belongsToSet,

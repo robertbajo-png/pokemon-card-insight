@@ -33,6 +33,7 @@ function cataloguePath(value: unknown): string | undefined {
     const series = input.get("serie");
     if (series && series !== "all") output.set("serie", series);
     if (input.get("mina") === "1") output.set("mina", "1");
+    if (input.get("japan") === "1") output.set("japan", "1");
   } else {
     const filter = input.get("filter");
     const allowed =
