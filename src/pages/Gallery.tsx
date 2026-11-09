@@ -147,7 +147,11 @@ export default function Gallery() {
             (!ownedOnly || (progress.get(set.id) ?? 0) > 0)
           );
         })
-        .sort((a, b) => b.releaseDate.localeCompare(a.releaseDate)),
+        .sort(
+          (a, b) =>
+            Number(b.region === "jp") - Number(a.region === "jp") ||
+            b.releaseDate.localeCompare(a.releaseDate),
+        ),
     [scopedSets, searchQuery, filterSeries, ownedOnly, progress],
   );
   const featured = [...scopedSets]
@@ -205,7 +209,7 @@ export default function Gallery() {
           </div>
         </header>
 
-        {featured && !filtered && (
+        {featured && !filtered && !includeJapan && (
           <section
             className="surface-panel relative flex min-h-52 items-center justify-between gap-4 overflow-hidden px-6 py-5 sm:px-8"
             aria-label="Utvalt set"
@@ -343,7 +347,7 @@ export default function Gallery() {
             </div>
             <p className="inline-flex items-center gap-2 text-xs text-muted-foreground">
               <ArrowDownWideNarrow className="h-3.5 w-3.5" />
-              Nyaste först
+              {includeJapan ? "Japanska set först" : "Nyaste först"}
             </p>
           </div>
           {ownedOnly && !collectionReady && (

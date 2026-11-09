@@ -251,6 +251,21 @@ it("restores the Japanese scope from a direct library URL", () => {
   expect(view.getByRole("button", { name: "Öppna Base Set" })).toBeTruthy();
 });
 
+it("puts the newly enabled Japanese sets first so the toggle reveals them immediately", () => {
+  const view = renderAt("/gallery");
+  fireEvent.click(japanSwitch(view));
+  const cards = view.getAllByRole("button", { name: /^Öppna / });
+  expect(
+    cards
+      .slice(0, fixtures.japanese.length)
+      .map((button) => button.getAttribute("aria-label")),
+  ).toEqual([
+    `Öppna ${fixtures.japanese[1].name}`,
+    `Öppna ${fixtures.japanese[0].name}`,
+  ]);
+  expect(view.getByText("Japanska set först")).toBeTruthy();
+});
+
 it.each([
   ["shiny star", "Shiny Star V (Japan)"],
   ["シャイニースター", "Shiny Star V (Japan)"],
