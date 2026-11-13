@@ -275,6 +275,23 @@ it("supports adding a card without a paid scan", async () => {
     ),
   );
 });
+it("defaults new manual Japanese editions to Japanese while preserving an explicit language choice", () => {
+  const view = render(<CollectionCardEditor open onOpenChange={vi.fn()} />);
+  fireEvent.change(view.getByLabelText("Set", { exact: true }), {
+    target: { value: "jp-sv2a" },
+  });
+  expect((view.getByLabelText("Språk") as HTMLSelectElement).value).toBe("ja");
+  fireEvent.change(view.getByLabelText("Set", { exact: true }), {
+    target: { value: "base1" },
+  });
+  expect((view.getByLabelText("Språk") as HTMLSelectElement).value).toBe("en");
+  fireEvent.change(view.getByLabelText("Språk"), { target: { value: "de" } });
+  fireEvent.change(view.getByLabelText("Set", { exact: true }), {
+    target: { value: "jp-sv2a" },
+  });
+  expect((view.getByLabelText("Språk") as HTMLSelectElement).value).toBe("de");
+  expect(mocks.save).not.toHaveBeenCalled();
+});
 it("asks before deleting all copies and leaves data untouched when cancelled", async () => {
   const view = render(
     <MemoryRouter>

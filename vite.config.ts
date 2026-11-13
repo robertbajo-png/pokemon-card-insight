@@ -52,6 +52,14 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff2}"],
         runtimeCaching: [
           {
+            urlPattern: /^https:\/\/assets\.tcgdex\.net\/ja\//i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "pokemon-japanese-images",
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+          {
             urlPattern: /^https:\/\/images\.pokemontcg\.io\/.*/i,
             handler: "CacheFirst",
             options: {

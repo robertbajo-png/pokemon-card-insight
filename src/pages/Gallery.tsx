@@ -20,7 +20,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { pokemonSets, type PokemonSet } from "@/data/pokemonSets";
+import { Switch } from "@/components/ui/switch";
+import {
+  pokemonSets,
+  internationalPokemonSets,
+  japanesePokemonSets,
+  type PokemonSet,
+} from "@/data/pokemonSets";
 import { useScannedCards } from "@/hooks/useScannedCards";
 import { getAllSets } from "@/services/pokemonTcgApi";
 import { localSetProgress } from "@/lib/collection";
@@ -73,9 +79,15 @@ export default function Gallery() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [setsWithLogos, setSetsWithLogos] = useState(pokemonSets);
   const { cards, isLoading, error } = useScannedCards();
+  const includeJapan = searchParams.get("japan") === "1";
+  const activeSets = includeJapan ? pokemonSets : internationalPokemonSets;
+  const scopedSets = useMemo(() => {
+    const includedIds = new Set(activeSets.map((set) => set.id));
+    return setsWithLogos.filter((set) => includedIds.has(set.id));
+  }, [activeSets, setsWithLogos]);
   const uniqueSeries = useMemo(
-    () => ["all", ...Array.from(new Set(pokemonSets.map((set) => set.series)))],
-    [],
+    () => ["all", ...Array.from(new Set(activeSets.map((set) => set.series)))],
+    [activeSets],
   );
   const searchQuery = searchParams.get("q") ?? "";
   const requestedSeries = searchParams.get("serie") ?? "all";
@@ -85,8 +97,8 @@ export default function Gallery() {
   const ownedOnly = searchParams.get("mina") === "1";
   const progress = useMemo(
     () =>
-      new Map(pokemonSets.map((set) => [set.id, localSetProgress(cards, set)])),
-    [cards],
+      new Map(activeSets.map((set) => [set.id, localSetProgress(cards, set)])),
+    [cards, activeSets],
   );
   const ownedSetCount = [...progress.values()].filter(
     (count) => count > 0,
@@ -98,20 +110,34 @@ export default function Gallery() {
     else next.set(key, value);
     setSearchParams(next, { replace: true });
   };
-  const resetFilters = () => setSearchParams({}, { replace: true });
+  const resetFilters = () => {
+    const next = new URLSearchParams(searchParams);
+    for (const key of ["q", "serie", "mina"]) next.delete(key);
+    setSearchParams(next, { replace: true });
+  };
+  const toggleJapan = (checked: boolean) => {
+    const next = new URLSearchParams(searchParams);
+    if (checked) next.set("japan", "1");
+    else next.delete("japan");
+    const nextSets = checked ? pokemonSets : internationalPokemonSets;
+    if (!nextSets.some((set) => set.series === next.get("serie")))
+      next.delete("serie");
+    setSearchParams(next, { replace: true });
+  };
   const openSet = (set: PokemonSet) =>
     navigate(`/set/${set.id}`, {
       state: { gallerySearch: searchParams.toString() },
     });
   const filteredSets = useMemo(
     () =>
-      setsWithLogos
+      scopedSets
         .filter((set) => {
           const needle = searchable(searchQuery);
           return (
             [
               set.name,
               set.canonicalName,
+              set.nativeName ?? "",
               set.setCode,
               set.id,
               ...set.aliases,
@@ -121,10 +147,14 @@ export default function Gallery() {
             (!ownedOnly || (progress.get(set.id) ?? 0) > 0)
           );
         })
-        .sort((a, b) => b.releaseDate.localeCompare(a.releaseDate)),
-    [setsWithLogos, searchQuery, filterSeries, ownedOnly, progress],
+        .sort(
+          (a, b) =>
+            Number(b.region === "jp") - Number(a.region === "jp") ||
+            b.releaseDate.localeCompare(a.releaseDate),
+        ),
+    [scopedSets, searchQuery, filterSeries, ownedOnly, progress],
   );
-  const featured = [...setsWithLogos]
+  const featured = [...scopedSets]
     .sort((a, b) => b.releaseDate.localeCompare(a.releaseDate))
     .find((set) => set.packArt);
   const filtered = Boolean(searchQuery || filterSeries !== "all" || ownedOnly);
@@ -136,12 +166,19 @@ export default function Gallery() {
         if (controller.signal.aborted) return;
         const byId = new Map(remote.map((set) => [set.id, set]));
         setSetsWithLogos(
-          pokemonSets.map((set) => ({
-            ...set,
-            logo: byId.get(set.id)?.images?.logo || set.logo || set.logoUrl,
-            symbol:
-              byId.get(set.id)?.images?.symbol || set.symbol || set.symbolUrl,
-          })),
+          pokemonSets.map((set) =>
+            set.region === "jp"
+              ? set
+              : {
+                  ...set,
+                  logo:
+                    byId.get(set.id)?.images?.logo || set.logo || set.logoUrl,
+                  symbol:
+                    byId.get(set.id)?.images?.symbol ||
+                    set.symbol ||
+                    set.symbolUrl,
+                },
+          ),
         );
       })
       .catch(() => {
@@ -166,13 +203,13 @@ export default function Gallery() {
           <div className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm text-muted-foreground">
             <Layers3 className="h-4 w-4 text-primary" />
             <span className="font-semibold text-foreground">
-              {pokemonSets.length}
+              {activeSets.length}
             </span>{" "}
             set att utforska
           </div>
         </header>
 
-        {featured && !filtered && (
+        {featured && !filtered && !includeJapan && (
           <section
             className="surface-panel relative flex min-h-52 items-center justify-between gap-4 overflow-hidden px-6 py-5 sm:px-8"
             aria-label="Utvalt set"
@@ -205,6 +242,43 @@ export default function Gallery() {
         )}
 
         <section aria-label="Hitta set" className="space-y-5">
+          <div className="surface-panel flex items-start justify-between gap-4 p-4 sm:p-5">
+            <div className="min-w-0 space-y-1.5">
+              <label
+                htmlFor="include-japanese-specials"
+                className="block text-sm font-semibold leading-6"
+              >
+                Visa japanska specialset
+              </label>
+              <p
+                id="japanese-specials-help"
+                className="text-xs leading-relaxed text-muted-foreground"
+              >
+                Japanska utgåvor får egna checklistor och kortnummer.
+              </p>
+              {includeJapan && (
+                <p
+                  id="japanese-specials-coverage"
+                  className="text-xs leading-relaxed text-muted-foreground"
+                >
+                  {japanesePokemonSets.length} verifierade japanska specialset.
+                  Bilder saknas för vissa kort.
+                </p>
+              )}
+            </div>
+            <Switch
+              id="include-japanese-specials"
+              aria-label="Visa japanska specialset"
+              aria-describedby={
+                includeJapan
+                  ? "japanese-specials-help japanese-specials-coverage"
+                  : "japanese-specials-help"
+              }
+              checked={includeJapan}
+              onCheckedChange={toggleJapan}
+              className="mt-1 shrink-0"
+            />
+          </div>
           <div className="surface-panel flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
             <div className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -273,7 +347,7 @@ export default function Gallery() {
             </div>
             <p className="inline-flex items-center gap-2 text-xs text-muted-foreground">
               <ArrowDownWideNarrow className="h-3.5 w-3.5" />
-              Nyaste först
+              {includeJapan ? "Japanska set först" : "Nyaste först"}
             </p>
           </div>
           {ownedOnly && !collectionReady && (
@@ -302,12 +376,27 @@ export default function Gallery() {
                   >
                     <SetArtwork set={set} />
                     <div className="flex flex-1 flex-col px-1 pt-4">
-                      <p className="mb-1.5 truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                        {set.series}
-                      </p>
-                      <h2 className="min-h-10 text-sm font-semibold leading-5 tracking-tight sm:text-base">
+                      <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                        <p className="min-w-0 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                          {set.series}
+                        </p>
+                        {set.region === "jp" && (
+                          <span className="rounded-full border border-primary/25 bg-primary/[0.08] px-2 py-0.5 text-[10px] font-semibold text-primary">
+                            Japan
+                          </span>
+                        )}
+                      </div>
+                      <h2 className="min-h-10 break-words text-sm font-semibold leading-5 tracking-tight sm:text-base">
                         {set.name}
                       </h2>
+                      {set.nativeName && (
+                        <p
+                          lang="ja"
+                          className="mt-1 break-words text-xs leading-5 text-muted-foreground"
+                        >
+                          {set.nativeName}
+                        </p>
+                      )}
                       <div className="mt-3 flex items-center justify-between gap-2 text-xs text-muted-foreground">
                         <span>{set.totalCards} kort</span>
                         <span>{set.releaseDate.slice(0, 4)}</span>

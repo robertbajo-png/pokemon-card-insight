@@ -23,6 +23,12 @@ const canonicalSets = new Map(pokemonSets.map((set) => [set.id, set]));
 const legacySets = new Map(legacySetMappings.map((set) => [set.id, set]));
 const names = new Map<string, Set<string>>();
 const codes = new Map<string, Set<string>>();
+const japaneseNames = new Map<string, Set<string>>();
+const japaneseCodes = new Map<string, Set<string>>();
+// Match the whole known set prefix; a region namespace itself is not a set ID.
+const cataloguePrefixes = [...pokemonSets].sort(
+  (a, b) => b.id.length - a.id.length,
+);
 function indexLabel(
   index: Map<string, Set<string>>,
   value: string,
@@ -34,14 +40,61 @@ function indexLabel(
   index.set(key, ids);
 }
 for (const set of pokemonSets) {
-  for (const name of [set.id, ...set.aliases]) indexLabel(names, name, set.id);
+  const nameIndex = set.region === "jp" ? japaneseNames : names;
+  const codeIndex = set.region === "jp" ? japaneseCodes : codes;
+  for (const name of [set.id, set.name, ...set.aliases])
+    indexLabel(nameIndex, name, set.id);
   for (const code of [set.id, ...set.codeAliases])
-    indexLabel(codes, code, set.id);
+    indexLabel(codeIndex, code, set.id);
 }
+
+const knownSetLabel = (value: string) =>
+  names.has(value) ||
+  codes.has(value) ||
+  japaneseNames.has(value) ||
+  japaneseCodes.has(value);
 
 export function resolveSetId(card: SetIdentity): string | undefined {
   const nameIds = names.get(normalize(card.set ?? "")) ?? new Set<string>();
   const codeIds = codes.get(normalize(card.setCode ?? "")) ?? new Set<string>();
+  const japaneseNameIds =
+    japaneseNames.get(normalize(card.set ?? "")) ?? new Set<string>();
+  const japaneseCodeIds =
+    japaneseCodes.get(normalize(card.setCode ?? "")) ?? new Set<string>();
+  const storedId = card.setId ? normalize(card.setId) : undefined;
+  const canonical = storedId ? canonicalSets.get(storedId) : undefined;
+  const catalogId = card.catalogId?.trim();
+  const catalogSet = catalogId
+    ? cataloguePrefixes.find((set) => catalogId.startsWith(`${set.id}-`))
+    : undefined;
+  const japaneseSet =
+    canonical?.region === "jp"
+      ? canonical
+      : catalogSet?.region === "jp"
+        ? catalogSet
+        : undefined;
+
+  if (japaneseSet) {
+    // Only an explicit known Japanese ID/prefix may select that edition.
+    // Recognized labels may corroborate it, but never override conflicting IDs.
+    if (
+      (storedId && storedId !== japaneseSet.id) ||
+      (catalogId && catalogSet?.id !== japaneseSet.id) ||
+      nameIds.size ||
+      codeIds.size ||
+      (japaneseNameIds.size && !japaneseNameIds.has(japaneseSet.id)) ||
+      (japaneseCodeIds.size && !japaneseCodeIds.has(japaneseSet.id))
+    )
+      return undefined;
+    return japaneseSet.id;
+  }
+  // Japanese text without edition evidence needs review. Shared old English
+  // labels retain their old meaning, even if a future Japanese code overlaps.
+  if (
+    (japaneseNameIds.size && !nameIds.size) ||
+    (japaneseCodeIds.size && !codeIds.size)
+  )
+    return undefined;
   const labels = new Set(
     nameIds.size && codeIds.size
       ? [...nameIds].filter((id) => codeIds.has(id))
@@ -50,8 +103,6 @@ export function resolveSetId(card: SetIdentity): string | undefined {
   // Recognized labels disagree: never credit either set's checklist.
   if (nameIds.size && codeIds.size && !labels.size) return undefined;
 
-  const storedId = card.setId ? normalize(card.setId) : undefined;
-  const canonical = storedId ? canonicalSets.get(storedId) : undefined;
   const legacy = storedId ? legacySets.get(storedId) : undefined;
   const legacySupported = Boolean(
     legacy &&
@@ -59,23 +110,20 @@ export function resolveSetId(card: SetIdentity): string | undefined {
       (normalize(card.set ?? "") === normalize(legacy.name) ||
         normalize(card.setCode ?? "") === normalize(legacy.setCode)),
   );
-  const catalogId = card.catalogId?.trim();
-  const catalogSet = catalogId
-    ? pokemonSets.find((set) => catalogId.startsWith(`${set.id}-`))?.id
-    : undefined;
+  const catalogSetId = catalogSet?.id;
 
   if (catalogId) {
-    if (!catalogSet || (labels.size && !labels.has(catalogSet)))
+    if (!catalogSetId || (labels.size && !labels.has(catalogSetId)))
       return undefined;
     if (
       storedId &&
-      canonical?.id !== catalogSet &&
-      !(legacySupported && legacy?.canonicalId === catalogSet)
+      canonical?.id !== catalogSetId &&
+      !(legacySupported && legacy?.canonicalId === catalogSetId)
     )
       return undefined;
     // A catalogue prefix needs supporting labels or the same canonical set ID.
-    return labels.has(catalogSet) || canonical?.id === catalogSet
-      ? catalogSet
+    return labels.has(catalogSetId) || canonical?.id === catalogSetId
+      ? catalogSetId
       : undefined;
   }
   if (storedId) {
@@ -106,11 +154,7 @@ export function setLinkStatus(
   const code = normalize(card.setCode ?? "");
   // The schema has no provenance flag for an intentionally custom set. Only
   // wholly unknown labels without an asserted catalogue identity are neutral.
-  const unknownLabels =
-    !names.has(name) &&
-    !codes.has(name) &&
-    !names.has(code) &&
-    !codes.has(code);
+  const unknownLabels = !knownSetLabel(name) && !knownSetLabel(code);
   if (
     !card.setId &&
     !card.catalogId &&
@@ -154,10 +198,8 @@ export function samePrinting(a: ScannedCard, b: ScannedCard): boolean {
       Boolean(name) &&
       name === normalize(b.set) &&
       code === normalize(b.setCode ?? "") &&
-      !names.has(name) &&
-      !codes.has(name) &&
-      !names.has(code) &&
-      !codes.has(code);
+      !knownSetLabel(name) &&
+      !knownSetLabel(code);
   }
   return (
     sameSet &&
@@ -181,8 +223,15 @@ export function catalogCardToCollection(
     set: card.set.name,
     setId: card.set.id ?? setId,
     catalogId: card.id,
+    language:
+      card.language ??
+      (canonicalSets.get(card.set.id ?? setId ?? "")?.region === "jp"
+        ? "ja"
+        : "en"),
     image: card.images.large || card.images.small,
-    type: card.types?.[0] ?? "Colorless",
+    type:
+      card.types?.[0] ??
+      (card.catalogueSource?.details === "basic" ? "Unknown" : "Colorless"),
     rarity: card.rarity ?? "Unknown",
     hp: card.hp,
     attacks: card.attacks ?? [],

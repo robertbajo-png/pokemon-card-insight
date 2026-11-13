@@ -80,6 +80,9 @@ export default function SetDetail() {
       ? {
           id: local.id,
           name: local.name,
+          nativeName: local.nativeName,
+          language: local.language,
+          region: local.region,
           series: local.series,
           printedTotal: local.printedTotal,
           total: local.totalCards,
@@ -185,7 +188,20 @@ export default function SetDetail() {
               <h1 className="page-title">
                 {set?.name || localSet?.name || "Setdetaljer"}
               </h1>
+              {(set?.nativeName || localSet?.nativeName) && (
+                <p
+                  lang="ja"
+                  className="mt-2 break-words text-base text-muted-foreground"
+                >
+                  {set?.nativeName || localSet?.nativeName}
+                </p>
+              )}
               <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+                {(set?.region === "jp" || localSet?.region === "jp") && (
+                  <span className="rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-medium text-primary">
+                    Japan · Japanska
+                  </span>
+                )}
                 {set?.releaseDate && (
                   <span className="inline-flex items-center gap-2">
                     <CalendarDays className="h-4 w-4" />

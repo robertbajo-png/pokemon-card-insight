@@ -1,7 +1,11 @@
 import catalogue from "./catalogue-sets.json";
+import japaneseCatalogue from "./japanese-catalogue.json";
 import { legacyPokemonSets } from "./legacyPokemonSets";
 
 export interface PokemonSet {
+  region?: "jp";
+  language?: "ja";
+  nativeName?: string;
   id: string;
   name: string;
   canonicalName: string;
@@ -86,32 +90,59 @@ export const legacySetMappings = legacyMatches
 
 export const catalogueRevision = catalogue.revision;
 export const catalogueUpdatedAt = catalogue.updatedAt;
-export const pokemonSets: PokemonSet[] = catalogue.sets.map((set) => {
-  const legacy = legacyMatches.find(
-    (match) => match.canonicalId === set.id,
-  )?.legacy;
-  const code = "ptcgoCode" in set ? set.ptcgoCode : undefined;
-  return {
+export const internationalPokemonSets: PokemonSet[] = catalogue.sets.map(
+  (set) => {
+    const legacy = legacyMatches.find(
+      (match) => match.canonicalId === set.id,
+    )?.legacy;
+    const code = "ptcgoCode" in set ? set.ptcgoCode : undefined;
+    return {
+      id: set.id,
+      name: legacy?.name ?? set.name,
+      canonicalName: set.name,
+      series: legacy?.series ?? seriesLabels[set.series] ?? set.series,
+      totalCards: set.total,
+      printedTotal: set.printedTotal,
+      releaseDate: set.releaseDate.replace(/\//g, "-"),
+      setCode: legacy?.setCode ?? code ?? set.id.toUpperCase(),
+      aliases: [
+        ...new Set([...sourceAliases(set), ...(legacy ? [legacy.name] : [])]),
+      ],
+      codeAliases: [
+        ...new Set(
+          [code, legacy?.setCode].filter((value): value is string =>
+            Boolean(value),
+          ),
+        ),
+      ],
+      logo: set.images.logo,
+      symbol: set.images.symbol,
+      packArt: legacy?.packArt,
+    };
+  },
+);
+
+export const japanesePokemonSets: PokemonSet[] = japaneseCatalogue.sets.map(
+  (set) => ({
     id: set.id,
-    name: legacy?.name ?? set.name,
-    canonicalName: set.name,
-    series: legacy?.series ?? seriesLabels[set.series] ?? set.series,
+    name: `${set.name} (Japan)`,
+    canonicalName: set.nativeName,
+    nativeName: set.nativeName,
+    region: "jp",
+    language: "ja",
+    series: set.series,
     totalCards: set.total,
     printedTotal: set.printedTotal,
-    releaseDate: set.releaseDate.replace(/\//g, "-"),
-    setCode: legacy?.setCode ?? code ?? set.id.toUpperCase(),
-    aliases: [
-      ...new Set([...sourceAliases(set), ...(legacy ? [legacy.name] : [])]),
-    ],
-    codeAliases: [
-      ...new Set(
-        [code, legacy?.setCode].filter((value): value is string =>
-          Boolean(value),
-        ),
-      ),
-    ],
-    logo: set.images.logo,
-    symbol: set.images.symbol,
-    packArt: legacy?.packArt,
-  };
-});
+    releaseDate: set.releaseDate,
+    setCode: set.setCode,
+    aliases: [set.nativeName, set.name],
+    codeAliases: [set.setCode],
+    logo: set.logo,
+    symbol: set.symbol,
+  }),
+);
+
+export const pokemonSets: PokemonSet[] = [
+  ...internationalPokemonSets,
+  ...japanesePokemonSets,
+];

@@ -14,7 +14,7 @@ import {
 import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { useScannedCards } from "@/hooks/useScannedCards";
-import { pokemonSets } from "@/data/pokemonSets";
+import { internationalPokemonSets as pokemonSets } from "@/data/pokemonSets";
 import { collectionCardIdentity, resolveSetId } from "@/lib/collection";
 import charizard from "@/assets/charizard-base-set.jpg";
 

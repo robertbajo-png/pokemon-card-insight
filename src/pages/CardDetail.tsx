@@ -13,6 +13,7 @@ import {
   ChevronRight,
   CircleAlert,
   Library,
+  ImageOff,
   Loader2,
   RefreshCw,
   Star,
@@ -45,6 +46,7 @@ const ApiCardDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
+  const [imageFailed, setImageFailed] = useState(false);
   const { currency, setCurrency } = useLanguage();
   useEffect(() => {
     if (!id) {
@@ -55,6 +57,7 @@ const ApiCardDetail = () => {
     const controller = new AbortController();
     setIsLoading(true);
     setCard(null);
+    setImageFailed(false);
     setError(null);
     withTimeout((signal) => getCardById(id, signal), controller.signal, 20000)
       .then((data) => {
@@ -149,11 +152,25 @@ const ApiCardDetail = () => {
               <div className="space-y-4 lg:sticky lg:top-28">
                 <section className="surface-panel overflow-hidden">
                   <div className="flex min-h-80 items-center justify-center bg-muted/20 px-7 py-8 sm:px-10 sm:py-10">
-                    <img
-                      src={card.images.large || card.images.small}
-                      alt={card.name}
-                      className="max-h-[560px] max-w-full rounded-xl object-contain shadow-2xl"
-                    />
+                    {(card.images.large || card.images.small) &&
+                    !imageFailed ? (
+                      <img
+                        src={card.images.large || card.images.small}
+                        alt={card.name}
+                        onError={() => setImageFailed(true)}
+                        className="max-h-[560px] max-w-full rounded-xl object-contain shadow-2xl"
+                      />
+                    ) : (
+                      <div
+                        role="img"
+                        aria-label="Bild saknas i katalogen"
+                        className="flex min-h-64 flex-col items-center justify-center gap-4 text-center text-muted-foreground"
+                      >
+                        <ImageOff className="h-12 w-12 opacity-40" />
+                        <p className="text-sm">Bild saknas i katalogen</p>
+                        <span className="text-xs">#{card.number}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 border-t border-border px-5 py-4 text-xs font-medium">
                     <Star className="h-4 w-4 text-primary" />

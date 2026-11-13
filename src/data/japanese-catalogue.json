@@ -1,0 +1,168 @@
+{
+  "schemaVersion": 1,
+  "revision": "tcgdex-ja-2026-11-08",
+  "updatedAt": "2026-11-08",
+  "source": "https://api.tcgdex.net/v2/ja",
+  "provenance": {
+    "capturedAt": "2026-11-08T20:39:06.863Z",
+    "metadataSha256": "be3f13adef054f01b98c542850798ef6a9273ed5409ec9e2cc106cee4cc42887",
+    "cardsSha256": "8789dabcab6d9dbbeddeae55d28152e2324ae05ae1089d3a7793ec8006e4ee4f",
+    "captures": [
+      {
+        "sourceId": "SV2a",
+        "url": "https://api.tcgdex.net/v2/ja/sets/SV2a",
+        "responseBytes": 23331,
+        "responseSha256": "085cd429aa271efd077ab282e8d4d5638e769e1fc92cfce0758ea3857d64e4e5",
+        "advertisedTotal": 210,
+        "returnedCount": 210,
+        "missingImages": 0,
+        "status": "included",
+        "cardsSha256": "3541a09071f332694d36c2f457219e3f50c4d5696bfd93ae613e569e1e57ae72"
+      },
+      {
+        "sourceId": "SV8a",
+        "url": "https://api.tcgdex.net/v2/ja/sets/SV8a",
+        "responseBytes": 27027,
+        "responseSha256": "e7e5be4224ab60e0d6662ae93bc8a4d680c03d44f178a84f84c36cb4bf21d06c",
+        "advertisedTotal": 237,
+        "returnedCount": 237,
+        "missingImages": 0,
+        "status": "included",
+        "cardsSha256": "3f4335f7f4980c22e9c47fed0cce64c822fb89b91975ad048f16a2153f47380e"
+      },
+      {
+        "sourceId": "SV4a",
+        "url": "https://api.tcgdex.net/v2/ja/sets/SV4a",
+        "responseBytes": 35522,
+        "responseSha256": "35709680cb408f62229cebc2bd6860409493918aab880b3c4238d8abf02bb2be",
+        "advertisedTotal": 320,
+        "returnedCount": 320,
+        "missingImages": 0,
+        "status": "excluded",
+        "reason": "Card numbers are not a unique contiguous sequence"
+      },
+      {
+        "sourceId": "S8b",
+        "url": "https://api.tcgdex.net/v2/ja/sets/S8b",
+        "responseBytes": 17603,
+        "responseSha256": "e67970eeda22cea1d59b4590224ea66806bccdf9c228aedd84bdca662372aae7",
+        "advertisedTotal": 285,
+        "returnedCount": 285,
+        "missingImages": 285,
+        "status": "included",
+        "cardsSha256": "5eed0a63442b7e0d303bbee372391f0571d4fc776b39f5c3e941c008902cd692"
+      },
+      {
+        "sourceId": "S4a",
+        "url": "https://api.tcgdex.net/v2/ja/sets/S4a",
+        "responseBytes": 252,
+        "responseSha256": "3578af3bc89123ca878f4492810fc322b6c1112ca13d37fc209cde0963b060a0",
+        "advertisedTotal": 190,
+        "returnedCount": 0,
+        "missingImages": 0,
+        "status": "excluded",
+        "reason": "Returned card count differs from advertised total"
+      },
+      {
+        "sourceId": "S6a",
+        "url": "https://api.tcgdex.net/v2/ja/sets/S6a",
+        "responseBytes": 252,
+        "responseSha256": "11e08fddf0aef58e8f589cc510e6f2d5925c6c3cccc6ae828b70494282f0b2f0",
+        "advertisedTotal": 69,
+        "returnedCount": 0,
+        "missingImages": 0,
+        "status": "excluded",
+        "reason": "Returned card count differs from advertised total"
+      },
+      {
+        "sourceId": "SM12a",
+        "url": "https://api.tcgdex.net/v2/ja/sets/SM12a",
+        "responseBytes": 14738,
+        "responseSha256": "90a47259bc1b46bc47cf8602723aaf2bdc1f6d5753e802fef422d2b2a9e589de",
+        "advertisedTotal": 226,
+        "returnedCount": 226,
+        "missingImages": 226,
+        "status": "included",
+        "cardsSha256": "79bca60f9914c4397aaf5ee13496c2a0014f4cfa8cc090c5e99dd433e3a06bd3"
+      },
+      {
+        "sourceId": "SM11b",
+        "url": "https://api.tcgdex.net/v2/ja/sets/SM11b",
+        "responseBytes": 4833,
+        "responseSha256": "3f852774301080aabbf8c3e5c9955864add55deb05735686d19284768a2f576f",
+        "advertisedTotal": 75,
+        "returnedCount": 75,
+        "missingImages": 75,
+        "status": "included",
+        "cardsSha256": "28b4c220dc1459f583e128e8cf3b3ab1dfe4dedf403e532bcc41db3d1ef0dc99"
+      }
+    ]
+  },
+  "sets": [
+    {
+      "id": "jp-sv2a",
+      "sourceId": "SV2a",
+      "name": "Pokémon Card 151",
+      "nativeName": "ポケモンカード151",
+      "series": "Japanska specialset",
+      "total": 210,
+      "printedTotal": 165,
+      "releaseDate": "2023-06-16",
+      "setCode": "SV2a",
+      "logo": "",
+      "symbol": ""
+    },
+    {
+      "id": "jp-sv8a",
+      "sourceId": "SV8a",
+      "name": "Terastal Festival ex",
+      "nativeName": "テラスタルフェスex",
+      "series": "Japanska specialset",
+      "total": 237,
+      "printedTotal": 187,
+      "releaseDate": "2024-12-06",
+      "setCode": "SV8a",
+      "logo": "",
+      "symbol": ""
+    },
+    {
+      "id": "jp-s8b",
+      "sourceId": "S8b",
+      "name": "VMAX Climax",
+      "nativeName": "VMAXクライマックス",
+      "series": "Japanska specialset",
+      "total": 285,
+      "printedTotal": 184,
+      "releaseDate": "2021-12-03",
+      "setCode": "S8b",
+      "logo": "",
+      "symbol": ""
+    },
+    {
+      "id": "jp-sm12a",
+      "sourceId": "SM12a",
+      "name": "TAG TEAM GX Tag All Stars",
+      "nativeName": "TAG TEAM GX タッグオールスターズ",
+      "series": "Japanska specialset",
+      "total": 226,
+      "printedTotal": 173,
+      "releaseDate": "2019-10-04",
+      "setCode": "SM12a",
+      "logo": "",
+      "symbol": ""
+    },
+    {
+      "id": "jp-sm11b",
+      "sourceId": "SM11b",
+      "name": "Dream League",
+      "nativeName": "ドリームリーグ",
+      "series": "Japanska specialset",
+      "total": 75,
+      "printedTotal": 49,
+      "releaseDate": "2019-08-02",
+      "setCode": "SM11b",
+      "logo": "",
+      "symbol": ""
+    }
+  ]
+}
