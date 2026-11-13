@@ -8,6 +8,18 @@ The source runs independently of Lovable. The installed Windows option uses
 Docker for the app, PostgreSQL, Auth and its function handlers on this PC, following the
 WineSnap local-hosting arrangement. AI calls use an explicitly configured provider.
 
+## Development roadmap
+
+The approved [six-month roadmap](docs/roadmap.md), **PCI-ROADMAP-2026-11**, is
+the persistent project reference. Read its current task status before continuing
+development and update it after verified changes. Repository instructions are in
+[AGENTS.md](AGENTS.md).
+
+The next product is a standalone Android app with a separate local collection
+on each phone, an offline catalogue and an optional online AI gateway. Google
+Play comes later. The current Windows app remains available; the roadmap does
+not mean an Android release or cloud gateway has already been delivered.
+
 ## Scan and review
 
 Choose a photo, run the analysis, then select **Kontrollera och spara**. Check

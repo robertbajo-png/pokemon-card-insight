@@ -1,4 +1,17 @@
-# Independent hosting: Sites and owner-managed Supabase
+# Optional hosted migration: Sites and owner-managed Supabase
+
+This guide records the earlier hosted deployment route. The current installation
+runs independently of Lovable on the Windows PC, using a local Docker web/backend
+stack. Follow [local Windows hosting](local-windows-hosting.md) for that running
+installation, including its specific backup import procedure; the hosted restore
+instructions below do not replace it.
+
+Sites and a hosted Supabase project are an alternative if hosted web deployment
+is explicitly selected again, not the current default or a requirement for the
+planned standalone Android app. That app will keep a separate local collection
+on each phone and use a small online AI gateway; see [the roadmap](roadmap.md).
+
+## Scope of the optional hosted route
 
 The frontend keeps the existing React/Vite UI. Sites serves the built `dist/`
 directory. The Supabase project belongs to the repository owner and provides
@@ -6,9 +19,10 @@ Auth, PostgreSQL/PostgREST and the four Edge Functions. No Lovable editor,
 preview broker, AI gateway, secret or build credit is required by this source.
 Source preparation is not proof that the live backend has been migrated.
 
-The Sites identity is recorded in `.openai/hosting.json`; reuse that Site instead
-of creating another one. The generated hostname is not proof of publication.
-Keep the new Site private until its backend and account migration are verified.
+The earlier Sites identity is recorded in `.openai/hosting.json`; if resuming
+this route, verify and reuse that Site instead of creating another one. Its
+configuration or generated hostname is not proof of current publication. Keep
+the destination Site private until its backend and account migration are verified.
 
 ## Preserve the existing backend first
 
