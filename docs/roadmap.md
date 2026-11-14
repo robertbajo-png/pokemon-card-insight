@@ -8,17 +8,19 @@ arbetsläget efter ändrade beslut eller verifierade leveranser.
 
 ## Aktuellt arbetsläge
 
-Senast uppdaterat: **2026-11-13**. Etapp 0: grunddokumentation, PR-baslinje och
-byggmiljöinventering är klara. Nästa utvecklingsuppgift är ANDROID-01.
-Inga Androidfunktioner är ännu levererade. Telefonmodeller och signeringsmaterial
-återstår före första installerade Androidrelease.
+Senast uppdaterat: **2026-11-14**. ANDROID-01 är byggd som signerad
+förhandsversion 0.1.0-preview.1 med paketerad startvy och sökbar offline
+setmetadata. Nästa utvecklingsuppgift är ANDROID-02 (lokal Room-samling).
+Fysisk telefoninstallation och portabel extern signeringsbackup är ännu inte
+verifierade. Fullständiga kortlistor, samling, kamera och AI är senare uppgifter.
 
 | Uppgift | Status | Resultat eller nästa åtgärd |
 | --- | --- | --- |
-| PLAN-01 | Implementerad | Godkänd plan sparad i detta dokument. Git-publicering verifieras i dokumentations-PR. |
-| PLAN-02 | Implementerad | Projektinstruktioner och README pekar hit. |
+| PLAN-01 | Levererad | Godkänd plan sparad genom PR #29 på main. |
+| PLAN-02 | Levererad | Projektinstruktioner och README pekar hit; PR #29 sammanfogad. |
 | PLAN-03 | Testad | PR #28 sammanfogad; driftguider rättade och Androidmiljö inventerad. Kvarvarande telefon-/signeringskontroller listas nedan. |
-| ANDROID-01 | Planerad | Skapa paketerat Androidprojekt och fast appidentitet. |
+| ANDROID-01 | Testad, APK byggd | Paketerad preview, fast app-ID, reproducerbart Debug/Release-bygge och verifierad release-signatur. Se leveransen nedan. |
+| ANDROID-02 | Planerad, nästa | Inför lokal Room-lagring och plattformsgränssnitt. |
 | Övriga uppgifter | Planerade | Följ etapperna och beroendena nedan. |
 
 ### Verifierad baslinje
@@ -34,8 +36,38 @@ Inga Androidfunktioner är ännu levererade. Telefonmodeller och signeringsmater
   Se arbetsmappens rapporter outputs/pokemon-pr28-*.json.
 - Sammanfogningen innebär ingen ny driftsättning. Körande tjänster har inte
   verifierats på nytt som del av planens dokumentation.
-- Capacitor-konfigurationen i baslinjen pekar fortfarande på gamla Lovable.
-  Ingen Androidprojektmapp finns. Ett riktigt Androidbygge återstår.
+- Före ANDROID-01 pekade Capacitor-konfigurationen på gamla Lovable och
+  Androidprojekt saknades. Detta är åtgärdat i Androidförhandsversionen.
+
+### ANDROID-01 byggd 2026-11-14
+
+- Paketerad Android-entry utan webbkonto, Supabase, Windowsbackend eller PWA.
+  176 engelska set samt fem japanska specialset ingår som offline setmetadata.
+- Japanvalet visar japanska set först. Sökning hanterar latinska accenter,
+  japanska namn och kompatibilitetstecken utan att ta bort japanska ljudtecken.
+- Capacitor core/android/cli är låsta till 8.6.2. Gradle-wrapper är 8.14.3 med
+  verifierad distributionschecksumma, AGP 8.13.0, JDK 21 och SDK/build-tools 36.
+- Debug och Release har byggts genom npm-kommandona i
+  [Androidbyggguiden](android-build.md). APK-identitet är
+  com.robertbajo.cardlens, version 0.1.0-preview.1, minSdk 24 och targetSdk 36.
+- Release-APK är signerad med en separat permanent lokal nyckel. Nyckel och
+  DPAPI-skyddat lösenord finns utanför Git, byggkontext och OneDrive. En portabel
+  extern nyckelbackup har inte skapats eller återställningsprovats.
+- Signatur och paketerade HTML/JS-resurser har kontrollerats. Native CSP nekar
+  tjänsteanslutningar; bygget nekar importer av webbens konto- och backendkod.
+- Sex Android-UI-tester är godkända. Ordinarie testsuite passerade med 311
+  befintliga och fyra initiala Androidtester; de två tillkommande
+  sök-/sorteringsregressionerna passerade i den riktade sex-testskörningen.
+- Visuell mobilkontroll av de paketerade webbresurserna vid 390 × 844 px:
+  ingen horisontell överströmning eller konsolfel, Japan först och sökning
+  kontrollerade. Detta är inte ett fysiskt Androidtelefonprov.
+- Artefakter och JSON-proveniens finns i Git-ignorerade artifacts/android/.
+  Arbetsmappens outputs/pokemon-android01-mobil.png visar förhandsvyn.
+- Datorapp, användardata, AI-nycklar och Windowsdrift har inte ändrats.
+
+Före ordinarie användning med riktiga samlingsdata återstår telefonprov och
+verifierad portabel signeringsbackup. ANDROID-01 är en metadataförhandsversion,
+inte hela etapp 1.
 
 Statusorden betyder **planerad → pågår → implementerad → testad → installerad
 → levererad**. En sammanfogad PR är ett separat Git-faktum. Markera inte fysisk
@@ -157,7 +189,7 @@ och [workers.dev](https://developers.cloudflare.com/workers/configuration/routin
 
 ### Katalog och nya datatyper
 
-Första Androidversionen paketerar **176 engelskspråkiga set med 20 635 kort** och
+Målet efter ANDROID-03 är **176 engelskspråkiga set med 20 635 kort** och
 **fem japanska specialset med 1 033 kort**. Engelska kortdata måste flyttas från
 Windowsbyggstegets snapshot till Androids byggartefakt; enbart setmetadata räcker
 inte. Katalogtext och checklistor fungerar offline. Alla bilder utlovas inte offline.
@@ -378,3 +410,4 @@ finns kvar i planen. Grundfunktioner ska fungera innan fler byggs ovanpå dem.
 | Datum | Version | Ändring |
 | --- | --- | --- |
 | 2026-11-13 | 1.0 | Godkänd sexmånadersplan sparad. Separata fristående Androidsamlingar, AI online, låg fast kostnad och Google Play senare. PR #28 sammanfogad. |
+| 2026-11-14 | 1.0 | ANDROID-01 byggd: paketerad metadata-preview, Debug/Release och lokal beständig signering. Fysisk telefon och portabel nyckelbackup ej verifierade. Nästa uppgift ANDROID-02. |
