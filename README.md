@@ -60,6 +60,30 @@ account import, backups and real-backend acceptance tests.
 Optional phone camera access uses an explicitly enabled, email-protected HTTPS
 link; see [mobile access](docs/mobile-access.md).
 
+## Android foundation preview — ANDROID-01
+
+The first Android preview packages a separate UI and offline **set metadata** in
+a Capacitor 8 app, ID `com.robertbajo.cardlens`. It opens without the Windows PC
+or Lovable. Complete offline card lists, Room collection storage, native camera,
+backup/restore and AI are later roadmap tasks; they are not working features of
+this foundation preview.
+
+```powershell
+npm ci
+npm run android:apk
+```
+
+The Windows build script produces
+`artifacts/android/cardlens-0.1.0-preview.1-debug.apk`; it does not install or
+publish it. `npm run build:android` checks only the separate `dist-android/` web
+assets. See [Android build and installation](docs/android-build.md) for toolchain
+requirements, selected-device installation, debug/release signing and data
+preservation. `npm run android:apk:release` builds with a permanent local signing
+identity kept outside Git; portable external key recovery is not yet verified.
+APK/report pairs remain under `artifacts/android/`. Neither build command
+installs on a phone or publishes to Google Play. Building an APK does not verify
+a physical phone or AI scan.
+
 ## Development
 
 Use Node.js 22 and npm 10.9.9. `package-lock.json` is the supported lockfile.
