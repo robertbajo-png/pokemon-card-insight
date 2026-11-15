@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "build:dev": "vite build --mode development",
+    "build:android": "vite build --config vite.android.config.ts && node scripts/finalize-android-web.mjs",
+    "android:apk": "pwsh -NoProfile -File scripts/build-android.ps1 -Configuration Debug",
+    "android:apk:release": "pwsh -NoProfile -File scripts/build-android.ps1 -Configuration Release",
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",
@@ -17,11 +20,8 @@
     "local:verify": "pwsh -NoProfile -File scripts/run-local-windows.ps1 -Action Verify"
   },
   "dependencies": {
-    "@capacitor/android": "^7.4.4",
-    "@capacitor/camera": "^7.0.2",
-    "@capacitor/cli": "^7.4.4",
-    "@capacitor/core": "^7.4.4",
-    "@capacitor/ios": "^7.4.4",
+    "@capacitor/android": "8.6.2",
+    "@capacitor/core": "8.6.2",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -75,6 +75,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.6.2",
     "@electric-sql/pglite": "^0.3.14",
     "@eslint/js": "^9.32.0",
     "@tailwindcss/typography": "^0.5.16",
