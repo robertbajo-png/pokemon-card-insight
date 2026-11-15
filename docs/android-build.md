@@ -138,7 +138,7 @@ Do not use either as a routine troubleshooting step once collection storage is
 introduced. Future collection data need a verified external backup before
 destructive removal. Installing again is not collection restoration.
 
-## Debug signing and the future family release
+## Debug signing and the preserved release identity
 
 The debug APK is automatically signed with a development certificate. It is
 for development/testing, not a Google Play or durable family release. Android
@@ -152,29 +152,42 @@ The separate release entry point is:
 npm run android:apk:release
 ```
 
-It calls the same builder with `-Configuration Release`. On the first release
-build, if neither signing file exists, the script creates a permanent local
-PKCS12 keystore and a Windows DPAPI-protected password file in
+It calls the same builder with `-Configuration Release` and requires the
+already provisioned Card Lens release identity. Its app ID, key alias and public
+certificate SHA256 are pinned in
+[`config/android/release-signing.json`](../config/android/release-signing.json).
+This certificate fingerprint is public; it is not the private signing key.
+
+The existing private signing files must be present in
 `%LOCALAPPDATA%/CardLensAndroid/signing/`:
 
 - `cardlens-release.p12` — the release signing identity.
 - `cardlens-release.password.clixml` — its protected local password.
 
 The directory and files allow access only to the current Windows owner and
-SYSTEM. Subsequent builds reuse the pair. If just one file exists, the build
-stops rather than creating a replacement identity; restore the original pair
-through a deliberate recovery procedure. Do not delete either file to fix a
-build error. The release build requires `apksigner` and verifies that the APK's
-public certificate matches the preserved keystore before copying the artifact.
+SYSTEM. The builder reuses this identity and never generates a keystore or
+replacement password file. Missing either or both files, an unreadable password,
+or a certificate that differs from the public pin stops Release. Debug builds
+do not require the release identity. Do not delete signing files, generate a new
+key or change the pin to bypass a build failure. Restore the original identity
+through a deliberate recovery procedure.
+
+The release build requires `apksigner`. It checks the local keystore against the
+public pin, then verifies that the APK's public certificate matches that same
+identity before copying the artifact.
 
 **A portable external signing-key backup has not been created or recovery-tested
 as part of this preview.** The DPAPI file alone is not recovery material for a
 new Windows installation or another Windows user. Portable recovery needs the
 keystore plus its password held in a separately protected, recoverable form.
-The builder does not export that password or make an external backup. Record
-local signing, successful APK verification and external recovery verification as
-separate results in the roadmap. A signing-key backup is also separate from a
-future collection backup.
+On a new PC, the original signing identity must be restored, including a newly
+protected local password file for that Windows user; copying the old DPAPI file
+alone is insufficient. Until portable recovery material exists, a fresh PC can
+build Debug but cannot reproduce the preserved Release signing identity.
+The builder does not provision that recovery, export the password or make an
+external backup. Record local signing, successful APK verification and external
+recovery verification as separate results in the roadmap. A signing-key backup
+is also separate from a future collection backup.
 
 Its expected outputs are
 `android/app/build/outputs/apk/release/app-release.apk` and

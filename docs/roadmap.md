@@ -8,7 +8,7 @@ arbetsläget efter ändrade beslut eller verifierade leveranser.
 
 ## Aktuellt arbetsläge
 
-Senast uppdaterat: **2026-11-14**. ANDROID-01 är byggd som signerad
+Senast uppdaterat: **2026-11-15**. ANDROID-01 är byggd som signerad
 förhandsversion 0.1.0-preview.1 med paketerad startvy och sökbar offline
 setmetadata. Nästa utvecklingsuppgift är ANDROID-02 (lokal Room-samling).
 Fysisk telefoninstallation och portabel extern signeringsbackup är ännu inte
@@ -53,11 +53,16 @@ verifierade. Fullständiga kortlistor, samling, kamera och AI är senare uppgift
 - Release-APK är signerad med en separat permanent lokal nyckel. Nyckel och
   DPAPI-skyddat lösenord finns utanför Git, byggkontext och OneDrive. En portabel
   extern nyckelbackup har inte skapats eller återställningsprovats.
+- Det publika certifikatets SHA256 är låst i config/android/release-signing.json.
+  Saknad eller avvikande lokal signeringsidentitet stoppar Release; en ny
+  ersättningsnyckel skapas inte automatiskt.
 - Signatur och paketerade HTML/JS-resurser har kontrollerats. Native CSP nekar
   tjänsteanslutningar; bygget nekar importer av webbens konto- och backendkod.
-- Sex Android-UI-tester är godkända. Ordinarie testsuite passerade med 311
-  befintliga och fyra initiala Androidtester; de två tillkommande
-  sök-/sorteringsregressionerna passerade i den riktade sex-testskörningen.
+- Ordinarie CI-kontroll på 2593a41 passerade med 317 tester i 26 filer,
+  typkontroll, webbbygge, katalogintegritet och Deno. Androids lokala Debug,
+  Release och lintDebug passerade på ren kodversion; fysisk telefon är ej provad.
+- CI:s Android-SDK förbereds uttryckligen med setup-android eftersom
+  ubuntu-latest inte längre garanterar sdkmanager i PATH.
 - Visuell mobilkontroll av de paketerade webbresurserna vid 390 × 844 px:
   ingen horisontell överströmning eller konsolfel, Japan först och sökning
   kontrollerade. Detta är inte ett fysiskt Androidtelefonprov.
@@ -411,3 +416,4 @@ finns kvar i planen. Grundfunktioner ska fungera innan fler byggs ovanpå dem.
 | --- | --- | --- |
 | 2026-11-13 | 1.0 | Godkänd sexmånadersplan sparad. Separata fristående Androidsamlingar, AI online, låg fast kostnad och Google Play senare. PR #28 sammanfogad. |
 | 2026-11-14 | 1.0 | ANDROID-01 byggd: paketerad metadata-preview, Debug/Release och lokal beständig signering. Fysisk telefon och portabel nyckelbackup ej verifierade. Nästa uppgift ANDROID-02. |
+| 2026-11-15 | 1.0 | Slutbygge och lokal Android-lint verifierade; 317 tester gröna. CI-SDK-installation görs explicit och den befintliga releaseidentiteten låses mot publikt certifikat. |

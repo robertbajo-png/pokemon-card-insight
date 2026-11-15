@@ -244,6 +244,11 @@ try {
     if ($nativeConfig.appId -ne $appId) { throw 'The generated Android app ID differs from the permanent Card Lens identity.' }
 
     if ($Configuration -eq 'Release') {
+      $identityPath = Get-SafeChild $repository 'config/android/release-signing.json'
+      $identity = [IO.File]::ReadAllText($identityPath) | ConvertFrom-Json
+      if ($identity.appId -ne $appId -or $identity.keyAlias -ne $keyAlias -or $identity.certificateSha256 -notmatch '^[0-9a-f]{64}$') {
+        throw 'Invalid public release-signing identity configuration.'
+      }
       $signingCandidate = Get-SafeChild $state 'signing'
       Assert-OutsideGit $signingCandidate
       $signing = New-SafeDirectory $state 'signing'
@@ -253,6 +258,7 @@ try {
       $hasKey = Test-Path -LiteralPath $keystore -PathType Leaf
       $hasPassword = Test-Path -LiteralPath $passwordFile -PathType Leaf
       if ($hasKey -ne $hasPassword) { throw 'Incomplete release signing pair. Restore the original keystore/password pair; no replacement identity will be generated.' }
+      if (-not $hasKey) { throw 'The preserved Card Lens signing identity is missing. Restore the original signing pair; a replacement identity will not be created.' }
       if ((Test-Path -LiteralPath $keystore) -and -not $hasKey) { throw 'The release keystore is not a regular file.' }
       if ((Test-Path -LiteralPath $passwordFile) -and -not $hasPassword) { throw 'The protected signing password is not a regular file.' }
       if ($hasKey) {
@@ -263,19 +269,6 @@ try {
         $pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($securePassword)
         try { $plainPassword = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($pointer) }
         finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer) }
-      } else {
-        $plainPassword = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
-        $securePassword = ConvertTo-SecureString -String $plainPassword -AsPlainText -Force
-        # Save recovery information first. A failed/interrupted key generation
-        # intentionally leaves an incomplete pair and is never silently retried.
-        $securePassword | Export-Clixml -LiteralPath $passwordFile
-        Set-PrivateFileAcl $passwordFile
-        [Environment]::SetEnvironmentVariable('CARDLENS_KEYSTORE_PASSWORD', $plainPassword, 'Process')
-        $null = Invoke-PrivateKeytool @('-genkeypair', '-noprompt', '-storetype', 'PKCS12', '-keystore', $keystore,
-          '-alias', $keyAlias, '-keyalg', 'RSA', '-keysize', '3072', '-sigalg', 'SHA256withRSA', '-validity', '10000',
-          '-dname', 'CN=Card Lens, OU=Family App', '-storepass:env', 'CARDLENS_KEYSTORE_PASSWORD', '-keypass:env', 'CARDLENS_KEYSTORE_PASSWORD')
-        Set-PrivateFileAcl $keystore
-        $keyCreated = $true
       }
       [Environment]::SetEnvironmentVariable('CARDLENS_KEYSTORE_PASSWORD', $plainPassword, 'Process')
       $certificateText = Invoke-PrivateKeytool @('-exportcert', '-rfc', '-storetype', 'PKCS12', '-keystore', $keystore,
@@ -284,6 +277,7 @@ try {
       if (-not $certificateMatch.Success) { throw 'Could not verify the existing release certificate.' }
       $certificateBytes = [Convert]::FromBase64String(($certificateMatch.Groups[1].Value -replace '\s', ''))
       $expectedCertificate = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($certificateBytes)).ToLowerInvariant()
+      if ($expectedCertificate -ne $identity.certificateSha256) { throw 'The local signing certificate differs from the preserved Card Lens identity.' }
       [Environment]::SetEnvironmentVariable('CARDLENS_KEYSTORE_PATH', $keystore, 'Process')
       [Environment]::SetEnvironmentVariable('CARDLENS_KEY_ALIAS', $keyAlias, 'Process')
     }

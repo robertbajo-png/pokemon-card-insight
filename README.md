@@ -78,11 +78,13 @@ The Windows build script produces
 publish it. `npm run build:android` checks only the separate `dist-android/` web
 assets. See [Android build and installation](docs/android-build.md) for toolchain
 requirements, selected-device installation, debug/release signing and data
-preservation. `npm run android:apk:release` builds with a permanent local signing
-identity kept outside Git; portable external key recovery is not yet verified.
-APK/report pairs remain under `artifacts/android/`. Neither build command
-installs on a phone or publishes to Google Play. Building an APK does not verify
-a physical phone or AI scan.
+preservation. `npm run android:apk:release` requires the already provisioned
+private signing identity outside Git and checks its public certificate pin in
+`config/android/release-signing.json`. It never creates a replacement key; Debug
+does not require that identity. Portable external key recovery is not yet
+verified. APK/report pairs remain under `artifacts/android/`. Neither build
+command installs on a phone or publishes to Google Play. Building an APK does
+not verify a physical phone or AI scan.
 
 ## Development
 
