@@ -8,11 +8,13 @@ arbetsläget efter ändrade beslut eller verifierade leveranser.
 
 ## Aktuellt arbetsläge
 
-Senast uppdaterat: **2026-11-15**. ANDROID-01 är byggd som signerad
-förhandsversion 0.1.0-preview.1 med paketerad startvy och sökbar offline
-setmetadata. Nästa utvecklingsuppgift är ANDROID-02 (lokal Room-samling).
+Senast uppdaterat: **2026-11-15**. ANDROID-02 är implementerad och testad som
+förhandsversion 0.1.0-preview.2 med privat Room-samling, manuell registrering,
+redigering och sökning utan konto eller nätanrop. Den riktiga Androidbryggan har
+provats på en separat emulator. Nästa uppgift är ANDROID-03 (komplett offlinekatalog).
 Fysisk telefoninstallation och portabel extern signeringsbackup är ännu inte
-verifierade. Fullständiga kortlistor, samling, kamera och AI är senare uppgifter.
+verifierade. Fullständiga kortlistor, kamera, beständiga utkast, backup och AI
+är senare uppgifter.
 
 | Uppgift | Status | Resultat eller nästa åtgärd |
 | --- | --- | --- |
@@ -20,7 +22,8 @@ verifierade. Fullständiga kortlistor, samling, kamera och AI är senare uppgift
 | PLAN-02 | Levererad | Projektinstruktioner och README pekar hit; PR #29 sammanfogad. |
 | PLAN-03 | Testad | PR #28 sammanfogad; driftguider rättade och Androidmiljö inventerad. Kvarvarande telefon-/signeringskontroller listas nedan. |
 | ANDROID-01 | Testad, APK byggd | Paketerad preview, fast app-ID, reproducerbart Debug/Release-bygge och verifierad release-signatur. Se leveransen nedan. |
-| ANDROID-02 | Planerad, nästa | Inför lokal Room-lagring och plattformsgränssnitt. |
+| ANDROID-02 | Testad, APK byggd | Privat Room-samling, atomiska revisioner och användbar samlingsvy. Tio native-lagringstester och riktigt bryggprov i emulator godkända. |
+| ANDROID-03 | Planerad, nästa | Paketera kompletta offlinekortlistor och koppla katalogregistrering/checklistor. |
 | Övriga uppgifter | Planerade | Följ etapperna och beroendena nedan. |
 
 ### Verifierad baslinje
@@ -77,6 +80,43 @@ inte hela etapp 1.
 Statusorden betyder **planerad → pågår → implementerad → testad → installerad
 → levererad**. En sammanfogad PR är ett separat Git-faktum. Markera inte fysisk
 telefonkontroll eller driftsättning som klar enbart för att kod eller CI är klar.
+
+### ANDROID-02 byggd och emulatortestad 2026-11-15
+
+- Ett plattformsoberoende samlingsgränssnitt och en lokal Capacitor-plugin
+  använder privat Room/SQLite per installation. Ingen webb-storage-fallback,
+  Supabase-inloggning, Windowsanslutning eller bakgrundssynkning.
+- Min samling har manuell registrering, redigering, sökning, antal exemplar,
+  språk, variant, skick, plats och anteckningar samt bekräftad borttagning.
+  Set och tryckt nummer registreras manuellt; ingen katalogmatchning påstås.
+- Samma ID vid återförsök skapar ingen dubblett. Revisioner och transaktioner
+  hindrar gamla redigeringar från att skriva över nya. Sparfel behåller utkastet;
+  osäkert anropsutfall beskrivs utan falskt löfte om att databasen är oförändrad.
+- Befintliga kort-/set-/katalog-ID:n och japanska tecken bevaras. Katalogkopplade
+  posters utgåvefält låses vid grundläggande samlingsredigering.
+- Room 2.8.5 har exporterad schema-version 1. Ingen destruktiv migrering,
+  nedgradering eller automatisk korruptionsåterställning. Även Androids
+  korruptionscallback är ersatt så att den inte raderar den gamla databasen.
+- Tio riktiga Room-/SQLite-diskprov med Robolectric 4.17 passerar: återöppning,
+  separata databaser, idempotens, CAS, rollback och bytebevarande vid framtida
+  schema respektive korrupt fil. Windows testvägar har marginal till MAX_PATH;
+  den ursprungliga 260-teckensorsaken är dokumenterad i ignorerade byggbevis.
+- Typkontroll, ESLint (0 fel, 10 befintliga webbvarningar), webb/PWA-bygge,
+  katalogintegritet och React-/kontraktstester passerar. Androids Debugbygge,
+  instrumentprovets kompilering, lagringstester och lint passerar.
+- Riktigt paketerat WebView → Capacitor → Room-prov på en ny Android 15/API 35
+  x86_64-emulator passerar: skapa, återförsök, revisionskonflikt, redigering,
+  Activity-omstart, japansk text i samlingsvyn och radering av enbart testkortet.
+  Skärmbilden artifacts/android/android02-emulator-collection.png innehåller
+  endast ett konstgjort testkort. Detta är inte ett fysiskt telefonprov.
+- VersionCode 2 / 0.1.0-preview.2 behåller app-ID och releasecertifikatets pin.
+  Bridge-loggning är avstängd även i Debug så att anteckningar inte loggas.
+- Se [lokal samling](android-collection.md) och [byggguiden](android-build.md).
+  Slutliga APK-/CI-resultat och kodversion sparas i artifacts/android/.
+  ANDROID-01:s PR #30 är beroendet; ingen PR sammanfogas automatiskt här.
+- Datorappen, dess kunddata och AI-nycklar har inte ändrats. Inga betalda
+  AI-anrop har gjorts. Full backup/restore, processbeständiga utkast och fysisk
+  telefonacceptans återstår. Prova med testkort tills återställning finns.
 
 ### Androidmiljö inventerad 2026-11-13
 
@@ -417,3 +457,4 @@ finns kvar i planen. Grundfunktioner ska fungera innan fler byggs ovanpå dem.
 | 2026-11-13 | 1.0 | Godkänd sexmånadersplan sparad. Separata fristående Androidsamlingar, AI online, låg fast kostnad och Google Play senare. PR #28 sammanfogad. |
 | 2026-11-14 | 1.0 | ANDROID-01 byggd: paketerad metadata-preview, Debug/Release och lokal beständig signering. Fysisk telefon och portabel nyckelbackup ej verifierade. Nästa uppgift ANDROID-02. |
 | 2026-11-15 | 1.0 | Slutbygge och lokal Android-lint verifierade; 317 tester gröna. CI-SDK-installation görs explicit och den befintliga releaseidentiteten låses mot publikt certifikat. |
+| 2026-11-15 | 1.0 | ANDROID-02 implementerad och testad: privat Room-samling, samlingsvy, revisionsskydd, tio diskprov och riktigt bryggprov i separat Androidemulator. Nästa ANDROID-03. |

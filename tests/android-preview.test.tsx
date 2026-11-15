@@ -3,11 +3,16 @@ import {
   cleanup,
   fireEvent,
   render,
+  waitFor,
   within,
 } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import AndroidPreview from "@/android/AndroidPreview";
 import { mountAndroidPreview } from "@/android/bootstrap";
+import {
+  CollectionRepositoryError,
+  type CollectionRepository,
+} from "@/platform/collection";
 
 // Loading the real native entry must never initialize the web account/backend.
 vi.mock("@/integrations/supabase/client", () => {
@@ -28,7 +33,47 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-it("mounts the real packaged preview without network, web storage or fake collection features", async () => {
+it("opens the private collection on request and keeps a read failure distinct from an empty collection", async () => {
+  const repository: CollectionRepository = {
+    list: vi
+      .fn()
+      .mockRejectedValue(new CollectionRepositoryError("STORAGE_UNAVAILABLE")),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+  };
+  const page = render(<AndroidPreview collectionRepository={repository} />);
+  expect(repository.list).not.toHaveBeenCalled();
+  fireEvent.click(
+    page.getByRole("button", { name: "Min samling", exact: true }),
+  );
+  await page.findByRole("heading", { name: "Samlingen kunde inte öppnas" });
+  expect(
+    page.queryByRole("heading", { name: "Ditt första kort börjar här." }),
+  ).toBeNull();
+  expect(
+    (
+      page.getByRole("button", {
+        name: "Lägg till kort",
+        exact: true,
+      }) as HTMLButtonElement
+    ).disabled,
+  ).toBe(true);
+  fireEvent.click(
+    page.getByRole("button", { name: "Setbibliotek", exact: true }),
+  );
+  expect(page.getByRole("heading", { name: "Setbiblioteket" })).toBeTruthy();
+  fireEvent.click(
+    page.getByRole("button", { name: "Min samling", exact: true }),
+  );
+  await waitFor(() => expect(repository.list).toHaveBeenCalledTimes(1));
+  expect(
+    page.getByRole("heading", { name: "Samlingen kunde inte öppnas" }),
+  ).toBeTruthy();
+  expect(repository.create).not.toHaveBeenCalled();
+});
+
+it("mounts the real packaged preview without network, web storage or authentication", async () => {
   const fetch = vi.fn();
   vi.stubGlobal("fetch", fetch);
   const xhr = vi.spyOn(XMLHttpRequest.prototype, "open");
@@ -45,9 +90,7 @@ it("mounts the real packaged preview without network, web storage or fake collec
     expect(page.getByText("Setöversikten fungerar offline")).toBeTruthy();
     expect(page.getByRole("status").textContent).toBe("Visar 24 av 176 set.");
     expect(
-      page.getByText(
-        /Din samling, kortens checklistor och skanning kommer senare/,
-      ),
+      page.getByText(/Lägg till och redigera kort i Min samling/),
     ).toBeTruthy();
     expect(
       page.queryByRole("button", { name: /logga in|skanna|spara kort/i }),

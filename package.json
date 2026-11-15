@@ -10,6 +10,7 @@
     "build:android": "vite build --config vite.android.config.ts && node scripts/finalize-android-web.mjs",
     "android:apk": "pwsh -NoProfile -File scripts/build-android.ps1 -Configuration Debug",
     "android:apk:release": "pwsh -NoProfile -File scripts/build-android.ps1 -Configuration Release",
+    "android:verify": "pwsh -NoProfile -File scripts/build-android.ps1 -Configuration Debug -VerifyStorage",
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json",

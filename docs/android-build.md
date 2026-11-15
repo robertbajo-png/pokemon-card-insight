@@ -1,6 +1,6 @@
-# Android preview build — ANDROID-01
+# Android preview build — ANDROID-01/02
 
-This guide covers the first packaged Android foundation preview. Its React UI
+This guide covers the packaged Android local collection preview. Its React UI
 and set metadata are bundled in a Capacitor 8 Android app with the fixed app ID
 **`com.robertbajo.cardlens`**. The phone does not load the Windows app or a Lovable
 website. Build, installation and physical-phone acceptance are separate results;
@@ -10,15 +10,17 @@ see the current evidence in [PCI-ROADMAP-2026-11](roadmap.md).
 
 - A separate packaged Android UI, built from `android.html` into `dist-android/`.
 - Offline metadata for 176 international sets and five Japanese special sets.
+- A private Room collection, basic manual entry, editing and confirmed removal.
 - An Android project and reproducible build entry points.
 
 The metadata counts describe the catalogue, not card lists already available in
-this preview. Complete offline card lists, checklist ownership and manual card
-registration belong to **ANDROID-03**. Local Room collection storage belongs to
-**ANDROID-02**; native camera/image selection and permanent photos belong to
+this preview. Complete offline card lists, checklist ownership and catalogue-linked
+registration belong to **ANDROID-03**. Local Room collection storage and basic manual
+entry are **ANDROID-02**; native camera/image selection and permanent photos belong to
 **ANDROID-04**. Full backup/restore follows in **ANDROID-05**. AI and its online
 gateway belong to the later **SCAN** tasks. These functions must not be presented
-as working in ANDROID-01. Do not put a real collection into this foundation preview.
+as working in preview 2. Test with disposable records until full backup/restore
+and physical-phone acceptance are verified. See [local collection](android-collection.md).
 
 The existing Windows app, its accounts and saved cards remain separate. This
 preview does not import, migrate, reset or sync their data. No Supabase login,
@@ -70,6 +72,11 @@ the Android web assets, finalizes the packaged entry point, checks the assets,
 syncs them into Capacitor and invokes the project's Gradle `assembleDebug` task.
 It does not install the APK, publish it or start the Windows services.
 
+To also run the Room storage tests and Android lint, use `npm run android:verify`.
+It runs `testDebugUnitTest` and `lintDebug` together with the Debug build, and
+compiles the guarded emulator test APK with `assembleDebugAndroidTest`. The
+Robolectric tests use disposable databases and do not open the installed app's data.
+
 To check only the Android web output, without building an APK:
 
 ```powershell
@@ -83,10 +90,10 @@ build` remains the separate web/PWA build; do not copy its `dist/` into Android.
 The debug APK has two locations:
 
 - Gradle output: `android/app/build/outputs/apk/debug/app-debug.apk`.
-- Delivery copy: `artifacts/android/cardlens-0.1.0-preview.1-debug.apk`.
+- Delivery copy: `artifacts/android/cardlens-0.1.0-preview.2-debug.apk`.
 
 The builder writes a matching report,
-`artifacts/android/cardlens-0.1.0-preview.1-debug.json`, with source commit,
+`artifacts/android/cardlens-0.1.0-preview.2-debug.json`, with source commit,
 `sourceDirty`, version, build type, APK SHA256/size and signature-verification
 result/public certificate fingerprint. A dirty source flag means the commit
 alone does not identify all built changes; use a reviewed clean source state for
@@ -96,7 +103,7 @@ so retain the delivered APK/report pair when recording a test result.
 `artifacts/android/` is ignored by Git. To check the delivered APK's hash:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 -LiteralPath artifacts/android/cardlens-0.1.0-preview.1-debug.apk
+Get-FileHash -Algorithm SHA256 -LiteralPath artifacts/android/cardlens-0.1.0-preview.2-debug.apk
 ```
 
 An APK is an output of this build, not a binary that should be committed. See
@@ -115,7 +122,7 @@ $androidSdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } elseif ($env:ANDROID_
 $adb = Join-Path $androidSdk 'platform-tools/adb.exe'
 & $adb devices -l
 # Replace DEVICE_SERIAL with the intended entry whose state is "device".
-& $adb -s DEVICE_SERIAL install -r artifacts/android/cardlens-0.1.0-preview.1-debug.apk
+& $adb -s DEVICE_SERIAL install -r artifacts/android/cardlens-0.1.0-preview.2-debug.apk
 ```
 
 Open Card Lens from the phone's app launcher. The `-r` option reinstalls while
@@ -191,7 +198,7 @@ is also separate from a future collection backup.
 
 Its expected outputs are
 `android/app/build/outputs/apk/release/app-release.apk` and
-`artifacts/android/cardlens-0.1.0-preview.1-release.apk`. Keep signing keys,
+`artifacts/android/cardlens-0.1.0-preview.2-release.apk`. Keep signing keys,
 passwords and external backups outside Git and the packaged assets. Never
 substitute the debug key for the permanent release identity. Preserve the app ID
 and release-signing identity before phones start holding real collections.

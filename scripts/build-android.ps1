@@ -2,6 +2,7 @@
 [CmdletBinding()]
 param(
   [ValidateSet('Debug', 'Release')][string]$Configuration = 'Debug',
+  [switch]$VerifyStorage,
   [string]$JavaHome,
   [string]$AndroidSdk
 )
@@ -11,7 +12,7 @@ $ErrorActionPreference = 'Stop'
 if (-not $IsWindows) { throw 'The Android APK builder requires Windows and PowerShell 7.2 or later.' }
 
 $appId = 'com.robertbajo.cardlens'
-$appVersion = '0.1.0-preview.1'
+$appVersion = '0.1.0-preview.2'
 $keyAlias = 'cardlens-release'
 $nodeCommand = Get-Command node -CommandType Application -ErrorAction Stop | Select-Object -First 1
 $nodePath = $nodeCommand.Source
@@ -283,7 +284,11 @@ try {
     }
 
     Push-Location -LiteralPath $androidDirectory
-    try { Invoke-BuildTool $gradle @('--no-daemon', "assemble$Configuration") }
+    try {
+      $gradleTasks = @('--no-daemon', "assemble$Configuration")
+      if ($VerifyStorage) { $gradleTasks += @(':app:assembleDebugAndroidTest', 'testDebugUnitTest', 'lintDebug') }
+      Invoke-BuildTool $gradle $gradleTasks
+    }
     finally { Pop-Location }
   } finally { Pop-Location }
   foreach ($name in @('CARDLENS_KEYSTORE_PATH', 'CARDLENS_KEYSTORE_PASSWORD', 'CARDLENS_KEY_ALIAS')) {
@@ -325,6 +330,7 @@ try {
     signatureVerified = $signatureVerified; certificateSha256 = $certificateSha256
     releaseSigningKeyCreated = $keyCreated; externalSigningBackupVerified = $false
     physicalPhoneInstallationVerified = $false
+    storageVerificationRequested = [bool]$VerifyStorage
   }
   [IO.File]::WriteAllText($reportPath, ($report | ConvertTo-Json -Depth 4) + "`n", [Text.UTF8Encoding]::new($false))
   Write-Host "APK: $artifact"
