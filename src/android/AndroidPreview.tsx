@@ -6,6 +6,7 @@ import {
   ChevronDown,
   Info,
   Layers3,
+  LibraryBig,
   Search,
   Smartphone,
   Sparkles,
@@ -28,6 +29,10 @@ import {
   searchPreviewSets,
   type PreviewSet,
 } from "./previewCatalogue";
+import type { CollectionRepository } from "@/platform/collection";
+import { androidCollectionRepository } from "./storage/collectionRepository";
+import CollectionScreen from "./CollectionScreen";
+import "./collection.css";
 
 const PAGE_SIZE = 24;
 const number = (value: number) => value.toLocaleString("sv-SE");
@@ -62,7 +67,11 @@ function SetSummary({ set }: { set: PreviewSet }) {
   );
 }
 
-export default function AndroidPreview() {
+export default function AndroidPreview({
+  collectionRepository = androidCollectionRepository,
+}: { collectionRepository?: CollectionRepository } = {}) {
+  const [view, setView] = useState<"library" | "collection">("library");
+  const [collectionOpened, setCollectionOpened] = useState(false);
   const [query, setQuery] = useState("");
   const [includeJapan, setIncludeJapan] = useState(false);
   const [limit, setLimit] = useState(PAGE_SIZE);
@@ -114,18 +123,19 @@ export default function AndroidPreview() {
           >
             <DialogHeader>
               <DialogTitle>Första steget mot din Androidapp</DialogTitle>
-              <DialogDescription>
-                Version 0.1 · Förhandsversion
-              </DialogDescription>
+              <DialogDescription>Version 0.1.0-preview.2</DialogDescription>
             </DialogHeader>
             <p>
               Här kan du söka bland setens namn och information utan internet.
-              Kortlistor, din privata samling, kamera och AI-skanning tillkommer
-              i senare steg.
+              Din samling sparas i telefonens privata lagring och kan redigeras
+              utan internet. Fullständiga kortlistor, kamera och AI-skanning
+              tillkommer i senare steg.
             </p>
             <p>
-              Förhandsversionen innehåller inga egna kort och kräver ingen
-              inloggning.
+              Appen kräver ingen inloggning. Robert och Leonard har varsin
+              samling på sina telefoner. Säkerhetskopiering och återställning
+              kommer senare; avinstallation eller rensning av appdata tar bort
+              samlingen.
             </p>
             <div className="android-source-dates">
               <p>
@@ -141,164 +151,194 @@ export default function AndroidPreview() {
       </header>
 
       <main id="main-content" tabIndex={-1} className="android-main">
-        <section className="android-hero" aria-labelledby="preview-heading">
-          <div className="android-build-label">
-            <Smartphone aria-hidden="true" />
-            Android · Förhandsversion
-          </div>
-          <div className="android-hero-copy">
-            <p className="android-eyebrow">För nästa stora lilla fynd</p>
-            <h1 id="preview-heading">
-              En värld av kort.
-              <br />
-              <span>Nu i din ficka.</span>
-            </h1>
-            <p className="android-hero-description">
-              Börja med att utforska setbiblioteket. Setens namn och information
-              finns i appen, även utan internet.
-            </p>
-            <Button asChild className="android-explore-button">
-              <a href="#set-library">
-                Utforska seten <ArrowDown aria-hidden="true" />
-              </a>
-            </Button>
-          </div>
-          <div className="android-hero-art" aria-hidden="true">
-            <div className="android-decor-card android-decor-card--back" />
-            <div className="android-decor-card android-decor-card--front">
-              <Sparkles strokeWidth={1} />
-              <span>CARD LENS</span>
-              <span>Din nästa upptäckt</span>
-            </div>
-          </div>
-          <div className="android-offline-note">
-            <WifiOff aria-hidden="true" />
-            Setöversikten fungerar offline
-          </div>
-        </section>
-
-        <section
-          className="android-coming-next"
-          aria-label="Detta ingår i förhandsversionen"
-        >
-          <span className="android-next-icon" aria-hidden="true">
-            <ArrowUpRight />
-          </span>
-          <div>
-            <p>En första titt, med mer på väg.</p>
-            <span>
-              Din samling, kortens checklistor och skanning kommer senare. Här
-              visas bara setinformation.
-            </span>
-          </div>
-        </section>
-
-        <section
-          id="set-library"
-          className="android-library"
-          aria-labelledby="library-heading"
-        >
-          <div className="android-library-heading">
-            <div>
-              <p className="android-eyebrow">Hitta din nästa favorit</p>
-              <h2 id="library-heading">Setbiblioteket</h2>
-            </div>
-            <span className="android-total-badge">{scope.length} set</span>
-          </div>
-
-          <div className="android-search">
-            <Search aria-hidden="true" />
-            <label className="sr-only" htmlFor="android-set-search">
-              Sök i setbiblioteket
-            </label>
-            <input
-              id="android-set-search"
-              ref={searchInput}
-              type="search"
-              autoComplete="off"
-              placeholder="Setnamn, kod eller japanskt namn"
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setLimit(PAGE_SIZE);
-              }}
-            />
-            {query && (
-              <button
-                type="button"
-                aria-label="Rensa sökning"
-                onClick={clearSearch}
-              >
-                <X aria-hidden="true" />
-              </button>
-            )}
-          </div>
-
+        <nav className="android-navigation" aria-label="Huvudmeny">
           <button
             type="button"
-            role="switch"
-            aria-checked={includeJapan}
-            aria-describedby="japanese-scope-description"
-            className="android-japan-toggle"
+            aria-current={view === "library" ? "page" : undefined}
+            onClick={() => setView("library")}
+          >
+            <Layers3 aria-hidden="true" /> Setbibliotek
+          </button>
+          <button
+            type="button"
+            aria-current={view === "collection" ? "page" : undefined}
             onClick={() => {
-              setIncludeJapan((value) => !value);
-              setLimit(PAGE_SIZE);
+              setCollectionOpened(true);
+              setView("collection");
             }}
           >
-            <span>Visa japanska specialset</span>
-            <span className="android-toggle-track" aria-hidden="true">
-              <span>{includeJapan && <Check />}</span>
-            </span>
+            <LibraryBig aria-hidden="true" /> Min samling
           </button>
-          <p
-            id="japanese-scope-description"
-            className="android-scope-description"
-          >
-            {previewInternationalSets.length} engelska set
-            {includeJapan
-              ? ` + ${previewJapaneseSets.length} verifierade japanska specialset.`
-              : `. Lägg till ${previewJapaneseSets.length} verifierade japanska specialset.`}
-          </p>
-
-          <p className="android-result-count" role="status" aria-live="polite">
-            {matches.length === 0
-              ? "Inga set matchar sökningen."
-              : `Visar ${shown.length} av ${matches.length} set${query.trim() ? " som matchar sökningen" : ""}.`}
-          </p>
-
-          {shown.length ? (
-            <ul className="android-set-list" aria-label="Set i biblioteket">
-              {shown.map((set) => (
-                <SetSummary key={set.id} set={set} />
-              ))}
-            </ul>
-          ) : (
-            <div className="android-empty-state">
-              <Search aria-hidden="true" />
-              <h3>Inga set hittades</h3>
-              <p>
-                Prova ett annat namn eller en setkod.
-                {!includeJapan &&
-                  " Slå på japanska specialset för att söka bland dem."}
+        </nav>
+        <div hidden={view !== "library"}>
+          <section className="android-hero" aria-labelledby="preview-heading">
+            <div className="android-build-label">
+              <Smartphone aria-hidden="true" />
+              Android · Förhandsversion
+            </div>
+            <div className="android-hero-copy">
+              <p className="android-eyebrow">För nästa stora lilla fynd</p>
+              <h1 id="preview-heading">
+                En värld av kort.
+                <br />
+                <span>Nu i din ficka.</span>
+              </h1>
+              <p className="android-hero-description">
+                Börja med att utforska setbiblioteket. Setens namn och
+                information finns i appen, även utan internet.
               </p>
-              <Button variant="outline" onClick={clearSearch}>
-                Visa alla set
+              <Button asChild className="android-explore-button">
+                <a href="#set-library">
+                  Utforska seten <ArrowDown aria-hidden="true" />
+                </a>
               </Button>
             </div>
-          )}
-          {shown.length < matches.length && (
-            <Button
-              variant="outline"
-              className="android-show-more"
-              onClick={() => setLimit((value) => value + PAGE_SIZE)}
+            <div className="android-hero-art" aria-hidden="true">
+              <div className="android-decor-card android-decor-card--back" />
+              <div className="android-decor-card android-decor-card--front">
+                <Sparkles strokeWidth={1} />
+                <span>CARD LENS</span>
+                <span>Din nästa upptäckt</span>
+              </div>
+            </div>
+            <div className="android-offline-note">
+              <WifiOff aria-hidden="true" />
+              Setöversikten fungerar offline
+            </div>
+          </section>
+
+          <section
+            className="android-coming-next"
+            aria-label="Detta ingår i förhandsversionen"
+          >
+            <span className="android-next-icon" aria-hidden="true">
+              <ArrowUpRight />
+            </span>
+            <div>
+              <p>Din samling har fått ett eget hem.</p>
+              <span>
+                Lägg till och redigera kort i Min samling. Setbiblioteket visar
+                ännu bara setinformation; kortlistor och skanning kommer senare.
+              </span>
+            </div>
+          </section>
+
+          <section
+            id="set-library"
+            className="android-library"
+            aria-labelledby="library-heading"
+          >
+            <div className="android-library-heading">
+              <div>
+                <p className="android-eyebrow">Hitta din nästa favorit</p>
+                <h2 id="library-heading">Setbiblioteket</h2>
+              </div>
+              <span className="android-total-badge">{scope.length} set</span>
+            </div>
+
+            <div className="android-search">
+              <Search aria-hidden="true" />
+              <label className="sr-only" htmlFor="android-set-search">
+                Sök i setbiblioteket
+              </label>
+              <input
+                id="android-set-search"
+                ref={searchInput}
+                type="search"
+                autoComplete="off"
+                placeholder="Setnamn, kod eller japanskt namn"
+                value={query}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setLimit(PAGE_SIZE);
+                }}
+              />
+              {query && (
+                <button
+                  type="button"
+                  aria-label="Rensa sökning"
+                  onClick={clearSearch}
+                >
+                  <X aria-hidden="true" />
+                </button>
+              )}
+            </div>
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={includeJapan}
+              aria-describedby="japanese-scope-description"
+              className="android-japan-toggle"
+              onClick={() => {
+                setIncludeJapan((value) => !value);
+                setLimit(PAGE_SIZE);
+              }}
             >
-              Visa fler set <ChevronDown aria-hidden="true" />
-            </Button>
-          )}
-        </section>
+              <span>Visa japanska specialset</span>
+              <span className="android-toggle-track" aria-hidden="true">
+                <span>{includeJapan && <Check />}</span>
+              </span>
+            </button>
+            <p
+              id="japanese-scope-description"
+              className="android-scope-description"
+            >
+              {previewInternationalSets.length} engelska set
+              {includeJapan
+                ? ` + ${previewJapaneseSets.length} verifierade japanska specialset.`
+                : `. Lägg till ${previewJapaneseSets.length} verifierade japanska specialset.`}
+            </p>
+
+            <p
+              className="android-result-count"
+              role="status"
+              aria-live="polite"
+            >
+              {matches.length === 0
+                ? "Inga set matchar sökningen."
+                : `Visar ${shown.length} av ${matches.length} set${query.trim() ? " som matchar sökningen" : ""}.`}
+            </p>
+
+            {shown.length ? (
+              <ul className="android-set-list" aria-label="Set i biblioteket">
+                {shown.map((set) => (
+                  <SetSummary key={set.id} set={set} />
+                ))}
+              </ul>
+            ) : (
+              <div className="android-empty-state">
+                <Search aria-hidden="true" />
+                <h3>Inga set hittades</h3>
+                <p>
+                  Prova ett annat namn eller en setkod.
+                  {!includeJapan &&
+                    " Slå på japanska specialset för att söka bland dem."}
+                </p>
+                <Button variant="outline" onClick={clearSearch}>
+                  Visa alla set
+                </Button>
+              </div>
+            )}
+            {shown.length < matches.length && (
+              <Button
+                variant="outline"
+                className="android-show-more"
+                onClick={() => setLimit((value) => value + PAGE_SIZE)}
+              >
+                Visa fler set <ChevronDown aria-hidden="true" />
+              </Button>
+            )}
+          </section>
+        </div>
+        {collectionOpened && (
+          <div hidden={view !== "collection"}>
+            <CollectionScreen repository={collectionRepository} />
+          </div>
+        )}
         <footer className="android-footer">
           <Layers3 aria-hidden="true" />
-          <span>Card Lens · Förhandsversion 0.1</span>
+          <span>Card Lens · Förhandsversion 0.1.0-preview.2</span>
         </footer>
       </main>
     </div>

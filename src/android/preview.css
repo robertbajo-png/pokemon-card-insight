@@ -43,6 +43,42 @@
 .android-main:focus {
   outline: none;
 }
+.android-navigation {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  margin-bottom: 22px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 16px;
+  background: hsl(var(--card));
+}
+.android-navigation button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  border-radius: 11px;
+  color: hsl(var(--muted-foreground));
+  font-size: 13px;
+  font-weight: 650;
+}
+.android-navigation button[aria-current="page"] {
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--primary));
+}
+.android-navigation svg {
+  width: 17px;
+  height: 17px;
+}
+.android-navigation button:focus-visible {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+}
+.android-preview [hidden] {
+  display: none !important;
+}
 .android-hero {
   position: relative;
   overflow: hidden;

@@ -60,21 +60,25 @@ account import, backups and real-backend acceptance tests.
 Optional phone camera access uses an explicitly enabled, email-protected HTTPS
 link; see [mobile access](docs/mobile-access.md).
 
-## Android foundation preview — ANDROID-01
+## Android local collection preview — ANDROID-02
 
-The first Android preview packages a separate UI and offline **set metadata** in
+The Android preview packages a separate UI and offline **set metadata** in
 a Capacitor 8 app, ID `com.robertbajo.cardlens`. It opens without the Windows PC
-or Lovable. Complete offline card lists, Room collection storage, native camera,
-backup/restore and AI are later roadmap tasks; they are not working features of
-this foundation preview.
+or Lovable. Preview 2 adds a private Room collection on each phone, basic manual
+entry, editing and confirmed deletion. Complete offline card lists, native
+camera, backup/restore and AI are later roadmap tasks. See [local Android
+collection](docs/android-collection.md) for the storage boundary, conflict
+handling and preview limitations.
 
 ```powershell
 npm ci
 npm run android:apk
+# Also run the native Room tests and Android lint:
+npm run android:verify
 ```
 
 The Windows build script produces
-`artifacts/android/cardlens-0.1.0-preview.1-debug.apk`; it does not install or
+`artifacts/android/cardlens-0.1.0-preview.2-debug.apk`; it does not install or
 publish it. `npm run build:android` checks only the separate `dist-android/` web
 assets. See [Android build and installation](docs/android-build.md) for toolchain
 requirements, selected-device installation, debug/release signing and data
